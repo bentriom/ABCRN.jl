@@ -4,6 +4,7 @@ import Base: +, -, getfield, getindex
 
 export Model, ContinuousTimeModel, DiscreteTimeModel
 export simulate, set_param!, get_param
+export load_model
 include("model.jl")
 
 export Observations, AbstractTrajectory

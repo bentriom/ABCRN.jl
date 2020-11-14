@@ -48,5 +48,5 @@ g = SVector(1)
 
 # Gamma should be constructed automatically in the case of 
 
-#m = Model(d,dobs,k,dict,l_name,param,p,x0,f,g)
+#SIR = Model(d,dobs,k,dict,l_name,param,p,x0,f,g)
 
