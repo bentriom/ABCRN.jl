@@ -18,9 +18,9 @@ function f(xn::State, tn::Real, p::Parameters)
     l_a = SVector(a1, a2)
     asum = sum(l_a)
     # column-major order
-    l_nu = @SMatrix [-1.0 0.0;
-                     1.0 -1.0;
-                     0.0 1.0]
+    l_nu = @SMatrix [-1 0;
+                     1 -1;
+                     0 1]
     
     u1, u2 = rand(), rand()
     tau = - log(u1) / asum

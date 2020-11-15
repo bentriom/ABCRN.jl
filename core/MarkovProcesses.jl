@@ -8,7 +8,7 @@ export load_model
 include("model.jl")
 
 export Observations, AbstractTrajectory
-export +,-,δ,get_obs_variables
+export +,-,δ,get_obs_variables,get_states_number
 include("observations.jl")
 
 end

@@ -38,7 +38,7 @@ end
 function simulate(m::ContinuousTimeModel)
     full_values = zeros(m.d, 0)
     times = zeros(0)
-    transitions = Vector{String}(undef, 0)
+    transitions = Vector{Union{String,Nothing}}(undef, 0)
     xn = m.x0
     tn = m.t0 
     n = 0
@@ -51,6 +51,14 @@ function simulate(m::ContinuousTimeModel)
         n += 1
     end
     values = full_values[m._g_idx,:] 
+    if is_bounded(m)
+        if times[end] > m.time_bound
+            values[:, end] = values[:,end-1]
+            times[end] = m.time_bound
+            transitions[end] = nothing
+        end
+    end
+    
     return Trajectory(m, values, times, transitions)
 end
 
@@ -62,6 +70,7 @@ function simulate(m::ContinuousTimeModel, n::Int)
     return obs
 end
 
+is_bounded(m::Model) = m.time_bound < Inf
 function check_consistency(m::Model) end
 function simulate(m::Model, n::Int; bound::Real = Inf)::AbstractObservations end
 function set_param!(m::Model, p::AbstractVector{Real})::Nothing end
