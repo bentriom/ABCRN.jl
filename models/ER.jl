@@ -2,19 +2,16 @@
 
 import StaticArrays: SVector, SMatrix, @SMatrix
 
-State = SVector{4, Int}
-Parameters = SVector{3, Float64}
-
 d=4
 k=3
 dict_var = Dict("E" => 1, "S" => 2, "ES" => 3, "P" => 4)
 dict_p = Dict("k1" => 1, "k2" => 2, "k3" => 3)
 l_tr = ["R1","R2","R3"]
-p = Parameters(1.0, 1.0, 1.0)
-x0 = State(100, 100, 0, 0)
+p = SVector{3, Float64}(1.0, 1.0, 1.0)
+x0 = SVector{4, Int}(100, 100, 0, 0)
 t0 = 0.0
 
-function f(xn::State, tn::Float64, p::Parameters)
+function f(xn::SVector{4, Int}, tn::Float64, p::SVector{3, Float64})
     a1 = p[1] * xn[1] * xn[2]
     a2 = p[2] * xn[3]
     a3 = p[3] * xn[3]
@@ -39,13 +36,13 @@ function f(xn::State, tn::Float64, p::Parameters)
     end
  
     nu = l_nu[:,reaction]
-    xnplus1 = State(xn[1]+nu[1], xn[2]+nu[2], xn[3]+nu[3], xn[4]+nu[4])
+    xnplus1 = SVector{4, Int}(xn[1]+nu[1], xn[2]+nu[2], xn[3]+nu[3], xn[4]+nu[4])
     tnplus1 = tn + tau
     transition = "R$(reaction)"
     
     return xnplus1, tnplus1, transition
 end
-is_absorbing_er(p::Parameters,xn::State) = 
+is_absorbing_er(p::SVector{3, Float64},xn::SVector{4, Int}) = 
     (p[1]*xn[1]*xn[2] + (p[2]+p[3])*xn[3]) == 0.0
 g = SVector("P")
 
