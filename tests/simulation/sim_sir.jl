@@ -2,7 +2,7 @@
 using MarkovProcesses 
 using PyPlot
 
-load_model("sir")
+load_model("SIR")
 
 σ = simulate(SIR)
 plt.figure()

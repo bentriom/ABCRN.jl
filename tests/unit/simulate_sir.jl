@@ -1,7 +1,7 @@
 
 using MarkovProcesses
 
-load_model("sir")
+load_model("SIR")
 
 σ = simulate(SIR)
 
