@@ -4,14 +4,14 @@ ContinuousObservations = AbstractVector{AbstractTrajectory}
 
 struct Trajectory <: AbstractTrajectory
     m::ContinuousTimeModel
-    values::AbstractMatrix{Real}
-    times::AbstractVector{Real}
+    values::AbstractMatrix{Float64}
+    times::AbstractVector{Float64}
     transitions::AbstractVector{Union{String,Nothing}}
 end
 
 function +(σ1::AbstractTrajectory,σ2::AbstractTrajectory) end
 function -(σ1::AbstractTrajectory,σ2::AbstractTrajectory) end
-function δ(σ1::AbstractTrajectory,t::Real) end
+function δ(σ1::AbstractTrajectory,t::Float64) end
 function get_obs_variables(σ::AbstractTrajectory) end
 
 get_values(σ::AbstractTrajectory, var::String) = 

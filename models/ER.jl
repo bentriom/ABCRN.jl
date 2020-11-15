@@ -3,7 +3,7 @@
 import StaticArrays: SVector, SMatrix, @SMatrix
 
 State = SVector{4, Int}
-Parameters = SVector{3, Real}
+Parameters = SVector{3, Float64}
 
 d=4
 k=3
@@ -14,7 +14,7 @@ p = Parameters(1.0, 1.0, 1.0)
 x0 = State(100, 100, 0, 0)
 t0 = 0.0
 
-function f(xn::State, tn::Real, p::Parameters)
+function f(xn::State, tn::Float64, p::Parameters)
     a1 = p[1] * xn[1] * xn[2]
     a2 = p[2] * xn[3]
     a3 = p[3] * xn[3]
@@ -45,10 +45,10 @@ function f(xn::State, tn::Real, p::Parameters)
     
     return xnplus1, tnplus1, transition
 end
-is_absorbing_sir(p::Parameters,xn::State) = 
+is_absorbing_er(p::Parameters,xn::State) = 
     (p[1]*xn[1]*xn[2] + (p[2]+p[3])*xn[3]) == 0.0
 g = SVector("P")
 
-ER = CTMC(d,k,dict_var,dict_p,l_tr,p,x0,t0,f,is_absorbing_sir; g=g)
+ER = CTMC(d,k,dict_var,dict_p,l_tr,p,x0,t0,f,is_absorbing_er; g=g)
 export ER
 

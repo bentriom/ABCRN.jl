@@ -12,19 +12,19 @@ mutable struct CTMC <: ContinuousTimeModel
     _map_obs_var_idx::Dict # maps str to observed state space
     map_param_idx::Dict # maps str in parameter space
     l_name_transitions::AbstractVector{String}
-    p::AbstractVector{Real}
+    p::AbstractVector{Float64}
     x0::AbstractVector{Int}
-    t0::Real
+    t0::Float64
     f::Function
     g::AbstractVector{String} # of dimension dobs
-    _g_idx::AbstractVector{Int} # of dimension dobs
+    _g_idx::Vector{Int} # of dimension dobs
     is_absorbing::Function
-    time_bound::Real
+    time_bound::Float64
 end
 
 function CTMC(d::Int, k::Int, map_var_idx::Dict, map_param_idx::Dict, l_name_transitions::AbstractVector{String}, 
-              p::AbstractVector{Real}, x0::AbstractVector{Int}, t0::Real, 
-              f::Function, is_absorbing::Function; g::AbstractVector{String} = keys(map_var_idx), time_bound::Real = Inf)
+              p::AbstractVector{Float64}, x0::AbstractVector{Int}, t0::Float64, 
+              f::Function, is_absorbing::Function; g::AbstractVector{String} = keys(map_var_idx), time_bound::Float64 = Inf)
     dobs = length(g)
     _map_obs_var_idx = Dict()
     _g_idx = Vector{Int}(undef, dobs)
@@ -72,9 +72,9 @@ end
 
 is_bounded(m::Model) = m.time_bound < Inf
 function check_consistency(m::Model) end
-function simulate(m::Model, n::Int; bound::Real = Inf)::AbstractObservations end
-function set_param!(m::Model, p::AbstractVector{Real})::Nothing end
-function get_param(m::Model)::AbstractVector{Real} end
+function simulate(m::Model, n::Int; bound::Float64 = Inf)::AbstractObservations end
+function set_param!(m::Model, p::AbstractVector{Float64})::Nothing end
+function get_param(m::Model)::AbstractVector{Float64} end
 
 function load_model(name_model::String)
     include(pathof(@__MODULE__) * "/../../models/" * name_model * ".jl")

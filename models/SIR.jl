@@ -1,18 +1,15 @@
 
 import StaticArrays: SVector, SMatrix, @SMatrix
 
-State = SVector{3, Int}
-Parameters = SVector{2, Real}
-
 d=3
 k=2
 dict_var = Dict("S" => 1, "I" => 2, "R" => 3)
 dict_p = Dict("ki" => 1, "kr" => 2)
 l_tr = ["R1","R2"]
-p = Parameters(0.0012, 0.05)
-x0 = State(95, 5, 0)
+p = SVector(0.0012, 0.05)
+x0 = SVector(95, 5, 0)
 t0 = 0.0
-function f(xn::State, tn::Real, p::Parameters)
+function f(xn::SVector{3, Int}, tn::Float64, p::SVector{2, Float64})
     a1 = p[1] * xn[1] * xn[2]
     a2 = p[2] * xn[2]
     l_a = SVector(a1, a2)
@@ -37,13 +34,13 @@ function f(xn::State, tn::Real, p::Parameters)
     end
  
     nu = l_nu[:,reaction]
-    xnplus1 = State(xn[1]+nu[1], xn[2]+nu[2], xn[3]+nu[3])
+    xnplus1 = SVector(xn[1]+nu[1], xn[2]+nu[2], xn[3]+nu[3])
     tnplus1 = tn + tau
     transition = "R$(reaction)"
 
     return xnplus1, tnplus1, transition
 end
-is_absorbing_sir(p::Parameters,xn::State) = (p[1]*xn[1]*xn[2] + p[2]*xn[2]) == 0.0
+is_absorbing_sir(p::SVector{2, Float64}, xn::SVector{3, Int}) = (p[1]*xn[1]*xn[2] + p[2]*xn[2]) == 0.0
 g = SVector("I")
 
 SIR = CTMC(d,k,dict_var,dict_p,l_tr,p,x0,t0,f,is_absorbing_sir; g=g)
