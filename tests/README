@@ -1,0 +1,7 @@
+
+unit/: ensures essential commands execute well, a test can contain a simulate() method to check it is well launched
+simulation/: tries to check the consistency of the produced simulations, comparison with other packages,
+             quantify if the simulation is probable
+
+Lauch unit tests: julia run_unit.jl
+

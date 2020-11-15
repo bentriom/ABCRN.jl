@@ -6,7 +6,7 @@ load_model("sir")
 
 σ = simulate(SIR)
 plt.figure()
-plot(σ["S,times"], σ["S,values"])
+plt.step(σ["times"], σ["I"], "ro--", marker="x", where="post", linewidth=1.0)
 plt.savefig("sim_sir.png")
 plt.close()
 
