@@ -6,10 +6,11 @@ k=2
 dict_var = Dict("S" => 1, "I" => 2, "R" => 3)
 dict_p = Dict("ki" => 1, "kr" => 2)
 l_tr = ["R1","R2"]
-p = SVector(0.0012, 0.05)
-x0 = SVector(95, 5, 0)
+p = [0.0012, 0.05]
+x0 = [95, 5, 0]
 t0 = 0.0
-function f(xn::SVector{3, Int}, tn::Float64, p::SVector{2, Float64})
+function f!(xnplus1::Vector{Int}, tnplus1::Vector{Float64}, tr::Vector{String}, 
+           xn::Vector{Int}, tn::Float64, p::Vector{Float64})
     a1 = p[1] * xn[1] * xn[2]
     a2 = p[2] * xn[2]
     l_a = SVector(a1, a2)
@@ -33,16 +34,18 @@ function f(xn::SVector{3, Int}, tn::Float64, p::SVector{2, Float64})
         b_sup += l_a[i+1]
     end
  
-    nu = l_nu[:,reaction]
-    xnplus1 = SVector(xn[1]+nu[1], xn[2]+nu[2], xn[3]+nu[3])
-    tnplus1 = tn + tau
-    transition = "R$(reaction)"
+    nu = @view l_nu[:,reaction] # macro for avoiding a copy
+    xnplus1[1] = xn[1]+nu[1]
+    xnplus1[2] = xn[2]+nu[2]
+    xnplus1[3] = xn[3]+nu[3]
+    tnplus1[1] = tn + tau
+    tr[1] = "R$(reaction)"
 
-    return xnplus1, tnplus1, transition
+    #return xnplus1, tnplus1, transition
 end
-is_absorbing_sir(p::SVector{2, Float64}, xn::SVector{3, Int}) = (p[1]*xn[1]*xn[2] + p[2]*xn[2]) == 0.0
-g = SVector("I")
+is_absorbing_sir(p::Vector{Float64}, xn::Vector{Int}) = (p[1]*xn[1]*xn[2] + p[2]*xn[2]) === 0.0
+g = ["I"]
 
-SIR = CTMC(d,k,dict_var,dict_p,l_tr,p,x0,t0,f,is_absorbing_sir; g=g)
+SIR = CTMC(d,k,dict_var,dict_p,l_tr,p,x0,t0,f!,is_absorbing_sir; g=g)
 export SIR
 
