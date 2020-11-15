@@ -1,6 +1,7 @@
 
 using MarkovProcesses
-load_model("sir")
+
+load_model("SIR")
 
 return true
 
