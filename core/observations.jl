@@ -4,9 +4,9 @@ ContinuousObservations = AbstractVector{AbstractTrajectory}
 
 struct Trajectory <: AbstractTrajectory
     m::ContinuousTimeModel
-    values::AbstractMatrix{Float64}
-    times::AbstractVector{Float64}
-    transitions::AbstractVector{Union{String,Nothing}}
+    values::Matrix{Int}
+    times::Vector{Float64}
+    transitions::Vector{Union{String,Nothing}}
 end
 
 function +(σ1::AbstractTrajectory,σ2::AbstractTrajectory) end

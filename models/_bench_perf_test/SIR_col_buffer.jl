@@ -9,7 +9,7 @@ l_tr = ["R1","R2"]
 p = [0.0012, 0.05]
 x0 = [95, 5, 0]
 t0 = 0.0
-function f!(mat_x::Matrix{Int}, l_t::Vector{Float64}, l_tr::Vector{String}, idx::Int,
+function SIR_col_buffer_f!(mat_x::Matrix{Int}, l_t::Vector{Float64}, l_tr::Vector{String}, idx::Int,
            xn::AbstractVector{Int}, tn::Float64, p::Vector{Float64})
     a1 = p[1] * xn[1] * xn[2]
     a2 = p[2] * xn[2]
@@ -41,9 +41,9 @@ function f!(mat_x::Matrix{Int}, l_t::Vector{Float64}, l_tr::Vector{String}, idx:
     l_t[idx] = tn + tau
     l_tr[idx] = "R$(reaction)"
 end
-is_absorbing_sir(p::Vector{Float64}, xn::AbstractVector{Int}) = (p[1]*xn[1]*xn[2] + p[2]*xn[2]) === 0.0
+is_absorbing_SIR_col_buffer(p::Vector{Float64}, xn::AbstractVector{Int}) = (p[1]*xn[1]*xn[2] + p[2]*xn[2]) === 0.0
 g = ["I"]
 
-SIR_col_buffer = CTMC(d,k,dict_var,dict_p,l_tr,p,x0,t0,f!,is_absorbing_sir; g=g)
+SIR_col_buffer = CTMC(d,k,dict_var,dict_p,l_tr,p,x0,t0,SIR_col_buffer_f!,is_absorbing_SIR_col_buffer; g=g)
 export SIR_col_buffer
 

@@ -32,6 +32,14 @@ function CTMC(d::Int, k::Int, map_var_idx::Dict, map_param_idx::Dict, l_name_tra
         _g_idx[i] = map_var_idx[g[i]] # = ( (g[i] = i-th obs var)::String => idx in state space )
         _map_obs_var_idx[g[i]] = i
     end
+  
+    if length(methods(f!)) >= 2
+        @warn "You have possibly redefined a function Model.f! used in a previously instantiated model."
+    end
+    if length(methods(is_absorbing)) >= 2
+        @warn "You have possibly redefined a function Model.is_absorbing used in a previously instantiated model."
+    end
+
     return CTMC(d, k, map_var_idx, _map_obs_var_idx, map_param_idx, l_name_transitions, p, x0, t0, f!, g, _g_idx, is_absorbing, time_bound)
 end
 

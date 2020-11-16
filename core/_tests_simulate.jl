@@ -4,14 +4,14 @@
 # Trajectories
 
 _get_values_col(σ::AbstractTrajectory, var::String) = 
-σ.values[(σ.m)._map_obs_var_idx[var],:] 
+@view σ.values[(σ.m)._map_obs_var_idx[var],:] 
 _get_values_row(σ::AbstractTrajectory, var::String) = 
-σ.values[:,(σ.m)._map_obs_var_idx[var]] 
+@view σ.values[:,(σ.m)._map_obs_var_idx[var]] 
 
 _get_state_col(σ::AbstractTrajectory, idx::Int) = 
-σ.values[:,idx]
+@view σ.values[:,idx]
 _get_state_row(σ::AbstractTrajectory, idx::Int) = 
-σ.values[idx,:]
+@view σ.values[idx,:]
 
 _get_value_col(σ::AbstractTrajectory, var::String, idx::Int) = 
 σ.values[(σ.m)._map_obs_var_idx[var],idx] 
