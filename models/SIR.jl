@@ -40,8 +40,6 @@ function f!(xnplus1::Vector{Int}, tnplus1::Vector{Float64}, tr::Vector{String},
     xnplus1[3] = xn[3]+nu[3]
     tnplus1[1] = tn + tau
     tr[1] = "R$(reaction)"
-
-    #return xnplus1, tnplus1, transition
 end
 is_absorbing_sir(p::Vector{Float64}, xn::Vector{Int}) = (p[1]*xn[1]*xn[2] + p[2]*xn[2]) === 0.0
 g = ["I"]
