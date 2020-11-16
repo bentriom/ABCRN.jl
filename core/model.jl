@@ -78,6 +78,19 @@ function simulate(m::ContinuousTimeModel, n::Int)
     return obs
 end
 
+function set_observed_var!(m::Model,g::Vector{String})
+    dobs = length(g)
+    _map_obs_var_idx = Dict()
+    _g_idx = Vector{Int}(undef, dobs)
+    for i = 1:dobs
+        _g_idx[i] = m.map_var_idx[g[i]] # = ( (g[i] = i-th obs var)::String => idx in state space )
+        _map_obs_var_idx[g[i]] = i
+    end
+    m.g = g
+    m._g_idx = _g_idx
+    m._map_obs_var_idx = _map_obs_var_idx
+end
+
 is_bounded(m::Model) = m.time_bound < Inf
 function check_consistency(m::Model) end
 function simulate(m::Model, n::Int; bound::Float64 = Inf)::AbstractObservations end

@@ -7,5 +7,7 @@ using Test
     @test include("unit/simulate_sir.jl")
     @test include("unit/simulate_sir_bounded.jl")
     @test include("unit/simulate_er.jl")
+    @test include("unit/change_obs_var_sir.jl")
+    @test include("unit/change_obs_var_sir_2.jl")
 end
 
