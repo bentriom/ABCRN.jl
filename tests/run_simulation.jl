@@ -9,6 +9,7 @@ if !isdir(str_dir_pics) mkdir(str_dir_pics) end
     @test include("simulation/sim_sir.jl")
     @test include("simulation/sim_sir_bounded.jl")
     @test include("simulation/sim_sir_col_buffer_bounded.jl")
+    @test include("simulation/sim_sir_row_buffer_bounded.jl")
     @test include("simulation/sim_er.jl")
 end
 

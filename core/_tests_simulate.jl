@@ -1,11 +1,24 @@
 
 # File for benchmarking simulation and memory access of the package.
 
+# Trajectories
+
 _get_values_col(σ::AbstractTrajectory, var::String) = 
 σ.values[(σ.m)._map_obs_var_idx[var],:] 
 _get_values_row(σ::AbstractTrajectory, var::String) = 
 σ.values[:,(σ.m)._map_obs_var_idx[var]] 
 
+_get_state_col(σ::AbstractTrajectory, idx::Int) = 
+σ.values[:,idx]
+_get_state_row(σ::AbstractTrajectory, idx::Int) = 
+σ.values[idx,:]
+
+_get_value_col(σ::AbstractTrajectory, var::String, idx::Int) = 
+σ.values[(σ.m)._map_obs_var_idx[var],idx] 
+_get_value_row(σ::AbstractTrajectory, var::String, idx::Int) = 
+σ.values[idx,(σ.m)._map_obs_var_idx[var]] 
+
+# Model
 
 function _simulate_col(m::ContinuousTimeModel)
     # trajectory fields
@@ -135,7 +148,7 @@ function _simulate_row_buffer(m::ContinuousTimeModel; buffer_size::Int = 5)
         while i < buffer_size && !is_absorbing && (tn <= m.time_bound)
             i += 1
             m.f!(mat_x, l_t, l_tr, i, xn, tn, m.p)
-            xn = @view mat_x[:,i]
+            xn = @view mat_x[i,:]
             tn = l_t[i]
             is_absorbing = m.is_absorbing(m.p,xn)::Bool
         end
