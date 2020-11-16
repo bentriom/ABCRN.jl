@@ -84,7 +84,8 @@ function simulate(m::Model, n::Int; bound::Float64 = Inf)::AbstractObservations 
 function set_param!(m::Model, p::Vector{Float64})::Nothing end
 function get_param(m::Model)::Vector{Float64} end
 
+get_module_path() = dirname(dirname(pathof(@__MODULE__)))
 function load_model(name_model::String)
-    include(pathof(@__MODULE__) * "/../../models/" * name_model * ".jl")
+    include(get_module_path() * "/models/" * name_model * ".jl")
 end
 
