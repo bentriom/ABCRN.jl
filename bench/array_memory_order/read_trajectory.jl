@@ -40,7 +40,7 @@ println("Col buffer:")
 function read_trajectory_col(m::Model)
     res = 0
     σ = _simulate_col_buffer(m)
-    n_states = get_states_number(σ)
+    n_states = length_states(σ)
     n_read = 100000
     for k = 1:n_read
         for i = 1:n_states
@@ -59,7 +59,7 @@ println("Row buffer:")
 function read_trajectory_row(m::Model)
     res = 0
     σ = _simulate_row_buffer(m)
-    n_states = get_states_number(σ)
+    n_states = length_states(σ)
     n_read = 100000
     for k = 1:n_read
         for i = 1:n_states

@@ -25,7 +25,6 @@ if ARGS[1] == "SIR"
 elseif ARGS[1] == "ER"
     l_var = ["E","S","ES","P"]
     bound_time = 20.0
-    nbr_sim = 10000
 
     load_model("_bench_perf_test/ER_col")
     ER_col.time_bound = bound_time
@@ -43,7 +42,7 @@ elseif ARGS[1] == "ER"
 else
     error("Unavailable model")
 end
-nbr_sim = 10000
+nbr_sim = 1000
 
 println("Col")
 b1_col = @benchmark for i = 1:$(nbr_sim) _simulate_col($model_col) end

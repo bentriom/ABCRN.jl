@@ -10,8 +10,9 @@ include("model.jl")
 
 export Observations, AbstractTrajectory, Trajectory
 export +,-,δ
-export get_obs_variables,get_states_number
-include("observations.jl")
+export dist_lp, l_dist_lp
+export get_obs_var, length_states, length_obs_var, is_bounded
+include("trajectory.jl")
 
 end
 

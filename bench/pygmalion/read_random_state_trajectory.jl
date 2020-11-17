@@ -36,7 +36,7 @@ MarkovProcesses.load_model("ER")
 ER.time_bound = 10.0
 σ = MarkovProcesses.simulate(ER)
 function random_trajectory_value(σ::AbstractTrajectory)
-    n_states = get_states_number(σ)
+    n_states = length_states(σ)
     return σ["P"][rand(1:n_states)]
 end
 # Bench

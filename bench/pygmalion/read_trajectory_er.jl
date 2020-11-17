@@ -48,7 +48,7 @@ MarkovProcesses.load_model("ER")
 ER.time_bound = 10.0
 σ = MarkovProcesses.simulate(ER)
 function read_trajectory(σ::AbstractTrajectory)
-    n_states = get_states_number(σ)
+    n_states = length_states(σ)
     res = 0
     for i = 1:n_states
         res += (σ["P"])[i]

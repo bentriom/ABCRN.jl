@@ -81,6 +81,10 @@ function simulate(m::ContinuousTimeModel)
             values[end,:] = values[end-1,:]
             times[end] = m.time_bound
             transitions[end] = nothing
+        else
+            vcat(values, values[end,:])
+            push!(times, m.time_bound)
+            push!(transitions, nothing)
         end
     end
     return Trajectory(m, values, times, transitions)

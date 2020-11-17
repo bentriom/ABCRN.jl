@@ -39,7 +39,7 @@ println("Col buffer:")
 
 function random_trajectory_value_col(m::ContinuousTimeModel)
     σ = _simulate_col_buffer(m)
-    n_states = get_states_number(σ)
+    n_states = length_states(σ)
     nb_rand = 1000
     res = 0
     for i = 1:nb_rand
@@ -57,7 +57,7 @@ println("Row buffer:")
 
 function random_trajectory_value_row(m::ContinuousTimeModel)
     σ = _simulate_row_buffer(m)
-    n_states = get_states_number(σ)
+    n_states = length_states(σ)
     nb_rand = 1000
     res = 0
     for i = 1:nb_rand

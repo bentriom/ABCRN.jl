@@ -11,5 +11,9 @@ using Test
     @test include("unit/change_obs_var_sir.jl")
     @test include("unit/change_obs_var_sir_2.jl")
     @test include("unit/getindex_access_trajectory.jl")
+    @test include("unit/is_always_bounded_sir.jl")
+    @test include("unit/length_obs_var.jl")
+    @test include("unit/dist_lp_var.jl")
+    @test include("unit/dist_lp.jl")
 end
 
