@@ -37,37 +37,39 @@ end
 
 println("Col buffer:")
 
-function random_trajectory_value_col(m::ContinuousTimeModel)
+function read_trajectory_col(m::Model)
+    res = 0
     σ = _simulate_col_buffer(m)
     n_states = get_states_number(σ)
-    nb_rand = 1000
-    res = 0
-    for i = 1:nb_rand
-        a = _get_state_col(σ, rand(1:n_states))
-        res += a[2]
+    n_read = 100000
+    for k = 1:n_read
+        for i = 1:n_states
+            res += _get_value_col(σ, "I", i)
+        end
     end
     return res
 end
 # Bench
-@timev random_trajectory_value_col(model_col_buffer) 
-b1_col_buffer = @benchmark random_trajectory_value_col($model_col_buffer)
-@show minimum(b1_col_buffer), mean(b1_col_buffer), maximum(b1_col_buffer)
+@timev read_trajectory_col(model_col_buffer) 
+b1_col = @benchmark read_trajectory_col($model_col_buffer)
+@show minimum(b1_col), mean(b1_col), maximum(b1_col)
 
 println("Row buffer:")
 
-function random_trajectory_value_row(m::ContinuousTimeModel)
+function read_trajectory_row(m::Model)
+    res = 0
     σ = _simulate_row_buffer(m)
     n_states = get_states_number(σ)
-    nb_rand = 1000
-    res = 0
-    for i = 1:nb_rand
-        a = _get_state_row(σ, rand(1:n_states))
-        res += a[2]
+    n_read = 100000
+    for k = 1:n_read
+        for i = 1:n_states
+            res += _get_value_row(σ, "I", i)
+        end
     end
     return res
 end
 # Bench
-@timev random_trajectory_value_row(model_row_buffer) 
-b1_row_buffer = @benchmark random_trajectory_value_row($model_row_buffer)
-@show minimum(b1_row_buffer), mean(b1_row_buffer), maximum(b1_row_buffer)
+@timev read_trajectory_row(model_row_buffer) 
+b1_row = @benchmark read_trajectory_row($model_row_buffer)
+@show minimum(b1_row), mean(b1_row), maximum(b1_row)
 
