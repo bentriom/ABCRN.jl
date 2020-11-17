@@ -9,7 +9,8 @@ export load_model, get_module_path
 include("model.jl")
 
 export Observations, AbstractTrajectory, Trajectory
-export +,-,δ,get_obs_variables,get_states_number
+export +,-,δ
+export get_obs_variables,get_states_number
 include("observations.jl")
 
 end

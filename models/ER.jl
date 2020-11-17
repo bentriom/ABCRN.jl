@@ -9,9 +9,8 @@ l_tr = ["R1","R2","R3"]
 p = [1.0, 1.0, 1.0]
 x0 = [100, 100, 0, 0]
 t0 = 0.0
-
-function f!(xnplus1::Vector{Int}, tnplus1::Vector{Float64}, tr::Vector{String}, 
-           xn::Vector{Int}, tn::Float64, p::Vector{Float64})
+function ER_f!(mat_x::Matrix{Int}, l_t::Vector{Float64}, l_tr::Vector{String}, idx::Int,
+           xn::AbstractVector{Int}, tn::Float64, p::Vector{Float64})
     a1 = p[1] * xn[1] * xn[2]
     a2 = p[2] * xn[3]
     a3 = p[3] * xn[3]
@@ -35,18 +34,17 @@ function f!(xnplus1::Vector{Int}, tnplus1::Vector{Float64}, tr::Vector{String},
         b_sup += l_a[i+1]
     end
  
-    nu = @view l_nu[:,reaction]
-    xnplus1[1] = xn[1]+nu[1] 
-    xnplus1[2] = xn[2]+nu[2]
-    xnplus1[3] = xn[3]+nu[3]
-    xnplus1[4] = xn[4]+nu[4]
-    tnplus1[1] = tn + tau
-    tr[1] = "R$(reaction)"
+    nu = @view l_nu[:,reaction] # macro for avoiding a copy
+    for i = 1:4
+        mat_x[idx,i] = xn[i]+nu[i]
+    end
+    l_t[idx] = tn + tau
+    l_tr[idx] = "R$(reaction)"
 end
-is_absorbing_er(p::Vector{Float64},xn::Vector{Int}) = 
+is_absorbing_ER(p::Vector{Float64},xn::AbstractVector{Int}) = 
     (p[1]*xn[1]*xn[2] + (p[2]+p[3])*xn[3]) === 0.0
 g = ["P"]
 
-ER = CTMC(d,k,dict_var,dict_p,l_tr,p,x0,t0,f!,is_absorbing_er; g=g)
+ER = CTMC(d,k,dict_var,dict_p,l_tr,p,x0,t0,ER_f!,is_absorbing_ER; g=g)
 export ER
 
