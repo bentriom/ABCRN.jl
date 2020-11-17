@@ -47,9 +47,10 @@ end
 
 function simulate(m::ContinuousTimeModel)
     # trajectory fields
-    full_values = zeros(0, m.d)
-    times = zeros(0)
-    transitions = Vector{Union{String,Nothing}}(undef,0)
+    full_values = zeros(1, m.d)
+    full_values[1,:] = m.x0
+    times = Float64[m.t0]
+    transitions = Union{String,Nothing}[nothing]
     # values at time n
     n = 0
     xn = m.x0
