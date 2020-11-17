@@ -10,5 +10,6 @@ using Test
     @test include("unit/simulate_er.jl")
     @test include("unit/change_obs_var_sir.jl")
     @test include("unit/change_obs_var_sir_2.jl")
+    @test include("unit/getindex_access_trajectory.jl")
 end
 

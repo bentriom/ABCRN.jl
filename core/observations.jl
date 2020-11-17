@@ -35,10 +35,9 @@ function getindex(σ::AbstractTrajectory, var::String)
     end
 end
 # Get i-th state [i]
-getindex(σ::AbstractTrajectory, idx::Int) = get_state(σ, i)
+getindex(σ::AbstractTrajectory, idx::Int) = get_state(σ, idx)
 # Get i-th value of var ["I", idx]
-function getindex(σ::AbstractTrajectory, var_idx::Tuple{String,Int})
-    var, idx = var_idx[1], var_idx[2]
+function getindex(σ::AbstractTrajectory, var::String, idx::Int)
     if var  == "times"
         return σ.times[idx]
     elseif var == "transitions"
