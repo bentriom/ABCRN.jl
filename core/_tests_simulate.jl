@@ -177,7 +177,7 @@ function _simulate_without_view(m::ContinuousTimeModel)
     transitions = Union{String,Nothing}[nothing]
     # values at time n
     n = 0
-    xn = m.x0
+    xn = @view m.x0[:]
     tn = m.t0 
     # at time n+1
     mat_x = zeros(Int, m.buffer_size, m.d)
@@ -188,16 +188,16 @@ function _simulate_without_view(m::ContinuousTimeModel)
         i = 0
         while i < m.buffer_size && !is_absorbing && (tn <= m.time_bound)
             i += 1
-            m.f!(mat_x, l_t, l_tr, i, xn, tn, m.p)
+            m.f!(mat_x, l_t, l_tr, i, @view(xn[:]), tn, m.p)
             xn = mat_x[i,:]
             tn = l_t[i]
-            is_absorbing = m.is_absorbing(m.p,xn)::Bool
+            is_absorbing = m.is_absorbing(m.p,@view(xn[:]))::Bool
         end
         full_values = vcat(full_values, mat_x[1:i,:])
         append!(times, l_t[1:i])
         append!(transitions,  l_tr[1:i])
         n += i
-        is_absorbing = m.is_absorbing(m.p,xn)::Bool
+        is_absorbing = m.is_absorbing(m.p,@view(xn[:]))::Bool
     end
     if is_bounded(m)
         if times[end] > m.time_bound
