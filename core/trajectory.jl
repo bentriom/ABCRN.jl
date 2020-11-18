@@ -78,7 +78,7 @@ function dist_lp(σ1::AbstractTrajectory, σ2::AbstractTrajectory, var::String;
 end
 
 # Distance function. Vectorized version
-function dist_lp(x_obs::AbstractVector{Int}, t_x::Vector{Float64}, y_obs::AbstractVector{Int}, t_y::Vector{Float64}; 
+function dist_lp(x_obs::SubArray{Int,1}, t_x::SubArray{Float64,1}, y_obs::SubArray{Int,1}, t_y::SubArray{Float64,1}; 
                  verbose::Bool = false, p::Int = 1)
     current_y_obs = y_obs[1]
     current_t_y = t_y[2]
@@ -188,9 +188,9 @@ function δ(σ1::AbstractTrajectory,t::Float64) end
 # Get var values ["I"]
 function getindex(σ::AbstractTrajectory, var::String)
     if var  == "times"
-        return σ.times
+        return @view σ.times[:]
     elseif var == "transitions"
-        return σ.transitions
+        return @view σ.transitions[:] 
     else
         return get_var_values(σ, var)
     end

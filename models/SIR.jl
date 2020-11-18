@@ -10,7 +10,7 @@ p = [0.0012, 0.05]
 x0 = [95, 5, 0]
 t0 = 0.0
 function SIR_f!(mat_x::Matrix{Int}, l_t::Vector{Float64}, l_tr::Vector{String}, idx::Int,
-           xn::AbstractVector{Int}, tn::Float64, p::Vector{Float64})
+           xn::SubArray{Int,1}, tn::Float64, p::Vector{Float64})
     a1 = p[1] * xn[1] * xn[2]
     a2 = p[2] * xn[2]
     l_a = SVector(a1, a2)
@@ -41,7 +41,7 @@ function SIR_f!(mat_x::Matrix{Int}, l_t::Vector{Float64}, l_tr::Vector{String}, 
     l_t[idx] = tn + tau
     l_tr[idx] = "R$(reaction)"
 end
-is_absorbing_SIR(p::Vector{Float64}, xn::AbstractVector{Int}) = (p[1]*xn[1]*xn[2] + p[2]*xn[2]) === 0.0
+is_absorbing_SIR(p::Vector{Float64}, xn::SubArray{Int,1}) = (p[1]*xn[1]*xn[2] + p[2]*xn[2]) === 0.0
 g = ["I"]
 
 SIR = CTMC(d,k,dict_var,dict_p,l_tr,p,x0,t0,SIR_f!,is_absorbing_SIR; g=g)

@@ -53,7 +53,7 @@ function simulate(m::ContinuousTimeModel)
     transitions = Union{String,Nothing}[nothing]
     # values at time n
     n = 0
-    xn = m.x0
+    xn = @view m.x0[:] # View for type stability
     tn = m.t0 
     # at time n+1
     mat_x = zeros(Int, m.buffer_size, m.d)

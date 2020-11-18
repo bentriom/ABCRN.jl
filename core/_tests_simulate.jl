@@ -27,7 +27,7 @@ function _simulate_col(m::ContinuousTimeModel)
     transitions = Vector{Union{String,Nothing}}(undef,0)
     # values at time n
     n = 0
-    xn = m.x0
+    xn = @view m.x0[:]
     tn = m.t0 
     tr = [""]
     # at time n+1
@@ -61,7 +61,7 @@ function _simulate_row(m::ContinuousTimeModel)
     transitions = Vector{Union{String,Nothing}}(undef,0)
     # values at time n
     n = 0
-    xn = m.x0
+    xn = @view m.x0[:]
     tn = m.t0 
     tr = [""]
     # at time n+1
@@ -96,7 +96,7 @@ function _simulate_col_buffer(m::ContinuousTimeModel; buffer_size::Int = 5)
     transitions = Vector{Union{String,Nothing}}(undef,0)
     # values at time n
     n = 0
-    xn = m.x0
+    xn = @view m.x0[:]
     tn = m.t0 
     # at time n+1
     mat_x = zeros(Int, m.d, buffer_size)
@@ -136,7 +136,7 @@ function _simulate_row_buffer(m::ContinuousTimeModel; buffer_size::Int = 5)
     transitions = Vector{Union{String,Nothing}}(undef,0)
     # values at time n
     n = 0
-    xn = m.x0
+    xn = @view m.x0[:]
     tn = m.t0 
     # at time n+1
     mat_x = zeros(Int, buffer_size, m.d)
@@ -166,6 +166,51 @@ function _simulate_row_buffer(m::ContinuousTimeModel; buffer_size::Int = 5)
             transitions[end] = nothing
         end
     end
+    return Trajectory(m, values, times, transitions)
+end
+
+function _simulate_without_view(m::ContinuousTimeModel)
+    # trajectory fields
+    full_values = Matrix{Int}(undef, 1, m.d)
+    full_values[1,:] = m.x0
+    times = Float64[m.t0]
+    transitions = Union{String,Nothing}[nothing]
+    # values at time n
+    n = 0
+    xn = m.x0
+    tn = m.t0 
+    # at time n+1
+    mat_x = zeros(Int, m.buffer_size, m.d)
+    l_t = zeros(Float64, m.buffer_size)
+    l_tr = Vector{String}(undef, m.buffer_size)
+    is_absorbing = m.is_absorbing(m.p,xn)::Bool
+    while !is_absorbing && (tn <= m.time_bound)
+        i = 0
+        while i < m.buffer_size && !is_absorbing && (tn <= m.time_bound)
+            i += 1
+            m.f!(mat_x, l_t, l_tr, i, xn, tn, m.p)
+            xn = mat_x[i,:]
+            tn = l_t[i]
+            is_absorbing = m.is_absorbing(m.p,xn)::Bool
+        end
+        full_values = vcat(full_values, mat_x[1:i,:])
+        append!(times, l_t[1:i])
+        append!(transitions,  l_tr[1:i])
+        n += i
+        is_absorbing = m.is_absorbing(m.p,xn)::Bool
+    end
+    if is_bounded(m)
+        if times[end] > m.time_bound
+            full_values[end,:] = full_values[end-1,:]
+            times[end] = m.time_bound
+            transitions[end] = nothing
+        else
+            full_values = vcat(full_values, reshape(full_values[end,:], 1, m.d))
+            push!(times, m.time_bound)
+            push!(transitions, nothing)
+        end
+    end
+    values = full_values[:,m._g_idx] 
     return Trajectory(m, values, times, transitions)
 end
 

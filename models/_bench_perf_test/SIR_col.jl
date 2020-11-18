@@ -10,7 +10,7 @@ p = [0.0012, 0.05]
 x0 = [95, 5, 0]
 t0 = 0.0
 function SIR_col_f!(xnplus1::Vector{Int}, tnplus1::Vector{Float64}, tr::Vector{String}, 
-           xn::Vector{Int}, tn::Float64, p::Vector{Float64})
+                    xn::AbstractVector{Int}, tn::Float64, p::Vector{Float64})
     a1 = p[1] * xn[1] * xn[2]
     a2 = p[2] * xn[2]
     l_a = SVector(a1, a2)
@@ -41,7 +41,7 @@ function SIR_col_f!(xnplus1::Vector{Int}, tnplus1::Vector{Float64}, tr::Vector{S
     tnplus1[1] = tn + tau
     tr[1] = "R$(reaction)"
 end
-is_absorbing_SIR_col(p::Vector{Float64}, xn::Vector{Int}) = (p[1]*xn[1]*xn[2] + p[2]*xn[2]) === 0.0
+is_absorbing_SIR_col(p::Vector{Float64}, xn::AbstractVector{Int}) = (p[1]*xn[1]*xn[2] + p[2]*xn[2]) === 0.0
 g = ["I"]
 
 SIR_col = CTMC(d,k,dict_var,dict_p,l_tr,p,x0,t0,SIR_col_f!,is_absorbing_SIR_col; g=g)

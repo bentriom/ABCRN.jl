@@ -10,7 +10,7 @@ p = [1.0, 1.0, 1.0]
 x0 = [100, 100, 0, 0]
 t0 = 0.0
 function ER_f!(mat_x::Matrix{Int}, l_t::Vector{Float64}, l_tr::Vector{String}, idx::Int,
-           xn::AbstractVector{Int}, tn::Float64, p::Vector{Float64})
+               xn::SubArray{Int,1}, tn::Float64, p::Vector{Float64})
     a1 = p[1] * xn[1] * xn[2]
     a2 = p[2] * xn[3]
     a3 = p[3] * xn[3]
@@ -41,7 +41,7 @@ function ER_f!(mat_x::Matrix{Int}, l_t::Vector{Float64}, l_tr::Vector{String}, i
     l_t[idx] = tn + tau
     l_tr[idx] = "R$(reaction)"
 end
-is_absorbing_ER(p::Vector{Float64},xn::AbstractVector{Int}) = 
+is_absorbing_ER(p::Vector{Float64},xn::SubArray{Int,1}) = 
     (p[1]*xn[1]*xn[2] + (p[2]+p[3])*xn[3]) === 0.0
 g = ["P"]
 

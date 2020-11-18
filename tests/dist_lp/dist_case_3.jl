@@ -26,9 +26,9 @@ for p = 1:2
     int_riemann = MarkovProcesses._riemann_sum(diff_f, 0.0, 20.0, 1E-5)
     int_riemann = int_riemann^(1/p)
 
-    res1 = dist_lp(x_obs, t_x, y_obs, t_y; p=p)
+    res1 = dist_lp(@view(x_obs[:]), @view(t_x[:]), @view(y_obs[:]), @view(t_y[:]); p=p)
     res2 = dist_lp(σ1,σ2; p=p)
-    res1_bis = dist_lp(y_obs, t_y, x_obs, t_x; p=p)
+    res1_bis = dist_lp(@view(y_obs[:]), @view(t_y[:]), @view(x_obs[:]), @view(t_x[:]); p=p)
     res2_bis = dist_lp(σ2,σ1; p=p)
     test_1 = isapprox(res1, int_riemann; atol = 1E-3) 
     test_1 = test_1 && isapprox(res2, int_riemann; atol = 1E-3)
