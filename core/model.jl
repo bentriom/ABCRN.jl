@@ -47,7 +47,7 @@ end
 
 function simulate(m::ContinuousTimeModel)
     # trajectory fields
-    full_values = zeros(1, m.d)
+    full_values = Matrix{Int}(undef, 1, m.d)
     full_values[1,:] = m.x0
     times = Float64[m.t0]
     transitions = Union{String,Nothing}[nothing]
@@ -75,18 +75,18 @@ function simulate(m::ContinuousTimeModel)
         n += i
         is_absorbing = m.is_absorbing(m.p,xn)::Bool
     end
-    values = @view full_values[:,m._g_idx] 
     if is_bounded(m)
         if times[end] > m.time_bound
-            values[end,:] = values[end-1,:]
+            full_values[end,:] = full_values[end-1,:]
             times[end] = m.time_bound
             transitions[end] = nothing
         else
-            vcat(values, values[end,:])
+            full_values = vcat(full_values, reshape(full_values[end,:], 1, m.d))
             push!(times, m.time_bound)
             push!(transitions, nothing)
         end
     end
+    values = @view full_values[:,m._g_idx] 
     return Trajectory(m, values, times, transitions)
 end
 

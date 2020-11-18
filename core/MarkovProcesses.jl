@@ -9,8 +9,7 @@ export load_model, get_module_path
 include("model.jl")
 
 export Observations, AbstractTrajectory, Trajectory
-export +,-,δ
-export dist_lp, l_dist_lp
+export +, -, δ, dist_lp
 export get_obs_var, length_states, length_obs_var, is_bounded
 include("trajectory.jl")
 

@@ -15,5 +15,7 @@ using Test
     @test include("unit/length_obs_var.jl")
     @test include("unit/dist_lp_var.jl")
     @test include("unit/dist_lp.jl")
+    @test include("unit/l_dist_lp.jl")
+    @test include("unit/check_trajectory_consistency.jl")
 end
 
