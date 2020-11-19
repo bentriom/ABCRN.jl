@@ -44,6 +44,6 @@ end
 is_absorbing_SIR_col(p::Vector{Float64}, xn::AbstractVector{Int}) = (p[1]*xn[1]*xn[2] + p[2]*xn[2]) === 0.0
 g = ["I"]
 
-SIR_col = CTMC(d,k,dict_var,dict_p,l_tr,p,x0,t0,SIR_col_f!,is_absorbing_SIR_col; g=g)
+SIR_col = ContinuousTimeModel(d,k,dict_var,dict_p,l_tr,p,x0,t0,SIR_col_f!,is_absorbing_SIR_col; g=g)
 export SIR_col
 

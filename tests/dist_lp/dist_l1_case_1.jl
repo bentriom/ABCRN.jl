@@ -21,7 +21,7 @@ values[:,1] = y_obs
 l_tr = Vector{Nothing}(nothing, length(y_obs))
 σ2 = Trajectory(SIR, values, t_y, l_tr)
 
-test_1 = dist_lp(@view(x_obs[:]), @view(t_x[:]), @view(y_obs[:]), @view(t_y[:]); p=1) == 6.4
+test_1 = dist_lp(@view(x_obs[:]), t_x, @view(y_obs[:]), t_y; p=1) == 6.4
 test_1 = test_1 && dist_lp(σ1, σ2; p=1) == 6.4
 
 f_x(t::Real) = MarkovProcesses._f_step(x_obs, t_x, t)
@@ -33,7 +33,7 @@ test_2 = isapprox(6.4, int; atol=err)
 
 # Case 1 bis : inverse of case 1 
 
-test_1_bis = dist_lp(@view(y_obs[:]), @view(t_y[:]), @view(x_obs[:]), @view(t_x[:]); p=1) == 6.4 
+test_1_bis = dist_lp(@view(y_obs[:]), t_y, @view(x_obs[:]), t_x; p=1) == 6.4 
 test_1_bis = test_1_bis && dist_lp(σ2, σ1; p=1) == 6.4
 
 return test_1 && test_1_bis && test_2

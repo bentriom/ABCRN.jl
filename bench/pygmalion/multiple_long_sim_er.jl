@@ -31,6 +31,13 @@ MarkovProcesses.load_model("ER")
 ER.time_bound = 20.0
 @timev MarkovProcesses.simulate(ER)
 
+println("Default buffer size=10")
+b1 = @benchmark for i=1:$(nb_sim) MarkovProcesses.simulate($ER) end
+b2 = @benchmark for i=1:$(nb_sim) MarkovProcesses.simulate(ER) end
+@show minimum(b1), mean(b1), maximum(b1)
+@show minimum(b2), mean(b2), maximum(b2)
+println("Buffer size 100")
+ER.buffer_size = 100
 b1 = @benchmark for i=1:$(nb_sim) MarkovProcesses.simulate($ER) end
 b2 = @benchmark for i=1:$(nb_sim) MarkovProcesses.simulate(ER) end
 @show minimum(b1), mean(b1), maximum(b1)

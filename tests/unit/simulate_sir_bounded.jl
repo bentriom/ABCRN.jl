@@ -11,7 +11,7 @@ d2 = Dict("I" => 1)
 
 bool_test = SIR.g == ["I"] && SIR._g_idx == [2] && 
             SIR.map_var_idx == d1 && 
-            SIR._map_obs_var_idx == d2 && σ["times"][end] <= SIR.time_bound
+            SIR._map_obs_var_idx == d2 && times(σ)[end] <= SIR.time_bound
 
 return bool_test
 

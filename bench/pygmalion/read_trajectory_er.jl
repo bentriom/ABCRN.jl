@@ -16,7 +16,7 @@ u = Control(10.0)
 tml = 1:400
 g_all = create_observation_function([ObserverModel(str_oml, tml)]) 
 so = pygmalion.simulate(f, g_all, x0, u, p_true; on = nothing, full_timeline = true)
-function read_trajectory_v1(so::SystemObservation)
+function read_trajectory_pyg_v1(so::SystemObservation)
     vals = to_vec(so, "P")
     n_states = length(vals)
     res = 0.0
@@ -25,7 +25,7 @@ function read_trajectory_v1(so::SystemObservation)
     end
     return res
 end
-function read_trajectory_v2(so::SystemObservation)
+function read_trajectory_pyg_v2(so::SystemObservation)
     idx_P = om_findfirst("P", so.oml)
     n_states = length(so.otll[idx_P]) 
     res = 0.0
@@ -35,11 +35,11 @@ function read_trajectory_v2(so::SystemObservation)
     return res
 end
 # Bench
-@timev read_trajectory_v1(so)
-b1_pyg = @benchmark read_trajectory_v1($so) 
+@timev read_trajectory_pyg_v1(so)
+b1_pyg = @benchmark read_trajectory_pyg_v1($so) 
 @show minimum(b1_pyg), mean(b1_pyg), maximum(b1_pyg)
-@timev read_trajectory_v2(so)
-b2_pyg = @benchmark read_trajectory_v2($so) 
+@timev read_trajectory_pyg_v2(so)
+b2_pyg = @benchmark read_trajectory_pyg_v2($so) 
 @show minimum(b2_pyg), mean(b2_pyg), maximum(b2_pyg)
 
 println("MarkovProcesses:")
@@ -47,16 +47,28 @@ println("MarkovProcesses:")
 MarkovProcesses.load_model("ER")
 ER.time_bound = 10.0
 σ = MarkovProcesses.simulate(ER)
-function read_trajectory(σ::AbstractTrajectory)
+function read_trajectory_v1(σ::AbstractTrajectory)
     n_states = length_states(σ)
     res = 0
     for i = 1:n_states
-        res += (σ["P"])[i]
+        res += σ["P",i]
+    end
+    return res
+end
+function read_trajectory_v2(σ::AbstractTrajectory)
+    n_states = length_states(σ)
+    vals = σ["P"]
+    res = 0
+    for i = 1:n_states
+        res += vals[i]
     end
     return res
 end
 # Bench
-@timev read_trajectory(σ) 
-b1 = @benchmark read_trajectory($σ)
+@timev read_trajectory_v1(σ) 
+b1 = @benchmark read_trajectory_v1($σ)
 @show minimum(b1), mean(b1), maximum(b1)
+@timev read_trajectory_v2(σ) 
+b2 = @benchmark read_trajectory_v2($σ)
+@show minimum(b2), mean(b2), maximum(b2)
 

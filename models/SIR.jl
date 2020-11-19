@@ -34,7 +34,7 @@ function SIR_f!(mat_x::Matrix{Int}, l_t::Vector{Float64}, l_tr::Vector{String}, 
         b_sup += l_a[i+1]
     end
  
-    nu = @view l_nu[:,reaction] # macro for avoiding a copy
+    nu = view(l_nu, :, reaction) # macro for avoiding a copy
     for i = 1:3
         mat_x[idx,i] = xn[i]+nu[i]
     end
@@ -44,6 +44,6 @@ end
 is_absorbing_SIR(p::Vector{Float64}, xn::SubArray{Int,1}) = (p[1]*xn[1]*xn[2] + p[2]*xn[2]) === 0.0
 g = ["I"]
 
-SIR = CTMC(d,k,dict_var,dict_p,l_tr,p,x0,t0,SIR_f!,is_absorbing_SIR; g=g)
+SIR = ContinuousTimeModel(d,k,dict_var,dict_p,l_tr,p,x0,t0,SIR_f!,is_absorbing_SIR; g=g)
 export SIR
 

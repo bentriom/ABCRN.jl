@@ -44,6 +44,6 @@ end
 is_absorbing_SIR_row_buffer(p::Vector{Float64}, xn::AbstractVector{Int}) = (p[1]*xn[1]*xn[2] + p[2]*xn[2]) === 0.0
 g = ["I"]
 
-SIR_row_buffer = CTMC(d,k,dict_var,dict_p,l_tr,p,x0,t0,SIR_row_buffer_f!,is_absorbing_SIR_row_buffer; g=g)
+SIR_row_buffer = ContinuousTimeModel(d,k,dict_var,dict_p,l_tr,p,x0,t0,SIR_row_buffer_f!,is_absorbing_SIR_row_buffer; g=g)
 export SIR_row_buffer
 

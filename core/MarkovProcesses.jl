@@ -1,6 +1,6 @@
 module MarkovProcesses
 
-import Base: +, -, getfield, getindex
+import Base: +, -, getfield, getindex, ImmutableDict
 
 export Model, ContinuousTimeModel, DiscreteTimeModel
 export simulate, set_param!, get_param, set_observed_var!
@@ -10,7 +10,7 @@ include("model.jl")
 
 export Observations, AbstractTrajectory, Trajectory
 export +, -, δ, dist_lp
-export get_obs_var, length_states, length_obs_var, is_bounded
+export get_obs_var, length_states, length_obs_var, is_bounded, times, transitions
 include("trajectory.jl")
 
 end

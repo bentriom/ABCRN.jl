@@ -23,9 +23,9 @@ for p = 1:2
     l_tr = Vector{Nothing}(nothing, length(x_obs))
     σ1 = Trajectory(SIR, values, t_x, l_tr)
 
-    test_1 = isapprox(dist_lp(@view(x_obs[:]), @view(t_x[:]), @view(y_obs[:]), @view(t_y[:]); p=p), res; atol = 1E-10) 
+    test_1 = isapprox(dist_lp(@view(x_obs[:]), t_x, @view(y_obs[:]), t_y; p=p), res; atol = 1E-10) 
     test_1 = test_1 && isapprox(dist_lp(σ1,σ2; p=p), res; atol = 1E-10)
-    test_1_bis = isapprox(dist_lp(@view(y_obs[:]), @view(t_y[:]), @view(x_obs[:]), @view(t_x[:]); p=p), res; atol = 1E-10) 
+    test_1_bis = isapprox(dist_lp(@view(y_obs[:]), t_y, @view(x_obs[:]), t_x; p=p), res; atol = 1E-10) 
     test_1_bis = test_1_bis && isapprox(dist_lp(σ2,σ1; p=p), res; atol = 1E-10)
           
     f_x(t::Real) = MarkovProcesses._f_step(x_obs, t_x, t)

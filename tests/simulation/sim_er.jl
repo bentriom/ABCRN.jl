@@ -6,7 +6,7 @@ load_model("ER")
 
 σ = simulate(ER)
 plt.figure()
-plt.step(σ["times"], σ["P"], "ro--", marker="x", where="post", linewidth=1.0)
+plt.step(times(σ), σ["P"], "ro--", marker="x", where="post", linewidth=1.0)
 plt.savefig(get_module_path() * "/tests/simulation/res_pics/sim_er.png", dpi=480)
 plt.close()
 

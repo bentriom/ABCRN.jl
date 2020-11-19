@@ -45,6 +45,6 @@ is_absorbing_ER(p::Vector{Float64},xn::SubArray{Int,1}) =
     (p[1]*xn[1]*xn[2] + (p[2]+p[3])*xn[3]) === 0.0
 g = ["P"]
 
-ER = CTMC(d,k,dict_var,dict_p,l_tr,p,x0,t0,ER_f!,is_absorbing_ER; g=g)
+ER = ContinuousTimeModel(d,k,dict_var,dict_p,l_tr,p,x0,t0,ER_f!,is_absorbing_ER; g=g)
 export ER
 

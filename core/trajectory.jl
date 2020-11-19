@@ -74,11 +74,11 @@ function dist_lp(σ1::AbstractTrajectory, σ2::AbstractTrajectory, var::String;
     if !is_bounded(σ1) || !is_bounded(σ2)
         @warn "Lp distance computed on unbounded trajectories. Result should be wrong"
     end
-    return dist_lp(σ1[var], σ1["times"], σ2[var], σ2["times"]; verbose = false, p = p)
+    return dist_lp(σ1[var], times(σ1), σ2[var], times(σ2); verbose = false, p = p)
 end
 
 # Distance function. Vectorized version
-function dist_lp(x_obs::SubArray{Int,1}, t_x::SubArray{Float64,1}, y_obs::SubArray{Int,1}, t_y::SubArray{Float64,1}; 
+function dist_lp(x_obs::SubArray{Int,1}, t_x::Vector{Float64}, y_obs::SubArray{Int,1}, t_y::Vector{Float64}; 
                  verbose::Bool = false, p::Int = 1)
     current_y_obs = y_obs[1]
     current_t_y = t_y[2]
@@ -179,32 +179,23 @@ is_bounded(σ::AbstractTrajectory) = σ.transitions[end] == nothing
 
 # Access to trajectory values
 get_var_values(σ::AbstractTrajectory, var::String) = 
-@view σ.values[:,(σ.m)._map_obs_var_idx[var]] 
-get_state(σ::AbstractTrajectory, idx::Int) = @view σ.values[idx,:]
+    view(σ.values, :, (σ.m)._map_obs_var_idx[var])
+get_state(σ::AbstractTrajectory, idx::Int) = 
+    view(σ.values, idx, :)
 get_value(σ::AbstractTrajectory, var::String, idx::Int) = 
-σ.values[idx,(σ.m)._map_obs_var_idx[var]] 
-function δ(σ1::AbstractTrajectory,t::Float64) end
+    σ.values[idx,(σ.m)._map_obs_var_idx[var]] 
 
-# Get var values ["I"]
-function getindex(σ::AbstractTrajectory, var::String)
-    if var  == "times"
-        return @view σ.times[:]
-    elseif var == "transitions"
-        return @view σ.transitions[:] 
-    else
-        return get_var_values(σ, var)
-    end
-end
+
+δ(σ::AbstractTrajectory,t::Float64) = true
+
+states(σ::AbstractTrajectory) = σ.values
+times(σ::AbstractTrajectory) = σ.times
+transitions(σ::AbstractTrajectory) = σ.transitions
+
 # Get i-th state [i]
 getindex(σ::AbstractTrajectory, idx::Int) = get_state(σ, idx)
 # Get i-th value of var ["I", idx]
-function getindex(σ::AbstractTrajectory, var::String, idx::Int)
-    if var  == "times"
-        return σ.times[idx]
-    elseif var == "transitions"
-        return σ.transitions[idx]
-    else
-        return get_value(σ, var, idx)
-    end
-end
+getindex(σ::AbstractTrajectory, var::String, idx::Int) = get_value(σ, var, idx)
+# Get the path of a variable ["I"]
+getindex(σ::AbstractTrajectory, var::String) = get_var_values(σ, var)
 

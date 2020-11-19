@@ -14,8 +14,8 @@ for p = 1:2
         d = dist_lp(σ1, σ2, "I"; p = p)
         d2 = dist_lp(σ1, σ2; p = p)
 
-        f_x(t::Float64) = MarkovProcesses._f_step(σ1["I"], σ1["times"], t)
-        f_y(t::Float64) = MarkovProcesses._f_step(σ2["I"], σ2["times"], t)
+        f_x(t::Float64) = MarkovProcesses._f_step(σ1["I"], times(σ1), t)
+        f_y(t::Float64) = MarkovProcesses._f_step(σ2["I"], times(σ2), t)
         diff_f(t) = abs(f_x(t) - f_y(t))^p
         int_riemann = MarkovProcesses._riemann_sum(diff_f, SIR.t0, SIR.time_bound, 1E-3)
         res_int_riemann = int_riemann^(1/p)
