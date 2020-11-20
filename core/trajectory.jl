@@ -6,7 +6,7 @@ struct Trajectory <: AbstractTrajectory
     m::ContinuousTimeModel
     values::Matrix{Int}
     times::Vector{Float64}
-    transitions::Vector{Union{String,Nothing}}
+    transitions::Vector{Transition}
 end
 
 # Operations
@@ -15,7 +15,7 @@ function -(σ1::AbstractTrajectory,σ2::AbstractTrajectory) end
 
 # Top-level Lp distance function
 """
-    `dist_lp(l_σ1, l_σ2; verbose, p, str_stat_list, str_stat_trajectory)`   
+`dist_lp(l_σ1, l_σ2; verbose, p, str_stat_list, str_stat_trajectory)`   
 
 Function that computes Lp distance between two set of any dimensional trajectories.
 ...
@@ -35,7 +35,7 @@ function dist_lp(l_σ1::Vector{<:AbstractTrajectory}, l_σ2::Vector{<:AbstractTr
 end
 
 """
-    `dist_lp(σ1, σ2; verbose, p, str_stat)`   
+`dist_lp(σ1, σ2; verbose, p, str_stat)`   
 
 Function that computes Lp distance between two trajectories of any dimension.
 It computes Lp distances for each observed variable (contained in `get_obs_var(σ)`). and then apply a statistic on these distances.
@@ -57,7 +57,7 @@ function dist_lp(σ1::AbstractTrajectory, σ2::AbstractTrajectory;
 end
 
 """
-    `dist_lp(σ1, σ2, var; verbose, p, str_stat)`   
+`dist_lp(σ1, σ2, var; verbose, p, str_stat)`   
 
 Function that computes Lp distance between two trajectories of any dimension.
 It computes Lp distances for each observed variable (contained in `get_obs_var(σ)`). and then apply a statistic on these distances.
@@ -131,7 +131,7 @@ function dist_lp_mean(σ1::AbstractTrajectory, σ2::AbstractTrajectory;
 end
 # For a list of trajectories
 function dist_lp_mean(l_σ1::Vector{<:AbstractTrajectory}, l_σ2::Vector{<:AbstractTrajectory};  
-                 verbose::Bool = false, p::Int = 1, str_stat_trajectory::String = "mean")
+                      verbose::Bool = false, p::Int = 1, str_stat_trajectory::String = "mean")
     res = 0.0
     for σ1 in l_σ1
         for σ2 in l_σ2
@@ -164,12 +164,12 @@ function _riemann_sum(f::Function, t_begin::Real, t_end::Real, step::Float64)
 end
 
 function check_consistency(σ::AbstractTrajectory)
-    test_sizes = length(σ.times) == length(σ.transitions) == size(σ.values)[1]
-    test_obs_var = length_obs_var(σ) == length(σ.m.g) == size(σ.values)[2]
-    if !test_sizes error("Issue between sizes of values/times/transitions in this trajectory.") end
-    if !test_obs_var error("Issue between sizes of observed variables in model and values") end
+    @assert length(σ.times) == length(σ.transitions) == size(σ.values)[1]
+    @assert length_obs_var(σ) == length(σ.m.g) == size(σ.values)[2]
     return true
 end
+is_steadystate(σ::AbstractTrajectory) = (σ.m).is_absorbing((σ.m).p, σ[end])
+
 
 # Properties of the trajectory
 length_states(σ::AbstractTrajectory) = length(σ.times)
@@ -178,15 +178,29 @@ get_obs_var(σ::AbstractTrajectory) = (σ.m).g
 is_bounded(σ::AbstractTrajectory) = σ.transitions[end] == nothing 
 
 # Access to trajectory values
-get_var_values(σ::AbstractTrajectory, var::String) = 
-    view(σ.values, :, (σ.m)._map_obs_var_idx[var])
-get_state(σ::AbstractTrajectory, idx::Int) = 
-    view(σ.values, idx, :)
-get_value(σ::AbstractTrajectory, var::String, idx::Int) = 
-    σ.values[idx,(σ.m)._map_obs_var_idx[var]] 
-
-
-δ(σ::AbstractTrajectory,t::Float64) = true
+get_var_values(σ::AbstractTrajectory, var::String) = view(σ.values, :, (σ.m)._map_obs_var_idx[var])
+get_state(σ::AbstractTrajectory, idx::Int) = view(σ.values, idx, :)
+get_value(σ::AbstractTrajectory, var::String, idx::Int) = σ.values[idx,(σ.m)._map_obs_var_idx[var]] 
+# Operation @
+function get_state_from_time(σ::AbstractTrajectory, t::Float64)
+    @assert t >= 0.0
+    l_t = times(σ)
+    if t == l_t[end] return σ[end] end
+    if t > l_t[end]
+        if !is_bounded(σ)
+            return σ[end]
+        else 
+            error("This trajectory is bounded and you're accessing out of the bounds")
+        end
+    end
+    for i in eachindex(l_t)
+        if l_t[i] <= t < l_t[i+1]
+            return σ[i]
+        end
+    end
+    error("Unexpected behavior")
+end
+δ(σ::AbstractTrajectory,idx::Int) = times(σ)[i+1] - times(σ)[i]
 
 states(σ::AbstractTrajectory) = σ.values
 times(σ::AbstractTrajectory) = σ.times
@@ -198,4 +212,5 @@ getindex(σ::AbstractTrajectory, idx::Int) = get_state(σ, idx)
 getindex(σ::AbstractTrajectory, var::String, idx::Int) = get_value(σ, var, idx)
 # Get the path of a variable ["I"]
 getindex(σ::AbstractTrajectory, var::String) = get_var_values(σ, var)
+lastindex(σ::AbstractTrajectory) = length_states(σ)
 

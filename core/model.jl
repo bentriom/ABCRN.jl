@@ -3,14 +3,16 @@ import StaticArrays: SVector
 
 abstract type Model end 
 abstract type DiscreteTimeModel <: Model end 
+const Transition = Union{String,Nothing}
 
+# Model types
 mutable struct ContinuousTimeModel <: Model
     d::Int # state space dim
     k::Int # parameter space dim
     map_var_idx::Dict{String,Int} # maps str to full state space
     _map_obs_var_idx::Dict{String,Int} # maps str to observed state space
     map_param_idx::Dict{String,Int} # maps str in parameter space
-    l_name_transitions::Vector{String}
+    l_transitions::Vector{Transition}
     p::Vector{Float64}
     x0::Vector{Int}
     t0::Float64
@@ -22,7 +24,7 @@ mutable struct ContinuousTimeModel <: Model
     buffer_size::Int
 end
 
-function ContinuousTimeModel(d::Int, k::Int, map_var_idx::Dict, map_param_idx::Dict, l_name_transitions::Vector{String}, 
+function ContinuousTimeModel(d::Int, k::Int, map_var_idx::Dict, map_param_idx::Dict, l_transitions::Vector{String}, 
               p::Vector{Float64}, x0::Vector{Int}, t0::Float64, 
               f!::Function, is_absorbing::Function; 
               g::Vector{String} = keys(map_var_idx), time_bound::Float64 = Inf, buffer_size::Int = 10)
@@ -41,9 +43,17 @@ function ContinuousTimeModel(d::Int, k::Int, map_var_idx::Dict, map_param_idx::D
         @warn "You have possibly redefined a function Model.is_absorbing used in a previously instantiated model."
     end
 
-    return ContinuousTimeModel(d, k, map_var_idx, _map_obs_var_idx, map_param_idx, l_name_transitions, p, x0, t0, f!, g, _g_idx, is_absorbing, time_bound, buffer_size)
+    return ContinuousTimeModel(d, k, map_var_idx, _map_obs_var_idx, map_param_idx, l_transitions, p, x0, t0, f!, g, _g_idx, is_absorbing, time_bound, buffer_size)
 end
 
+#=
+mutable struct SynchronizedModel
+    m::ContinuousTimeModel
+    automaton::LHA
+end
+=#
+
+# Simulation
 function simulate(m::ContinuousTimeModel)
     # trajectory fields
     full_values = Matrix{Int}(undef, 1, m.d)
@@ -88,6 +98,62 @@ function simulate(m::ContinuousTimeModel)
     values = view(full_values, :, m._g_idx)
     return Trajectory(m, values, times, transitions)
 end
+
+#=
+function simulate(product::SynchronizedModel)
+    # trajectory fields
+    m = product.m
+    A = product.automaton
+    full_values = Matrix{Int}(undef, 1, m.d)
+    full_values[1,:] = m.x0
+    times = Float64[m.t0]
+    transitions = Union{String,Nothing}[nothing]
+    reshaped_x0 = view(reshape(m.x0, 1, m.d), 1, :) # View for type stability
+    S0 = init_state(A, reshaped_x0, t0) 
+    # values at time n
+    n = 0
+    xn = reshaped_x0 
+    tn = m.t0
+    Sn = copy(S0)
+    # at time n+1
+    mat_x = zeros(Int, m.buffer_size, m.d)
+    l_t = zeros(Float64, m.buffer_size)
+    l_tr = Vector{String}(undef, m.buffer_size)
+    is_absorbing::Bool = m.is_absorbing(m.p,xn)
+    Snplus1 = copy(Sn)
+    while !is_absorbing && (tn < m.time_bound)
+        i = 0
+        while i < m.buffer_size && !is_absorbing && (tn < m.time_bound)
+            i += 1
+            m.f!(mat_x, l_t, l_tr, i, xn, tn, m.p)
+            xn = view(mat_x, i, :)
+            tn = l_t[i]
+            tr_n = l_tr[n]
+            A.next_state!(Snplus1, A, xn, tn, tr_n, Sn)
+            Sn = Snplus1
+            is_absorbing = m.is_absorbing(m.p,xn)
+        end
+        full_values = vcat(full_values, view(mat_x, 1:i, :))
+        append!(times, view(l_t, 1:i))
+        append!(transitions,  view(l_tr, 1:i))
+        n += i
+        is_absorbing = m.is_absorbing(m.p,xn)
+    end
+    if is_bounded(m)
+        if times[end] > m.time_bound
+            full_values[end,:] = full_values[end-1,:]
+            times[end] = m.time_bound
+            transitions[end] = nothing
+        else
+            full_values = vcat(full_values, reshape(full_values[end,:], 1, m.d))
+            push!(times, m.time_bound)
+            push!(transitions, nothing)
+        end
+    end
+    values = view(full_values, :, m._g_idx)
+    return Trajectory(m, values, times, transitions)
+end
+=#
 
 function simulate(m::ContinuousTimeModel, n::Int)
     obs = ContinuousObservations(undef, n)
