@@ -1,39 +1,8 @@
 
-const Location = String
-const VariableAutomaton = String
-
-struct Edge
-    transitions::Vector{Transition}
-    check_constraints::Function
-    update_state!::Function
-end
-
-struct LHA
-    l_transitions::Vector{Transition}
-    l_loc::Vector{Location} 
-    Λ::Dict{Location,Function}
-    l_loc_init::Vector{Location}
-    l_loc_final::Vector{Location}
-    map_var_automaton_idx::Dict{VariableAutomaton,Int} # nvar keys : str_var => idx in l_var
-    l_flow::Dict{Location,Vector{Float64}} # output of length nvar
-    map_edges::Dict{Tuple{Location,Location},Vector{Edge}}
-    l_ctes::Dict{String,Float64}
-    map_var_model_idx::Dict{String,Int} # of dim d (of a model)
-end
-
-LHA(A::LHA, map_var::Dict{String,Int}) = LHA(A.l_transitions, A.l_loc, A.Λ, 
-                                             A.l_loc_init, A.l_loc_final, A.map_var_automaton_idx, A.l_flow,
-                                             A.map_edges, A.l_ctes, map_var)
-length_var(A::LHA) = length(A.map_var_automaton_idx)
-get_value(A::LHA, x::SubArray{Int,1}, var::String) = x[A.map_var_model_idx[var]]
 load_automaton(automaton::String) = include(get_module_path() * "/automata/$(automaton).jl")
 
-mutable struct StateLHA
-    A::LHA
-    loc::Location
-    l_var::Vector{Float64}
-    time::Float64
-end
+length_var(A::LHA) = length(A.map_var_automaton_idx)
+get_value(A::LHA, x::SubArray{Int,1}, var::String) = x[A.map_var_model_idx[var]]
 
 copy(S::StateLHA) = StateLHA(S.A, S.loc, S.l_var, S.time)
 # Not overring getproperty, setproperty to avoid a conversion Symbol => String for the dict key
@@ -50,6 +19,7 @@ function Base.show(io::IO, S::StateLHA)
     end
 end
 
+# Methods for synchronize / read the trajectory
 function init_state(A::LHA, x0::SubArray{Int,1}, t0::Float64)
     S0 = StateLHA(A, "", zeros(length_var(A)), t0)
     for loc in A.l_loc_init

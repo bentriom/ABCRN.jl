@@ -1,18 +1,4 @@
 
-abstract type AbstractTrajectory end
-ContinuousObservations = AbstractVector{AbstractTrajectory}
-
-struct Trajectory <: AbstractTrajectory
-    m::ContinuousTimeModel
-    values::Matrix{Int}
-    times::Vector{Float64}
-    transitions::Vector{Transition}
-end
-
-# Operations
-function +(σ1::AbstractTrajectory,σ2::AbstractTrajectory) end
-function -(σ1::AbstractTrajectory,σ2::AbstractTrajectory) end
-
 # Top-level Lp distance function
 """
 `dist_lp(l_σ1, l_σ2; verbose, p, str_stat_list, str_stat_trajectory)`   
@@ -170,7 +156,6 @@ function check_consistency(σ::AbstractTrajectory)
 end
 is_steadystate(σ::AbstractTrajectory) = (σ.m).is_absorbing((σ.m).p, σ[end])
 
-
 # Properties of the trajectory
 length_states(σ::AbstractTrajectory) = length(σ.times)
 length_obs_var(σ::AbstractTrajectory) = size(σ.values)[2]
@@ -200,7 +185,6 @@ function get_state_from_time(σ::AbstractTrajectory, t::Float64)
     end
     error("Unexpected behavior")
 end
-δ(σ::AbstractTrajectory,idx::Int) = times(σ)[i+1] - times(σ)[i]
 
 states(σ::AbstractTrajectory) = σ.values
 times(σ::AbstractTrajectory) = σ.times
@@ -213,4 +197,9 @@ getindex(σ::AbstractTrajectory, var::String, idx::Int) = get_value(σ, var, idx
 # Get the path of a variable ["I"]
 getindex(σ::AbstractTrajectory, var::String) = get_var_values(σ, var)
 lastindex(σ::AbstractTrajectory) = length_states(σ)
+
+# Operations
+function +(σ1::AbstractTrajectory,σ2::AbstractTrajectory) end
+function -(σ1::AbstractTrajectory,σ2::AbstractTrajectory) end
+δ(σ::AbstractTrajectory,idx::Int) = times(σ)[i+1] - times(σ)[i]
 
