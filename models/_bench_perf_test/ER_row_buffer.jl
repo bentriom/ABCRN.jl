@@ -41,10 +41,10 @@ function ER_row_buffer_f!(mat_x::Matrix{Int}, l_t::Vector{Float64}, l_tr::Vector
     l_t[idx] = tn + tau
     l_tr[idx] = "R$(reaction)"
 end
-is_absorbing_ER_row_buffer(p::Vector{Float64},xn::AbstractVector{Int}) = 
+isabsorbing_ER_row_buffer(p::Vector{Float64},xn::AbstractVector{Int}) = 
     (p[1]*xn[1]*xn[2] + (p[2]+p[3])*xn[3]) === 0.0
 g = ["P"]
 
-ER_row_buffer = ContinuousTimeModel(d,k,dict_var,dict_p,l_tr,p,x0,t0,ER_row_buffer_f!,is_absorbing_ER_row_buffer; g=g)
+ER_row_buffer = ContinuousTimeModel(d,k,dict_var,dict_p,l_tr,p,x0,t0,ER_row_buffer_f!,isabsorbing_ER_row_buffer; g=g)
 export ER_row_buffer
 

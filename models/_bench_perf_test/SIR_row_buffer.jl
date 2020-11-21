@@ -41,9 +41,9 @@ function SIR_row_buffer_f!(mat_x::Matrix{Int}, l_t::Vector{Float64}, l_tr::Vecto
     l_t[idx] = tn + tau
     l_tr[idx] = "R$(reaction)"
 end
-is_absorbing_SIR_row_buffer(p::Vector{Float64}, xn::AbstractVector{Int}) = (p[1]*xn[1]*xn[2] + p[2]*xn[2]) === 0.0
+isabsorbing_SIR_row_buffer(p::Vector{Float64}, xn::AbstractVector{Int}) = (p[1]*xn[1]*xn[2] + p[2]*xn[2]) === 0.0
 g = ["I"]
 
-SIR_row_buffer = ContinuousTimeModel(d,k,dict_var,dict_p,l_tr,p,x0,t0,SIR_row_buffer_f!,is_absorbing_SIR_row_buffer; g=g)
+SIR_row_buffer = ContinuousTimeModel(d,k,dict_var,dict_p,l_tr,p,x0,t0,SIR_row_buffer_f!,isabsorbing_SIR_row_buffer; g=g)
 export SIR_row_buffer
 

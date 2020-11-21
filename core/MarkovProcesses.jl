@@ -6,23 +6,23 @@ import Base: copy, getfield, getindex, lastindex, setindex!, getproperty, setpro
 import StaticArrays: SVector
 
 # Common types and constructors
-export Observations, AbstractTrajectory, Trajectory
+export Observations, AbstractTrajectory, Trajectory, SynchronizedTrajectory
+export Model, ContinuousTimeModel, SynchronizedModel
 export LHA, StateLHA, Edge
-export Model, ContinuousTimeModel, DiscreteTimeModel
 
 # Trajectory related methods
 export +, -, δ, dist_lp
 export get_obs_var, length_states, length_obs_var, get_state_from_time 
-export is_bounded, times, transitions
-export check_consistency, is_steadystate
+export isbounded, times, transitions
+export check_consistency, issteadystate, isaccepted
 
 # LHA related methods
 export init_state, next_state!, read_trajectory
-export load_automaton, get_index, get_value, length_var
+export load_automaton, get_index, get_value, length_var, isaccepted
 
 # Model related methods
 export simulate, set_param!, get_param, set_observed_var!
-export is_bounded, check_consistency
+export isbounded, isaccepted, check_consistency
 export load_model, get_module_path
 
 # Utils

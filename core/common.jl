@@ -19,7 +19,7 @@ mutable struct ContinuousTimeModel <: Model
     f!::Function
     g::Vector{String} # of dimension dobs
     _g_idx::Vector{Int} # of dimension dobs
-    is_absorbing::Function
+    isabsorbing::Function
     time_bound::Float64
     buffer_size::Int
 end
@@ -57,15 +57,23 @@ mutable struct StateLHA
     time::Float64
 end
 
-mutable struct SynchronizedModel
+mutable struct SynchronizedModel <: Model
     m::ContinuousTimeModel
     automaton::LHA
+end
+
+struct SynchronizedTrajectory <: AbstractTrajectory
+    S::StateLHA
+    m::SynchronizedModel
+    values::Matrix{Int}
+    times::Vector{Float64}
+    transitions::Vector{Transition}
 end
 
 # Constructors
 function ContinuousTimeModel(d::Int, k::Int, map_var_idx::Dict, map_param_idx::Dict, l_transitions::Vector{String}, 
               p::Vector{Float64}, x0::Vector{Int}, t0::Float64, 
-              f!::Function, is_absorbing::Function; 
+              f!::Function, isabsorbing::Function; 
               g::Vector{String} = keys(map_var_idx), time_bound::Float64 = Inf, buffer_size::Int = 10)
     dobs = length(g)
     _map_obs_var_idx = Dict()
@@ -78,11 +86,11 @@ function ContinuousTimeModel(d::Int, k::Int, map_var_idx::Dict, map_param_idx::D
     if length(methods(f!)) >= 2
         @warn "You have possibly redefined a function Model.f! used in a previously instantiated model."
     end
-    if length(methods(is_absorbing)) >= 2
-        @warn "You have possibly redefined a function Model.is_absorbing used in a previously instantiated model."
+    if length(methods(isabsorbing)) >= 2
+        @warn "You have possibly redefined a function Model.isabsorbing used in a previously instantiated model."
     end
 
-    return ContinuousTimeModel(d, k, map_var_idx, _map_obs_var_idx, map_param_idx, l_transitions, p, x0, t0, f!, g, _g_idx, is_absorbing, time_bound, buffer_size)
+    return ContinuousTimeModel(d, k, map_var_idx, _map_obs_var_idx, map_param_idx, l_transitions, p, x0, t0, f!, g, _g_idx, isabsorbing, time_bound, buffer_size)
 end
 
 LHA(A::LHA, map_var::Dict{String,Int}) = LHA(A.l_transitions, A.l_loc, A.Λ, 

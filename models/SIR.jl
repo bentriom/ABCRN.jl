@@ -41,9 +41,9 @@ function SIR_f!(mat_x::Matrix{Int}, l_t::Vector{Float64}, l_tr::Vector{String}, 
     l_t[idx] = tn + tau
     l_tr[idx] = "R$(reaction)"
 end
-is_absorbing_SIR(p::Vector{Float64}, xn::SubArray{Int,1}) = (p[1]*xn[1]*xn[2] + p[2]*xn[2]) === 0.0
+isabsorbing_SIR(p::Vector{Float64}, xn::SubArray{Int,1}) = (p[1]*xn[1]*xn[2] + p[2]*xn[2]) === 0.0
 g_SIR = ["I"]
 
-SIR = ContinuousTimeModel(d,k,dict_var,dict_p,l_tr_SIR,p_SIR,x0_SIR,t0_SIR,SIR_f!,is_absorbing_SIR; g=g_SIR)
+SIR = ContinuousTimeModel(d,k,dict_var,dict_p,l_tr_SIR,p_SIR,x0_SIR,t0_SIR,SIR_f!,isabsorbing_SIR; g=g_SIR)
 export SIR
 

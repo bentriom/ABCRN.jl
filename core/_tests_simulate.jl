@@ -33,18 +33,18 @@ function _simulate_col(m::ContinuousTimeModel)
     # at time n+1
     xnplus1 = zeros(Int, m.d)
     tnplus1 = zeros(Float64, 1)
-    is_absorbing = (m.is_absorbing(m.p,xn))::Bool
-    while !is_absorbing && (tn <= m.time_bound)
+    isabsorbing = (m.isabsorbing(m.p,xn))::Bool
+    while !isabsorbing && (tn <= m.time_bound)
         m.f!(xnplus1, tnplus1, tr, xn, tn, m.p)
         full_values = hcat(full_values, xnplus1)
         push!(times, tnplus1[1])
         push!(transitions, tr[1])
         xn, tn = xnplus1, tnplus1[1]
         n += 1
-        is_absorbing = m.is_absorbing(m.p,xn)::Bool
+        isabsorbing = m.isabsorbing(m.p,xn)::Bool
     end
     values = @view full_values[m._g_idx,:] 
-    if is_bounded(m)
+    if isbounded(m)
         if times[end] > m.time_bound
             values[:, end] = values[:,end-1]
             times[end] = m.time_bound
@@ -67,18 +67,18 @@ function _simulate_row(m::ContinuousTimeModel)
     # at time n+1
     xnplus1 = zeros(Int, m.d)
     tnplus1 = zeros(Float64, 1)
-    is_absorbing = (m.is_absorbing(m.p,xn))::Bool
-    while !is_absorbing && (tn <= m.time_bound)
+    isabsorbing = (m.isabsorbing(m.p,xn))::Bool
+    while !isabsorbing && (tn <= m.time_bound)
         m.f!(xnplus1, tnplus1, tr, xn, tn, m.p)
         full_values = vcat(full_values, xnplus1)
         push!(times, tnplus1[1])
         push!(transitions, tr[1])
         xn, tn = xnplus1, tnplus1[1]
         n += 1
-        is_absorbing = m.is_absorbing(m.p,xn)::Bool
+        isabsorbing = m.isabsorbing(m.p,xn)::Bool
     end
     values = @view full_values[m._g_idx,:] 
-    if is_bounded(m)
+    if isbounded(m)
         if times[end] > m.time_bound
             values[:, end] = values[:,end-1]
             times[end] = m.time_bound
@@ -102,24 +102,24 @@ function _simulate_col_buffer(m::ContinuousTimeModel; buffer_size::Int = 5)
     mat_x = zeros(Int, m.d, buffer_size)
     l_t = zeros(Float64, buffer_size)
     l_tr = Vector{String}(undef, buffer_size)
-    is_absorbing = m.is_absorbing(m.p,xn)::Bool
-    while !is_absorbing && (tn <= m.time_bound)
+    isabsorbing = m.isabsorbing(m.p,xn)::Bool
+    while !isabsorbing && (tn <= m.time_bound)
         i = 0
-        while i < buffer_size && !is_absorbing && (tn <= m.time_bound)
+        while i < buffer_size && !isabsorbing && (tn <= m.time_bound)
             i += 1
             m.f!(mat_x, l_t, l_tr, i, xn, tn, m.p)
             xn = @view mat_x[:,i]
             tn = l_t[i]
-            is_absorbing = m.is_absorbing(m.p,xn)::Bool
+            isabsorbing = m.isabsorbing(m.p,xn)::Bool
         end
         full_values = hcat(full_values, @view mat_x[:,1:i])
         append!(times, @view l_t[1:i])
         append!(transitions,  @view l_tr[1:i])
         n += i
-        is_absorbing = m.is_absorbing(m.p,xn)::Bool
+        isabsorbing = m.isabsorbing(m.p,xn)::Bool
     end
     values = @view full_values[m._g_idx,:] 
-    if is_bounded(m)
+    if isbounded(m)
         if times[end] > m.time_bound
             values[:, end] = values[:,end-1]
             times[end] = m.time_bound
@@ -142,24 +142,24 @@ function _simulate_row_buffer(m::ContinuousTimeModel; buffer_size::Int = 5)
     mat_x = zeros(Int, buffer_size, m.d)
     l_t = zeros(Float64, buffer_size)
     l_tr = Vector{String}(undef, buffer_size)
-    is_absorbing = m.is_absorbing(m.p,xn)::Bool
-    while !is_absorbing && (tn <= m.time_bound)
+    isabsorbing = m.isabsorbing(m.p,xn)::Bool
+    while !isabsorbing && (tn <= m.time_bound)
         i = 0
-        while i < buffer_size && !is_absorbing && (tn <= m.time_bound)
+        while i < buffer_size && !isabsorbing && (tn <= m.time_bound)
             i += 1
             m.f!(mat_x, l_t, l_tr, i, xn, tn, m.p)
             xn = @view mat_x[i,:]
             tn = l_t[i]
-            is_absorbing = m.is_absorbing(m.p,xn)::Bool
+            isabsorbing = m.isabsorbing(m.p,xn)::Bool
         end
         full_values = vcat(full_values, @view mat_x[1:i,:])
         append!(times, @view l_t[1:i])
         append!(transitions,  @view l_tr[1:i])
         n += i
-        is_absorbing = m.is_absorbing(m.p,xn)::Bool
+        isabsorbing = m.isabsorbing(m.p,xn)::Bool
     end
     values = @view full_values[:,m._g_idx] 
-    if is_bounded(m)
+    if isbounded(m)
         if times[end] > m.time_bound
             values[end,:] = values[end-1,:]
             times[end] = m.time_bound
@@ -183,23 +183,23 @@ function _simulate_without_view(m::ContinuousTimeModel)
     mat_x = zeros(Int, m.buffer_size, m.d)
     l_t = zeros(Float64, m.buffer_size)
     l_tr = Vector{String}(undef, m.buffer_size)
-    is_absorbing = m.is_absorbing(m.p,xn)::Bool
-    while !is_absorbing && (tn <= m.time_bound)
+    isabsorbing = m.isabsorbing(m.p,xn)::Bool
+    while !isabsorbing && (tn <= m.time_bound)
         i = 0
-        while i < m.buffer_size && !is_absorbing && (tn <= m.time_bound)
+        while i < m.buffer_size && !isabsorbing && (tn <= m.time_bound)
             i += 1
             m.f!(mat_x, l_t, l_tr, i, @view(xn[:]), tn, m.p)
             xn = mat_x[i,:]
             tn = l_t[i]
-            is_absorbing = m.is_absorbing(m.p,@view(xn[:]))::Bool
+            isabsorbing = m.isabsorbing(m.p,@view(xn[:]))::Bool
         end
         full_values = vcat(full_values, mat_x[1:i,:])
         append!(times, l_t[1:i])
         append!(transitions,  l_tr[1:i])
         n += i
-        is_absorbing = m.is_absorbing(m.p,@view(xn[:]))::Bool
+        isabsorbing = m.isabsorbing(m.p,@view(xn[:]))::Bool
     end
-    if is_bounded(m)
+    if isbounded(m)
         if times[end] > m.time_bound
             full_values[end,:] = full_values[end-1,:]
             times[end] = m.time_bound

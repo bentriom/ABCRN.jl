@@ -57,7 +57,7 @@ Requires `get_obs_var(σ1) == get_obs_var(σ2)`, it is verified if they are simu
 """
 function dist_lp(σ1::AbstractTrajectory, σ2::AbstractTrajectory, var::String; 
                  verbose::Bool = false, p::Int = 1)
-    if !is_bounded(σ1) || !is_bounded(σ2)
+    if !isbounded(σ1) || !isbounded(σ2)
         @warn "Lp distance computed on unbounded trajectories. Result should be wrong"
     end
     return dist_lp(σ1[var], times(σ1), σ2[var], times(σ2); verbose = false, p = p)
@@ -154,13 +154,14 @@ function check_consistency(σ::AbstractTrajectory)
     @assert length_obs_var(σ) == length(σ.m.g) == size(σ.values)[2]
     return true
 end
-is_steadystate(σ::AbstractTrajectory) = (σ.m).is_absorbing((σ.m).p, σ[end])
+issteadystate(σ::AbstractTrajectory) = (σ.m).isabsorbing((σ.m).p, σ[end])
 
 # Properties of the trajectory
 length_states(σ::AbstractTrajectory) = length(σ.times)
 length_obs_var(σ::AbstractTrajectory) = size(σ.values)[2]
 get_obs_var(σ::AbstractTrajectory) = (σ.m).g
-is_bounded(σ::AbstractTrajectory) = σ.transitions[end] == nothing 
+isbounded(σ::AbstractTrajectory) = σ.transitions[end] == nothing 
+isaccepted(σ::SynchronizedTrajectory) = isaccepted(σ.S)
 
 # Access to trajectory values
 get_var_values(σ::AbstractTrajectory, var::String) = view(σ.values, :, (σ.m)._map_obs_var_idx[var])
@@ -172,7 +173,7 @@ function get_state_from_time(σ::AbstractTrajectory, t::Float64)
     l_t = times(σ)
     if t == l_t[end] return σ[end] end
     if t > l_t[end]
-        if !is_bounded(σ)
+        if !isbounded(σ)
             return σ[end]
         else 
             error("This trajectory is bounded and you're accessing out of the bounds")

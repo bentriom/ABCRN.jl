@@ -41,10 +41,10 @@ function ER_f!(mat_x::Matrix{Int}, l_t::Vector{Float64}, l_tr::Vector{String}, i
     l_t[idx] = tn + tau
     l_tr[idx] = "R$(reaction)"
 end
-is_absorbing_ER(p::Vector{Float64},xn::SubArray{Int,1}) = 
+isabsorbing_ER(p::Vector{Float64},xn::SubArray{Int,1}) = 
     (p[1]*xn[1]*xn[2] + (p[2]+p[3])*xn[3]) === 0.0
 g_ER = ["P"]
 
-ER = ContinuousTimeModel(d,k,dict_var,dict_p,l_tr_ER,p_ER,x0_ER,t0_ER,ER_f!,is_absorbing_ER; g=g_ER)
+ER = ContinuousTimeModel(d,k,dict_var,dict_p,l_tr_ER,p_ER,x0_ER,t0_ER,ER_f!,isabsorbing_ER; g=g_ER)
 export ER
 
