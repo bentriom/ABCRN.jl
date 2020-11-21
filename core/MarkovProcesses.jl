@@ -22,14 +22,18 @@ export load_automaton, get_index, get_value, length_var
 
 # Model related methods
 export simulate, set_param!, get_param, set_observed_var!
-export is_bounded
+export is_bounded, check_consistency
 export load_model, get_module_path
+
+# Utils
+export get_module_path
 
 include("common.jl")
 
 include("trajectory.jl")
 include("lha.jl")
 include("model.jl")
+include("utils.jl")
 
 end
 

@@ -5,10 +5,10 @@ d=4
 k=3
 dict_var = Dict("E" => 1, "S" => 2, "ES" => 3, "P" => 4)
 dict_p = Dict("k1" => 1, "k2" => 2, "k3" => 3)
-l_tr = ["R1","R2","R3"]
-p = [1.0, 1.0, 1.0]
-x0 = [100, 100, 0, 0]
-t0 = 0.0
+l_tr_ER = ["R1","R2","R3"]
+p_ER = [1.0, 1.0, 1.0]
+x0_ER = [100, 100, 0, 0]
+t0_ER = 0.0
 function ER_f!(mat_x::Matrix{Int}, l_t::Vector{Float64}, l_tr::Vector{String}, idx::Int,
                xn::SubArray{Int,1}, tn::Float64, p::Vector{Float64})
     a1 = p[1] * xn[1] * xn[2]
@@ -43,8 +43,8 @@ function ER_f!(mat_x::Matrix{Int}, l_t::Vector{Float64}, l_tr::Vector{String}, i
 end
 is_absorbing_ER(p::Vector{Float64},xn::SubArray{Int,1}) = 
     (p[1]*xn[1]*xn[2] + (p[2]+p[3])*xn[3]) === 0.0
-g = ["P"]
+g_ER = ["P"]
 
-ER = ContinuousTimeModel(d,k,dict_var,dict_p,l_tr,p,x0,t0,ER_f!,is_absorbing_ER; g=g)
+ER = ContinuousTimeModel(d,k,dict_var,dict_p,l_tr_ER,p_ER,x0_ER,t0_ER,ER_f!,is_absorbing_ER; g=g_ER)
 export ER
 

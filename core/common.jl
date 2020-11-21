@@ -88,4 +88,6 @@ end
 LHA(A::LHA, map_var::Dict{String,Int}) = LHA(A.l_transitions, A.l_loc, A.Λ, 
                                              A.l_loc_init, A.l_loc_final, A.map_var_automaton_idx, A.l_flow,
                                              A.map_edges, A.l_ctes, map_var)
+Base.:*(m::ContinuousTimeModel, A::LHA) = SynchronizedModel(m, A)
+Base.:*(A::LHA, m::ContinuousTimeModel) = SynchronizedModel(m, A)
 

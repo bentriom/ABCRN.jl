@@ -5,10 +5,10 @@ d=3
 k=2
 dict_var = Dict("S" => 1, "I" => 2, "R" => 3)
 dict_p = Dict("ki" => 1, "kr" => 2)
-l_tr = ["R1","R2"]
-p = [0.0012, 0.05]
-x0 = [95, 5, 0]
-t0 = 0.0
+l_tr_SIR = ["R1","R2"]
+p_SIR = [0.0012, 0.05]
+x0_SIR = [95, 5, 0]
+t0_SIR = 0.0
 function SIR_f!(mat_x::Matrix{Int}, l_t::Vector{Float64}, l_tr::Vector{String}, idx::Int,
            xn::SubArray{Int,1}, tn::Float64, p::Vector{Float64})
     a1 = p[1] * xn[1] * xn[2]
@@ -42,8 +42,8 @@ function SIR_f!(mat_x::Matrix{Int}, l_t::Vector{Float64}, l_tr::Vector{String}, 
     l_tr[idx] = "R$(reaction)"
 end
 is_absorbing_SIR(p::Vector{Float64}, xn::SubArray{Int,1}) = (p[1]*xn[1]*xn[2] + p[2]*xn[2]) === 0.0
-g = ["I"]
+g_SIR = ["I"]
 
-SIR = ContinuousTimeModel(d,k,dict_var,dict_p,l_tr,p,x0,t0,SIR_f!,is_absorbing_SIR; g=g)
+SIR = ContinuousTimeModel(d,k,dict_var,dict_p,l_tr_SIR,p_SIR,x0_SIR,t0_SIR,SIR_f!,is_absorbing_SIR; g=g_SIR)
 export SIR
 

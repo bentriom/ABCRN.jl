@@ -19,6 +19,8 @@ function Base.show(io::IO, S::StateLHA)
     end
 end
 
+isaccepted(S::StateLHA) = S.loc in (S.A).l_loc_final
+
 # Methods for synchronize / read the trajectory
 function init_state(A::LHA, x0::SubArray{Int,1}, t0::Float64)
     S0 = StateLHA(A, "", zeros(length_var(A)), t0)

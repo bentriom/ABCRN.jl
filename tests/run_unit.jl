@@ -17,5 +17,8 @@ using Test
     @test include("unit/dist_lp.jl")
     @test include("unit/l_dist_lp.jl")
     @test include("unit/check_trajectory_consistency.jl")
+    @test include("unit/check_model_consistency.jl")
+    @test include("unit/set_param.jl")
+    @test include("unit/side_effects_1.jl")
 end
 

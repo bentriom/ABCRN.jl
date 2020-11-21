@@ -1,4 +1,6 @@
 
+load_model(name_model::String) = include(get_module_path() * "/models/" * name_model * ".jl")
+
 # Simulation
 function simulate(m::ContinuousTimeModel)
     # trajectory fields
@@ -120,14 +122,18 @@ function set_observed_var!(m::Model,g::Vector{String})
     m._map_obs_var_idx = _map_obs_var_idx
 end
 
-is_bounded(m::Model) = m.time_bound < Inf
-function check_consistency(m::Model) end
-function simulate(m::Model, n::Int; bound::Float64 = Inf)::AbstractObservations end
-function set_param!(m::Model, p::Vector{Float64})::Nothing end
-function get_param(m::Model)::Vector{Float64} end
-
-get_module_path() = dirname(dirname(pathof(@__MODULE__)))
-function load_model(name_model::String)
-    include(get_module_path() * "/models/" * name_model * ".jl")
+is_bounded(m::ContinuousTimeModel) = m.time_bound < Inf
+function check_consistency(m::ContinuousTimeModel) 
+    @assert m.d == length(m.map_var_idx) 
+    @assert m.k == length(m.map_param_idx)
+    @assert m.k == length(m.p)
+    @assert length(m.g) <= m.d
+    @assert length(m._g_idx) == length(m.g)
+    @assert m.buffer_size >= 0
+    @assert typeof(m.is_absorbing(m.p, view(reshape(m.x0, 1, m.d), 1, :))) == Bool
+    return true
 end
+set_param!(m::ContinuousTimeModel, p::Vector{Float64}) = (m.p = p)
+set_param!(m::ContinuousTimeModel, name_p::String, p_i::Float64) = (m.p[m.map_param_idx[name_p]] = p_i)
+get_param(m::ContinuousTimeModel) = m.p
 
