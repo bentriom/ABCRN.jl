@@ -1,0 +1,45 @@
+const int E_init=100;
+const int S_init=100;
+const int ES_init=0;
+const int P_init=0;
+
+const double k_1=1.0;
+const double k_2=1.0;
+const double k_3=1.0;
+
+
+NbPlaces = 4;
+NbTransitions = 3;
+
+PlacesList = { 
+E,S, ES, P
+} ;
+
+TransitionsList = { 
+TR1,   TR2,  TR3
+} ;
+
+Marking={
+(E , E_init); (S , S_init); (ES , ES_init);
+(P , P_init); 
+};
+
+Transitions={
+(TR1,EXPONENTIAL(k_1*E*S),1,1, SINGLE);
+(TR2,EXPONENTIAL(k_2*ES),1,1, SINGLE);
+(TR3,EXPONENTIAL(k_3*ES),1,1, SINGLE);
+};
+
+InArcs={
+(E, TR1,1); (S, TR1,1); 
+(ES, TR2,1); (ES, TR3,1); 
+};
+
+OutArcs={
+(TR1, ES,1); 
+(TR2, E,1);
+(TR2, S,1); 
+(TR3, E,1); 
+(TR3, P,1); 
+};
+

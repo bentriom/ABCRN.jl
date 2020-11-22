@@ -26,7 +26,7 @@ export isbounded, isaccepted, check_consistency
 export load_model, get_module_path
 
 # Utils
-export get_module_path
+export get_module_path, cosmos_get_values
 
 include("common.jl")
 

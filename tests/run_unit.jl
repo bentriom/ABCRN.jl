@@ -20,5 +20,6 @@ using Test
     @test include("unit/check_model_consistency.jl")
     @test include("unit/set_param.jl")
     @test include("unit/side_effects_1.jl")
+    @test include("unit/create_models.jl")
 end
 

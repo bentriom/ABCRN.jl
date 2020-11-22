@@ -46,5 +46,13 @@ isabsorbing_ER(p::Vector{Float64},xn::SubArray{Int,1}) =
 g_ER = ["P"]
 
 ER = ContinuousTimeModel(d,k,dict_var,dict_p,l_tr_ER,p_ER,x0_ER,t0_ER,ER_f!,isabsorbing_ER; g=g_ER)
-export ER
+
+function create_ER(new_p::Vector{Float64})
+    ER_new = deepcopy(ER)
+    @assert length(ER_new.p) == length(new_p)
+    set_param!(ER_new, new_p)
+    return ER_new
+end
+
+export ER, create_ER
 

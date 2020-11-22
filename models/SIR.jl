@@ -45,5 +45,13 @@ isabsorbing_SIR(p::Vector{Float64}, xn::SubArray{Int,1}) = (p[1]*xn[1]*xn[2] + p
 g_SIR = ["I"]
 
 SIR = ContinuousTimeModel(d,k,dict_var,dict_p,l_tr_SIR,p_SIR,x0_SIR,t0_SIR,SIR_f!,isabsorbing_SIR; g=g_SIR)
-export SIR
+
+function create_SIR(new_p::Vector{Float64})
+    SIR_new = deepcopy(SIR)
+    @assert length(SIR_new.p) == length(new_p)
+    set_param!(SIR_new, new_p)
+    return SIR_new
+end
+
+export SIR, create_SIR
 
