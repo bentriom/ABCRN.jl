@@ -1,0 +1,33 @@
+
+const double ki = 0.0012;
+const double kr = 0.05;
+
+NbPlaces = 3;
+NbTransitions = 2;
+
+PlacesList ={ S, I, R };
+
+TransitionsList ={ Infection, Recovery };
+
+Marking={
+    (S, 95);
+    (I, 5);
+    (R, 0);
+};
+
+Transitions ={
+    (Infection, EXPONENTIAL(ki*S*I), 1, 1, SINGLE);
+    (Recovery, EXPONENTIAL(kr*I), 1, 1, SINGLE);
+};
+
+InArcs ={
+    (S, Infection, 1);
+    (I, Infection, 1);
+    (I, Recovery, 1);
+};
+
+OutArcs ={
+    (Infection, I, 2);
+    (Recovery, R, 1);
+};
+

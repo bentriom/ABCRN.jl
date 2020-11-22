@@ -139,4 +139,5 @@ end
 set_param!(m::ContinuousTimeModel, p::Vector{Float64}) = (m.p = p)
 set_param!(m::ContinuousTimeModel, name_p::String, p_i::Float64) = (m.p[m.map_param_idx[name_p]] = p_i)
 get_param(m::ContinuousTimeModel) = m.p
+set_time_bound!(m::ContinuousTimeModel, b::Float64) = (m.time_bound = b)
 

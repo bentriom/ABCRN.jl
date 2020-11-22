@@ -39,7 +39,7 @@ for exp in l_exp
     for i in 1:nb_param
         # Cosmos estimation
         k3 = l_k3[i]
-        command = `Cosmos $(absolute_path * "distance_F/" * str_model * ".gspn") 
+        command = `Cosmos $(absolute_path * "models/" * str_model * ".gspn") 
         $(absolute_path * "distance_F/dist_F_"  * str_model * ".lha") --njob $(ENV["JULIA_NUM_THREADS"]) 
         --const k_3=$(k3),x1=$x1,x2=$x2,t1=$t1,t2=$t2 
         --level $(level) --width $(width) 
