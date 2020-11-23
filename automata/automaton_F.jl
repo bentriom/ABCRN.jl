@@ -1,5 +1,6 @@
 
 function create_automaton_F(m::ContinuousTimeModel, x1::Float64, x2::Float64, t1::Float64, t2::Float64, str_obs::String)
+    @assert str_obs in m.g
     # Locations
     l_loc = ["l0", "l1", "l2", "l3"]
 
@@ -14,7 +15,7 @@ function create_automaton_F(m::ContinuousTimeModel, x1::Float64, x2::Float64, t1
 
     #S.n <=> S.l_var[A.map_var_automaton_idx["n"]] 
     #P <=> xn[map_var_model_idx[l_ctes[str_O]] with str_O = "P". On stock str_O dans l_ctes
-    
+    # P = get_value(A, x, str_obs) 
     ## Map of automaton variables
     map_var_automaton_idx = Dict{VariableAutomaton,Int}("n" => 1, "d" => 2)
 

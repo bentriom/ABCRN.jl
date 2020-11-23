@@ -21,5 +21,6 @@ using Test
     @test include("unit/set_param.jl")
     @test include("unit/side_effects_1.jl")
     @test include("unit/create_models.jl")
+    @test include("unit/create_automata.jl")
 end
 

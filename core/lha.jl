@@ -9,6 +9,8 @@ copy(S::StateLHA) = StateLHA(S.A, S.loc, S.l_var, S.time)
 getindex(S::StateLHA, var::VariableAutomaton) = (S.l_var)[(S.A).map_var_automaton_idx[var]]
 setindex!(S::StateLHA, val::Float64, var::VariableAutomaton) = (S.l_var)[(S.A).map_var_automaton_idx[var]] = val
 setindex!(S::StateLHA, val::Int, var::VariableAutomaton) = (S.l_var)[(S.A).map_var_automaton_idx[var]] = convert(Float64, val)
+setindex!(S::StateLHA, val::Bool, var::VariableAutomaton) = (S.l_var)[(S.A).map_var_automaton_idx[var]] = convert(Float64, val)
+
 function Base.show(io::IO, S::StateLHA)
     print(io, "State of LHA\n")
     print(io, "- location: $(S.loc)\n")
