@@ -24,7 +24,7 @@ end
 isaccepted(S::StateLHA) = (S.loc in (S.A).l_loc_final)
 
 # Methods for synchronize / read the trajectory
-function init_state(A::LHA, x0::SubArray{Int,1}, t0::Float64)
+function init_state(A::LHA, x0::Vector{Int}, t0::Float64)
     S0 = StateLHA(A, "", zeros(length_var(A)), t0)
     for loc in A.l_loc_init
         if A.Λ[loc](A,S0) 
@@ -119,12 +119,17 @@ function read_trajectory(A::LHA, σ::Trajectory; verbose = false)
     A_new = LHA(A, (σ.m)._map_obs_var_idx)
     l_t = times(σ)
     l_tr = transitions(σ)
+    mat_x = zeros(Int, length_states(σ), σ.m.d)
+    for (i,var) in enumerate(σ.m.g)
+        mat_x[:,i] = σ[var]
+    end
     Sn = init_state(A_new, σ[1], l_t[1])
     Snplus1 = copy(Sn)
     if verbose println("Init: ") end
     if verbose @show Sn end
     for n in 1:length_states(σ)
-        next_state!(Snplus1, A_new, σ[n], l_t[n], l_tr[n], Sn; verbose = verbose)
+        xn = view(mat_x, n, :)
+        next_state!(Snplus1, A_new, xn, l_t[n], l_tr[n], Sn; verbose = verbose)
         if Snplus1.loc in A_new.l_loc_final 
             break 
         end

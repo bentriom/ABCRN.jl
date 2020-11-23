@@ -22,7 +22,7 @@ export load_automaton, get_index, get_value, length_var, isaccepted
 
 # Model related methods
 export simulate, set_param!, get_param, set_observed_var!
-export set_time_bound!
+export set_time_bound!, getproperty
 export isbounded, isaccepted, check_consistency
 export load_model, get_module_path
 

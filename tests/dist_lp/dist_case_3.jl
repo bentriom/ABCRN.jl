@@ -7,15 +7,15 @@ test_all = true
 for p = 1:2
     x_obs =[5, 6, 5, 4, 3, 2, 1, 1]
     t_x = [0.0, 3.10807, 4.29827, 4.40704, 5.67024, 7.1299, 11.2763, 20.0]
-    values = zeros(length(x_obs), 1)
-    values[:,1] = x_obs
+    values = [zeros(length(x_obs))]
+    values[1] = x_obs
     l_tr = Vector{Nothing}(nothing, length(x_obs))
     σ1 = Trajectory(SIR, values, t_x, l_tr)
 
     y_obs =[5, 4, 5, 4, 3, 4, 3, 2, 3, 2, 1, 2, 3, 4, 3, 4, 4]
     t_y = [0.0, 0.334082, 1.21012, 1.40991, 1.58866, 2.45879, 2.94545, 4.66746, 5.44723, 5.88066, 7.25626, 11.4036, 13.8373, 17.1363, 17.8193, 18.7613, 20.0]
-    values = zeros(length(y_obs), 1)
-    values[:,1] = y_obs
+    values = [zeros(length(y_obs))]
+    values[1] = y_obs
     l_tr = Vector{Nothing}(nothing, length(y_obs))
     σ2 = Trajectory(SIR, values, t_y, l_tr)
 
@@ -26,9 +26,9 @@ for p = 1:2
     int_riemann = MarkovProcesses._riemann_sum(diff_f, 0.0, 20.0, 1E-5)
     int_riemann = int_riemann^(1/p)
 
-    res1 = dist_lp(@view(x_obs[:]), t_x, @view(y_obs[:]), t_y; p=p)
+    res1 = dist_lp(x_obs, t_x, y_obs, t_y; p=p)
     res2 = dist_lp(σ1,σ2; p=p)
-    res1_bis = dist_lp(@view(y_obs[:]), t_y, @view(x_obs[:]), t_x; p=p)
+    res1_bis = dist_lp(y_obs, t_y, x_obs, t_x; p=p)
     res2_bis = dist_lp(σ2,σ1; p=p)
     test_1 = isapprox(res1, int_riemann; atol = 1E-3) 
     test_1 = test_1 && isapprox(res2, int_riemann; atol = 1E-3)

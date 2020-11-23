@@ -64,7 +64,7 @@ function dist_lp(σ1::AbstractTrajectory, σ2::AbstractTrajectory, var::String;
 end
 
 # Distance function. Vectorized version
-function dist_lp(x_obs::SubArray{Int,1}, t_x::Vector{Float64}, y_obs::SubArray{Int,1}, t_y::Vector{Float64}; 
+function dist_lp(x_obs::Vector{Int}, t_x::Vector{Float64}, y_obs::Vector{Int}, t_y::Vector{Float64}; 
                  verbose::Bool = false, p::Int = 1)
     current_y_obs = y_obs[1]
     current_t_y = t_y[2]
@@ -150,23 +150,31 @@ function _riemann_sum(f::Function, t_begin::Real, t_end::Real, step::Float64)
 end
 
 function check_consistency(σ::AbstractTrajectory)
-    @assert length(σ.times) == length(σ.transitions) == size(σ.values)[1]
-    @assert length_obs_var(σ) == length(σ.m.g) == size(σ.values)[2]
+    test_length_var = true
+    for i = 1:(σ.m).dobs 
+        test_length_i = (length(σ.values[1]) == length(σ.values[i]))
+        test_length_var = test_length_var && test_length_i 
+    end
+    @assert begin (length(σ.times) == length(σ.transitions)) && 
+                  (length(σ.times) == length(σ.values[1])) &&
+                  test_length_var
+            end
+    @assert length_obs_var(σ) == σ.m.dobs
     return true
 end
-issteadystate(σ::AbstractTrajectory) = (σ.m).isabsorbing((σ.m).p, σ[end])
+issteadystate(σ::AbstractTrajectory) = (σ.m).isabsorbing((σ.m).p, view(reshape(σ[end], 1, m.d), 1, :))
 
 # Properties of the trajectory
 length_states(σ::AbstractTrajectory) = length(σ.times)
-length_obs_var(σ::AbstractTrajectory) = size(σ.values)[2]
+length_obs_var(σ::AbstractTrajectory) = length(σ.values)
 get_obs_var(σ::AbstractTrajectory) = (σ.m).g
 isbounded(σ::AbstractTrajectory) = σ.transitions[end] == nothing 
 isaccepted(σ::SynchronizedTrajectory) = isaccepted(σ.S)
 
 # Access to trajectory values
-get_var_values(σ::AbstractTrajectory, var::String) = view(σ.values, :, (σ.m)._map_obs_var_idx[var])
-get_state(σ::AbstractTrajectory, idx::Int) = view(σ.values, idx, :)
-get_value(σ::AbstractTrajectory, var::String, idx::Int) = σ.values[idx,(σ.m)._map_obs_var_idx[var]] 
+get_var_values(σ::AbstractTrajectory, var::String) = σ.values[(σ.m)._map_obs_var_idx[var]]
+get_state(σ::AbstractTrajectory, idx::Int) = [σ.values[i][idx] for i = 1:length(σ.values)] # /!\ Creates an array
+get_value(σ::AbstractTrajectory, var::String, idx::Int) = get_var_values(σ, var)[idx]
 # Operation @
 function get_state_from_time(σ::AbstractTrajectory, t::Float64)
     @assert t >= 0.0

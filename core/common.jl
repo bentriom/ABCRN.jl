@@ -26,7 +26,7 @@ end
 
 struct Trajectory <: AbstractTrajectory
     m::ContinuousTimeModel
-    values::Matrix{Int}
+    values::Vector{Vector{Int}}
     times::Vector{Float64}
     transitions::Vector{Transition}
 end
@@ -65,7 +65,7 @@ end
 struct SynchronizedTrajectory <: AbstractTrajectory
     S::StateLHA
     m::SynchronizedModel
-    values::Matrix{Int}
+    values::Vector{Vector{Int}}
     times::Vector{Float64}
     transitions::Vector{Transition}
 end
