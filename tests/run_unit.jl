@@ -23,5 +23,6 @@ using Test
     @test include("unit/create_models.jl")
     @test include("unit/create_automata.jl")
     @test include("unit/model_prior.jl")
+    @test include("unit/absorbing_x0.jl")
 end
 

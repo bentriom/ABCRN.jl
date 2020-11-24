@@ -29,7 +29,7 @@ println("MarkovProcesses:")
 using MarkovProcesses
 MarkovProcesses.load_model("ER")
 ER.time_bound = 20.0
-ER.estim_min_states = 7000
+ER.estim_min_states = 9000
 set_param!(ER, "k1", 0.2)
 set_param!(ER, "k2", 40.0)
 @timev MarkovProcesses.simulate(ER)

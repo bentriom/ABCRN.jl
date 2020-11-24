@@ -8,8 +8,8 @@ test_all = true
 nb_sim = 1000
 
 function show_traj(io::IO, σ::AbstractTrajectory, m::Model)
-    println(io, "length(σ.values), length(σ.times), length(σ.transitions)")
-    println(io, "$(length(σ.values)), $(length(σ.times)), $(length(σ.transitions))")
+    println(io, "length(σ.values[1]), length(σ.times), length(σ.transitions)")
+    println(io, "$(length(σ.values[1])), l$(length(σ.times)), $(length(σ.transitions))")
     println(io, "isbounded(m), isbounded(σ)")
     println(io, "$(isbounded(m)), $(isbounded(σ))")
     println(io, σ.values)

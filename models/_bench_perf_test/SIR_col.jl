@@ -9,7 +9,7 @@ l_tr = ["R1","R2"]
 p = [0.0012, 0.05]
 x0 = [95, 5, 0]
 t0 = 0.0
-function SIR_col_f!(xnplus1::Vector{Int}, tnplus1::Vector{Float64}, tr::Vector{String}, 
+function SIR_col_f!(xnplus1::Vector{Int}, tnplus1::Vector{Float64}, tr::Vector{Union{Nothing,String}}, 
                     xn::AbstractVector{Int}, tn::Float64, p::Vector{Float64})
     a1 = p[1] * xn[1] * xn[2]
     a2 = p[2] * xn[2]
