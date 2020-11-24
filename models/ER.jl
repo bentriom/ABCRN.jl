@@ -9,7 +9,7 @@ l_tr_ER = ["R1","R2","R3"]
 p_ER = [1.0, 1.0, 1.0]
 x0_ER = [100, 100, 0, 0]
 t0_ER = 0.0
-function ER_f!(mat_x::Matrix{Int}, l_t::Vector{Float64}, l_tr::Vector{String}, idx::Int,
+function ER_f!(mat_x::Matrix{Int}, l_t::Vector{Float64}, l_tr::Vector{Union{Nothing,String}}, idx::Int,
                xn::SubArray{Int,1}, tn::Float64, p::Vector{Float64})
     a1 = p[1] * xn[1] * xn[2]
     a2 = p[2] * xn[3]

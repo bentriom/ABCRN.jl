@@ -168,7 +168,7 @@ issteadystate(σ::AbstractTrajectory) = (σ.m).isabsorbing((σ.m).p, view(reshap
 length_states(σ::AbstractTrajectory) = length(σ.times)
 length_obs_var(σ::AbstractTrajectory) = length(σ.values)
 get_obs_var(σ::AbstractTrajectory) = (σ.m).g
-isbounded(σ::AbstractTrajectory) = σ.transitions[end] == nothing 
+isbounded(σ::AbstractTrajectory) = σ.transitions[end] == nothing && length_states(σ) >= 2
 isaccepted(σ::SynchronizedTrajectory) = isaccepted(σ.S)
 
 # Access to trajectory values

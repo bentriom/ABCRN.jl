@@ -1,64 +1,112 @@
 
 load_model(name_model::String) = include(get_module_path() * "/models/" * name_model * ".jl")
 
+function _resize_trajectory!(values::Vector{Vector{Int}}, times::Vector{Float64}, 
+                             transitions::Vector{Transition}, size::Int)
+    for i = eachindex(values) resize!(values[i], size) end
+    resize!(times, size)
+    resize!(transitions, size)
+end
+
+
+function _finish_bounded_trajectory!(values::Vector{Vector{Int}}, times::Vector{Float64}, 
+                                    transitions::Vector{Transition}, time_bound::Float64)
+    
+    for i = eachindex(values) push!(values[i], values[i][end]) end
+    push!(times, time_bound)
+    push!(transitions, nothing)
+end
+
 # Simulation
 function simulate(m::ContinuousTimeModel)
-    # trajectory fields
+    # First alloc
     full_values = Vector{Vector{Int}}(undef, m.d)
-    for i = 1:m.d full_values[i] = Int[m.x0[i]] end
-    for i = 1:m.d sizehint!(full_values[i], m.estim_min_states) end
-    times = Float64[m.t0]
-    transitions = Transition[nothing]
-    # values at time n
-    n = 0
+    for i = 1:m.d full_values[i] = zeros(Int, m.estim_min_states) end
+    times = zeros(Float64, m.estim_min_states)
+    transitions = Vector{Transition}(undef, m.estim_min_states)
+    # Initial values
+    for i = 1:m.d full_values[i][1] = m.x0[i] end
+    times[1] = m.t0
+    transitions[1] = nothing
+    # Values at time n
+    n = 1
     xn = view(reshape(m.x0, 1, m.d), 1, :) # View for type stability
     tn = m.t0 
     # at time n+1
+    isabsorbing::Bool = m.isabsorbing(m.p,xn)
+    if isabsorbing
+        _resize_trajectory!(full_values, times, transitions, 1)
+        values = full_values[m._g_idx]
+        if isbounded(m)
+            _finish_bounded_trajectory!(values, times, transitions, m.time_bound)
+        end
+        return Trajectory(m, values, times, transitions)
+    end
+    # First we fill the allocated array
+    mat_x = zeros(Int, 1, m.d)
+    l_t = Float64[0.0]
+    l_tr = Transition[nothing]
+    for i = 2:m.estim_min_states
+        m.f!(mat_x, l_t, l_tr, 1, xn, tn, m.p)
+        tn = l_t[1]
+        if tn > m.time_bound
+            break
+        end
+        n += 1
+        xn = view(mat_x, 1, :)
+        # Updating value
+        for k = 1:m.d full_values[k][n] = xn[k] end
+        times[n] = tn
+        transitions[n] = l_tr[1]
+        isabsorbing = m.isabsorbing(m.p,xn)
+        if isabsorbing 
+            break
+        end
+    end
+    # If simulation ended
+    if n < m.estim_min_states
+        _resize_trajectory!(full_values, times, transitions, n)
+        values = full_values[m._g_idx]
+        if isbounded(m)
+            _finish_bounded_trajectory!(values, times, transitions, m.time_bound)
+        end
+        return Trajectory(m, values, times, transitions)
+    end
+    # Otherwise, buffering system
     mat_x = zeros(Int, m.buffer_size, m.d)
     l_t = zeros(Float64, m.buffer_size)
-    l_tr = Vector{String}(undef, m.buffer_size)
-    isabsorbing::Bool = m.isabsorbing(m.p,xn)
-    end_idx = -1
-    # use sizehint! ?
+    l_tr = Vector{Transition}(undef, m.buffer_size)
     while !isabsorbing && tn <= m.time_bound
-        for i = 1:m.buffer_size
+        i = 0
+        while i < m.buffer_size
+            i += 1
             m.f!(mat_x, l_t, l_tr, i, xn, tn, m.p)
             tn = l_t[i]
             if tn > m.time_bound
-                i -= 1 # 0 is an ok value, 1:0 is allowed
-                end_idx = i
+                i -= 1
                 break
             end
             xn = view(mat_x, i, :)
             isabsorbing = m.isabsorbing(m.p,xn)
             if isabsorbing 
-                end_idx = i
                 break
             end
         end
-        if end_idx != -1
-            break 
-        end
-        for k = 1:m.d
-            append!(full_values[k], view(mat_x, :, k))
-        end
-        append!(times, l_t)
-        append!(transitions,  l_tr)
-        n += m.buffer_size
-    end
-    for k = 1:m.d
-        append!(full_values[k], view(mat_x, 1:end_idx, k))
-    end
-    append!(times, view(l_t, 1:end_idx))
-    append!(transitions,  view(l_tr, 1:end_idx))
-    if isbounded(m)
-        for k = 1:m.d
-            push!(full_values[k], full_values[k][end])
-        end
-        push!(times, m.time_bound)
-        push!(transitions, nothing)
+        _resize_trajectory!(full_values, times, transitions, n+i)
+        # Update values
+        rng_traj = (n+1):(n+i) 
+        rng_buffer = 1:i
+        for k = 1:m.d full_values[k][rng_traj] = view(mat_x, rng_buffer, k) end
+        times[rng_traj] = l_t[rng_buffer]
+        transitions[rng_traj] = l_tr[rng_buffer]
+        n += i
     end
     values = full_values[m._g_idx]
+    if isbounded(m)
+        # Add last value: the convention is the last transition is nothing,
+        # the trajectory is bounded
+        _finish_bounded_trajectory!(values, times, transitions, m.time_bound)
+    end
     return Trajectory(m, values, times, transitions)
 end
 
