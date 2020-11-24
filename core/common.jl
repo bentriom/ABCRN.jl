@@ -22,6 +22,7 @@ mutable struct ContinuousTimeModel <: Model
     isabsorbing::Function
     time_bound::Float64
     buffer_size::Int
+    estim_min_states::Int
 end
 
 struct Trajectory <: AbstractTrajectory
@@ -29,6 +30,11 @@ struct Trajectory <: AbstractTrajectory
     values::Vector{Vector{Int}}
     times::Vector{Float64}
     transitions::Vector{Transition}
+end
+
+struct ModelPrior
+    m::Model
+    map_l_param_dist::Dict{Vector{String},Distribution}
 end
 
 struct Edge
@@ -74,7 +80,7 @@ end
 function ContinuousTimeModel(d::Int, k::Int, map_var_idx::Dict, map_param_idx::Dict, l_transitions::Vector{String}, 
               p::Vector{Float64}, x0::Vector{Int}, t0::Float64, 
               f!::Function, isabsorbing::Function; 
-              g::Vector{String} = keys(map_var_idx), time_bound::Float64 = Inf, buffer_size::Int = 10)
+              g::Vector{String} = keys(map_var_idx), time_bound::Float64 = Inf, buffer_size::Int = 10, estim_min_states::Int = 50)
     dobs = length(g)
     _map_obs_var_idx = Dict()
     _g_idx = Vector{Int}(undef, dobs)
@@ -90,7 +96,7 @@ function ContinuousTimeModel(d::Int, k::Int, map_var_idx::Dict, map_param_idx::D
         @warn "You have possibly redefined a function Model.isabsorbing used in a previously instantiated model."
     end
 
-    return ContinuousTimeModel(d, k, map_var_idx, _map_obs_var_idx, map_param_idx, l_transitions, p, x0, t0, f!, g, _g_idx, isabsorbing, time_bound, buffer_size)
+    return ContinuousTimeModel(d, k, map_var_idx, _map_obs_var_idx, map_param_idx, l_transitions, p, x0, t0, f!, g, _g_idx, isabsorbing, time_bound, buffer_size, estim_min_states)
 end
 
 LHA(A::LHA, map_var::Dict{String,Int}) = LHA(A.l_transitions, A.l_loc, A.Λ, 
@@ -98,4 +104,12 @@ LHA(A::LHA, map_var::Dict{String,Int}) = LHA(A.l_transitions, A.l_loc, A.Λ,
                                              A.map_edges, A.l_ctes, map_var)
 Base.:*(m::ContinuousTimeModel, A::LHA) = SynchronizedModel(m, A)
 Base.:*(A::LHA, m::ContinuousTimeModel) = SynchronizedModel(m, A)
+
+function ModelPrior(m::Model, priors::Tuple{Vector{String},Distribution}...)
+    map = Dict{Vector{String},Distribution}()
+    for prior in priors
+        map[prior[1]] = prior[2]
+    end
+    return ModelPrior(m, map)
+end
 

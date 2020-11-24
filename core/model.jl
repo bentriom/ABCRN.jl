@@ -4,10 +4,11 @@ load_model(name_model::String) = include(get_module_path() * "/models/" * name_m
 # Simulation
 function simulate(m::ContinuousTimeModel)
     # trajectory fields
-    full_values = Matrix{Int}(undef, 1, m.d)
-    full_values[1,:] = m.x0
+    full_values = Vector{Vector{Int}}(undef, m.d)
+    for i = 1:m.d full_values[i] = Int[m.x0[i]] end
+    for i = 1:m.d sizehint!(full_values[i], m.estim_min_states) end
     times = Float64[m.t0]
-    transitions = Union{String,Nothing}[nothing]
+    transitions = Transition[nothing]
     # values at time n
     n = 0
     xn = view(reshape(m.x0, 1, m.d), 1, :) # View for type stability
@@ -17,39 +18,47 @@ function simulate(m::ContinuousTimeModel)
     l_t = zeros(Float64, m.buffer_size)
     l_tr = Vector{String}(undef, m.buffer_size)
     isabsorbing::Bool = m.isabsorbing(m.p,xn)
+    end_idx = -1
+    # use sizehint! ?
     while !isabsorbing && tn <= m.time_bound
-        i = 0
-        while i < m.buffer_size && !isabsorbing && tn <= m.time_bound
-            i += 1
+        for i = 1:m.buffer_size
             m.f!(mat_x, l_t, l_tr, i, xn, tn, m.p)
             tn = l_t[i]
             if tn > m.time_bound
                 i -= 1 # 0 is an ok value, 1:0 is allowed
+                end_idx = i
                 break
             end
             xn = view(mat_x, i, :)
             isabsorbing = m.isabsorbing(m.p,xn)
+            if isabsorbing 
+                end_idx = i
+                break
+            end
         end
-        full_values = vcat(full_values, view(mat_x, 1:i, :))
-        append!(times, view(l_t, 1:i))
-        append!(transitions,  view(l_tr, 1:i))
-        n += i
-        #isabsorbing = m.isabsorbing(m.p,xn)
+        if end_idx != -1
+            break 
+        end
+        for k = 1:m.d
+            append!(full_values[k], view(mat_x, :, k))
+        end
+        append!(times, l_t)
+        append!(transitions,  l_tr)
+        n += m.buffer_size
     end
+    for k = 1:m.d
+        append!(full_values[k], view(mat_x, 1:end_idx, k))
+    end
+    append!(times, view(l_t, 1:end_idx))
+    append!(transitions,  view(l_tr, 1:end_idx))
     if isbounded(m)
-        #=
-        if times[end] > m.time_bound
-            full_values[end,:] = full_values[end-1,:]
-            times[end] = m.time_bound
-            transitions[end] = nothing
-        else
+        for k = 1:m.d
+            push!(full_values[k], full_values[k][end])
         end
-        =#
-        full_values = vcat(full_values, reshape(full_values[end,:], 1, m.d))
         push!(times, m.time_bound)
         push!(transitions, nothing)
     end
-    values = view(full_values, :, m._g_idx)
+    values = full_values[m._g_idx]
     return Trajectory(m, values, times, transitions)
 end
 
@@ -57,12 +66,13 @@ function simulate(product::SynchronizedModel)
     # trajectory fields
     m = product.m
     A = product.automaton
-    full_values = Matrix{Int}(undef, 1, m.d)
-    full_values[1,:] = m.x0
+    full_values = Vector{Vector{Int}}(undef, m.d)
+    for i = 1:m.d full_values[i] = Int[m.x0[i]] end
+    for i = 1:m.d sizehint!(full_values[i], m.estim_min_states) end
     times = Float64[m.t0]
     transitions = Union{String,Nothing}[nothing]
     reshaped_x0 = view(reshape(m.x0, 1, m.d), 1, :) # View for type stability
-    S0 = init_state(A, reshaped_x0, m.t0) 
+    S0 = init_state(A, m.x0, m.t0)
     # values at time n
     n = 0
     xn = reshaped_x0 
@@ -75,7 +85,6 @@ function simulate(product::SynchronizedModel)
     isabsorbing::Bool = m.isabsorbing(m.p,xn)
     isacceptedLHA::Bool = isaccepted(Sn)
     Snplus1 = copy(Sn)
-    Sn_dump = Sn
     while !isabsorbing && tn <= m.time_bound && !isacceptedLHA
         i = 0
         while i < m.buffer_size && !isabsorbing && tn <= m.time_bound && !isacceptedLHA
@@ -93,7 +102,9 @@ function simulate(product::SynchronizedModel)
             isabsorbing = m.isabsorbing(m.p,xn)
             isacceptedLHA = isaccepted(Snplus1)
         end
-        full_values = vcat(full_values, view(mat_x, 1:i, :))
+        for k = 1:m.d
+            append!(full_values[k], view(mat_x, 1:i, k))
+        end
         append!(times, view(l_t, 1:i))
         append!(transitions,  view(l_tr, 1:i))
         n += i
@@ -101,11 +112,13 @@ function simulate(product::SynchronizedModel)
     # When the trajectory is accepted, we should not add an end value
     if isbounded(m) && !isaccepted(Sn)
         @assert times[end] < m.time_bound
-        #full_values = vcat(full_values, reshape(full_values[end,:], 1, m.d))
-        #push!(times, m.time_bound)
-        #push!(transitions, nothing)
+        for k = 1:m.d
+            push!(full_values[k], full_values[k][end])
+        end
+        push!(times, m.time_bound)
+        push!(transitions, nothing)
     end
-    values = view(full_values, :, m._g_idx)
+    values = full_values[m._g_idx]
     return SynchronizedTrajectory(Snplus1, product, values, times, transitions)
 end
 
@@ -136,8 +149,40 @@ function check_consistency(m::ContinuousTimeModel)
     @assert typeof(m.isabsorbing(m.p, view(reshape(m.x0, 1, m.d), 1, :))) == Bool
     return true
 end
+
 set_param!(m::ContinuousTimeModel, p::Vector{Float64}) = (m.p = p)
 set_param!(m::ContinuousTimeModel, name_p::String, p_i::Float64) = (m.p[m.map_param_idx[name_p]] = p_i)
+function set_param!(m::ContinuousTimeModel, l_name_p::Vector{String}, p::Vector{Float64}) 
+    nb_param = length(l_name_p)
+    for i = 1:nb_param
+        set_param!(m, l_name_p[i], p[i])
+    end
+end
+
 get_param(m::ContinuousTimeModel) = m.p
+getindex(m::ContinuousTimeModel, name_p::String) = m.p[m.map_param_idx[name_p]]
 set_time_bound!(m::ContinuousTimeModel, b::Float64) = (m.time_bound = b)
+set_time_bound!(sm::SynchronizedModel, b::Float64) = set_time_bound!(sm.m, b)
+
+function getproperty(m::ContinuousTimeModel, sym::Symbol)
+    if sym == :dobs
+        return length(m.g)
+    else
+        return getfield(m, sym)
+    end
+end
+get_proba_model(m::ContinuousTimeModel) = m
+get_proba_model(sm::SynchronizedModel) = sm.m
+
+# Prior methods
+function draw!(Π::ModelPrior)
+    dict_dist = Π.map_l_param_dist
+    for l_name in keys(dict_dist)
+        if length(l_name) == 1
+            set_param!(get_proba_model(Π.m), l_name[1], rand(dict_dist[l_name]))
+        else
+            set_param!(get_proba_model(Π.m), l_name, rand(dict_dist[l_name]))
+        end
+    end
+end
 
