@@ -1,5 +1,5 @@
 
-import StaticArrays: SVector, SMatrix, @SMatrix
+import StaticArrays: SVector, SMatrix, @SVector, @SMatrix
 
 d=3
 k=2
@@ -9,18 +9,20 @@ l_tr_SIR = ["R1","R2"]
 p_SIR = [0.0012, 0.05]
 x0_SIR = [95, 5, 0]
 t0_SIR = 0.0
-function SIR_f!(mat_x::Matrix{Int}, l_t::Vector{Float64}, l_tr::Vector{Union{Nothing,String}}, idx::Int,
-           xn::SubArray{Int,1}, tn::Float64, p::Vector{Float64})
+function SIR_f!(xnplus1::Vector{Int}, l_t::Vector{Float64}, l_tr::Vector{Union{Nothing,String}},
+                xn::Vector{Int}, tn::Float64, p::Vector{Float64})
     a1 = p[1] * xn[1] * xn[2]
     a2 = p[2] * xn[2]
     l_a = SVector(a1, a2)
     asum = sum(l_a)
     # column-major order
-    l_nu = @SMatrix [-1 0;
-                     1 -1;
-                     0 1]
-    
-    u1, u2 = rand(), rand()
+    nu_1 = SVector(-1, 1, 0)
+    nu_2 = SVector(0, -1, 1)
+    l_nu = SVector(nu_1, nu_2)
+    l_str_R = SVector("R1","R2")
+
+    u1 = rand()
+    u2 = rand()
     tau = - log(u1) / asum
     b_inf = 0.0
     b_sup = a1
@@ -34,14 +36,14 @@ function SIR_f!(mat_x::Matrix{Int}, l_t::Vector{Float64}, l_tr::Vector{Union{Not
         b_sup += l_a[i+1]
     end
  
-    nu = view(l_nu, :, reaction) # macro for avoiding a copy
+    nu = l_nu[reaction]
     for i = 1:3
-        mat_x[idx,i] = xn[i]+nu[i]
+        xnplus1[i] = xn[i]+nu[i]
     end
-    l_t[idx] = tn + tau
-    l_tr[idx] = "R$(reaction)"
+    l_t[1] = tn + tau
+    l_tr[1] = l_str_R[reaction]
 end
-isabsorbing_SIR(p::Vector{Float64}, xn::SubArray{Int,1}) = (p[1]*xn[1]*xn[2] + p[2]*xn[2]) === 0.0
+isabsorbing_SIR(p::Vector{Float64}, xn::Vector{Int}) = (p[1]*xn[1]*xn[2] + p[2]*xn[2]) === 0.0
 g_SIR = ["I"]
 
 SIR = ContinuousTimeModel(d,k,dict_var,dict_p,l_tr_SIR,p_SIR,x0_SIR,t0_SIR,SIR_f!,isabsorbing_SIR; g=g_SIR)

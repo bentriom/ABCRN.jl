@@ -32,7 +32,7 @@ function create_automaton_F(m::ContinuousTimeModel, x1::Float64, x2::Float64, t1
     # "cc" as check_constraints
     tuple = ("l0", "l1")
     cc_aut_F_l0l1_1(A::LHA, S::StateLHA) = true
-    us_aut_F_l0l1_1!(A::LHA, S::StateLHA, x::SubArray{Int,1}) = 
+    us_aut_F_l0l1_1!(A::LHA, S::StateLHA, x::Vector{Int}) = 
         (S.loc = "l1"; S["d"] = Inf; S["n"] = get_value(A, x, str_obs))
     edge1 = Edge([nothing], cc_aut_F_l0l1_1, us_aut_F_l0l1_1!)
     map_edges[tuple] = [edge1]
@@ -41,34 +41,34 @@ function create_automaton_F(m::ContinuousTimeModel, x1::Float64, x2::Float64, t1
     tuple = ("l1", "l2")
     cc_aut_F_l1l2_1(A::LHA, S::StateLHA) = 
         (A.l_ctes["x1"] <= S["n"] <= A.l_ctes["x2"]) && (A.l_ctes["t1"] <= S.time <= A.l_ctes["t2"])
-    us_aut_F_l1l2_1!(A::LHA, S::StateLHA, x::SubArray{Int,1}) = (S["d"] = 0; S.loc = "l2")
+    us_aut_F_l1l2_1!(A::LHA, S::StateLHA, x::Vector{Int}) = (S["d"] = 0; S.loc = "l2")
     edge1 = Edge([nothing], cc_aut_F_l1l2_1, us_aut_F_l1l2_1!)
 
     cc_aut_F_l1l2_2(A::LHA, S::StateLHA) = (S["d"] > 0 && S.time > A.l_ctes["t2"])
-    us_aut_F_l1l2_2!(A::LHA, S::StateLHA, x::SubArray{Int,1}) = (S.loc = "l2")
+    us_aut_F_l1l2_2!(A::LHA, S::StateLHA, x::Vector{Int}) = (S.loc = "l2")
     edge2 = Edge([nothing], cc_aut_F_l1l2_2, us_aut_F_l1l2_2!)
     
     cc_aut_F_l1l2_3(A::LHA, S::StateLHA) = (S["d"] == 0 && S.time >= A.l_ctes["t1"])
-    us_aut_F_l1l2_3!(A::LHA, S::StateLHA, x::SubArray{Int,1}) = (S.loc = "l2")
+    us_aut_F_l1l2_3!(A::LHA, S::StateLHA, x::Vector{Int}) = (S.loc = "l2")
     edge3 = Edge([nothing], cc_aut_F_l1l2_3, us_aut_F_l1l2_3!)
     
     map_edges[tuple] = [edge1, edge2, edge3]
 
     tuple = ("l1", "l3")
     cc_aut_F_l1l3_1(A::LHA, S::StateLHA) = (A.l_ctes["x1"] <= S["n"] <= A.l_ctes["x2"])
-    us_aut_F_l1l3_1!(A::LHA, S::StateLHA, x::SubArray{Int,1}) = (S["d"] = 0; S.loc = "l3")
+    us_aut_F_l1l3_1!(A::LHA, S::StateLHA, x::Vector{Int}) = (S["d"] = 0; S.loc = "l3")
     edge1 = Edge([nothing], cc_aut_F_l1l3_1, us_aut_F_l1l3_1!)
     
     cc_aut_F_l1l3_2(A::LHA, S::StateLHA) = 
         (A.l_ctes["x1"] > S["n"] || S["n"] > A.l_ctes["x2"]) && (S.time < A.l_ctes["t1"])
-    us_aut_F_l1l3_2!(A::LHA, S::StateLHA, x::SubArray{Int,1}) = 
+    us_aut_F_l1l3_2!(A::LHA, S::StateLHA, x::Vector{Int}) = 
         (S["d"] = min(sqrt((S.time - A.l_ctes["t1"])^2 + (S["n"] - A.l_ctes["x2"])^2), 
                       sqrt((S.time - A.l_ctes["t1"])^2 + (S["n"] - A.l_ctes["x1"])^2)); S.loc = "l3")
     edge2 = Edge([nothing], cc_aut_F_l1l3_2, us_aut_F_l1l3_2!)
 
     cc_aut_F_l1l3_3(A::LHA, S::StateLHA) = 
         (A.l_ctes["x1"] > S["n"] || S["n"] > A.l_ctes["x2"]) && (A.l_ctes["t1"] <= S.time <= A.l_ctes["t2"])
-    us_aut_F_l1l3_3!(A::LHA, S::StateLHA, x::SubArray{Int,1}) = 
+    us_aut_F_l1l3_3!(A::LHA, S::StateLHA, x::Vector{Int}) = 
         (S["d"] = min(S["d"], min(abs(S["n"] - A.l_ctes["x1"]), abs(S["n"] - A.l_ctes["x2"]))); S.loc = "l3")
     edge3 = Edge([nothing], cc_aut_F_l1l3_3, us_aut_F_l1l3_3!)
     map_edges[tuple] = [edge1, edge2, edge3]
@@ -76,11 +76,11 @@ function create_automaton_F(m::ContinuousTimeModel, x1::Float64, x2::Float64, t1
     # l3 loc
     tuple = ("l3", "l1")
     cc_aut_F_l3l1_1(A::LHA, S::StateLHA) = true
-    us_aut_F_l3l1_1!(A::LHA, S::StateLHA, x::SubArray{Int,1}) = (S["n"] = get_value(A, x, str_obs); S.loc = "l1")
+    us_aut_F_l3l1_1!(A::LHA, S::StateLHA, x::Vector{Int}) = (S["n"] = get_value(A, x, str_obs); S.loc = "l1")
     edge1 = Edge(["ALL"], cc_aut_F_l3l1_1, us_aut_F_l3l1_1!)
     tuple = ("l3", "l2")
     cc_aut_F_l3l2_1(A::LHA, S::StateLHA) = (S.time >= A.l_ctes["t2"])
-    us_aut_F_l3l2_1!(A::LHA, S::StateLHA, x::SubArray{Int,1}) = (S["n"] = get_value(A, x, str_obs); S.loc = "l2")
+    us_aut_F_l3l2_1!(A::LHA, S::StateLHA, x::Vector{Int}) = (S["n"] = get_value(A, x, str_obs); S.loc = "l2")
     edge2 = Edge([nothing], cc_aut_F_l3l2_1, us_aut_F_l3l2_1!)
     map_edges[tuple] = [edge1, edge2]
 

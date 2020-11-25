@@ -11,12 +11,18 @@ end
 
 function _finish_bounded_trajectory!(values::Vector{Vector{Int}}, times::Vector{Float64}, 
                                     transitions::Vector{Transition}, time_bound::Float64)
-    
     for i = eachindex(values) push!(values[i], values[i][end]) end
     push!(times, time_bound)
     push!(transitions, nothing)
 end
-    
+
+function _update_values!(values::Vector{Vector{Int}}, times::Vector{Float64}, transitions::Vector{Transition},
+                         xn::Vector{Int}, tn::Float64, tr_n::Transition, idx::Int)
+    for k = eachindex(values) values[k][idx] = xn[k] end
+    times[idx] = tn
+    transitions[idx] = tr_n
+end
+
 """
     `simulate(m)`
 
@@ -35,7 +41,7 @@ function simulate(m::ContinuousTimeModel)
     transitions[1] = nothing
     # Values at time n
     n = 1
-    xn = view(reshape(m.x0, 1, m.d), 1, :) # View for type stability
+    xn = m.x0 # View for type stability
     tn = m.t0 
     # at time n+1
     isabsorbing::Bool = m.isabsorbing(m.p,xn)
@@ -48,22 +54,20 @@ function simulate(m::ContinuousTimeModel)
         end
         return Trajectory(m, values, times, transitions)
     end
-    # First we fill the allocated array
-    mat_x = zeros(Int, 1, m.d)
+    # Alloc of vectors where we stock n+1 values
+    vec_x = zeros(Int, m.d)
     l_t = Float64[0.0]
     l_tr = Transition[nothing]
+    # First we fill the allocated array
     for i = 2:m.estim_min_states
-        m.f!(mat_x, l_t, l_tr, 1, xn, tn, m.p)
+        m.f!(vec_x, l_t, l_tr, xn, tn, m.p)
         tn = l_t[1]
         if tn > m.time_bound
             break
         end
         n += 1
-        xn = view(mat_x, 1, :)
-        # Updating value
-        for k = eachindex(full_values) full_values[k][n] = xn[k] end
-        times[n] = tn
-        transitions[n] = l_tr[1]
+        xn = vec_x
+        _update_values!(full_values, times, transitions, xn, tn, l_tr[1], i)
         isabsorbing = m.isabsorbing(m.p,xn)
         if isabsorbing 
             break
@@ -79,48 +83,34 @@ function simulate(m::ContinuousTimeModel)
         return Trajectory(m, values, times, transitions)
     end
     # Otherwise, buffering system
-    mat_x = zeros(Int, m.buffer_size, m.d)
-    l_t = zeros(Float64, m.buffer_size)
-    l_tr = Vector{Transition}(undef, m.buffer_size)
-    # Alloc buffer values
-    tmp_full_values = Vector{Vector{Int}}(undef, m.d)
-    for i = eachindex(tmp_full_values) tmp_full_values[i] = zeros(Int, 0) end
-    tmp_times = zeros(Float64, 0)
-    tmp_transitions = Vector{Transition}(undef, 0)
-    tmp_idx = 0
+    size_tmp = 0
     while !isabsorbing && tn <= m.time_bound
-        _resize_trajectory!(tmp_full_values, tmp_times, tmp_transitions, tmp_idx+m.buffer_size)
+        # Alloc buffer
+        _resize_trajectory!(full_values, times, transitions, m.estim_min_states+size_tmp+m.buffer_size)
         i = 0
         while i < m.buffer_size
             i += 1
-            m.f!(mat_x, l_t, l_tr, i, xn, tn, m.p)
-            tn = l_t[i]
+            m.f!(vec_x, l_t, l_tr, xn, tn, m.p)
+            tn = l_t[1]
             if tn > m.time_bound
                 i -= 1
                 break
             end
-            xn = view(mat_x, i, :)
+            xn = vec_x
+            _update_values!(full_values, times, transitions, 
+                            xn, tn, l_tr[1], m.estim_min_states+size_tmp+i)
             isabsorbing = m.isabsorbing(m.p,xn)
             if isabsorbing 
                 break
             end
         end
-        # Update values
-        rng_tmp = (tmp_idx+1):(tmp_idx+m.buffer_size)
-        for k = eachindex(tmp_full_values) tmp_full_values[k][rng_tmp] = view(mat_x, :, k) end
-        tmp_times[rng_tmp] = l_t
-        tmp_transitions[rng_tmp] = l_tr
+        # If simulation ended before the end of buffer
         if i < m.buffer_size
-            _resize_trajectory!(tmp_full_values, tmp_times, tmp_transitions, tmp_idx+i)
+            _resize_trajectory!(full_values, times, transitions, m.estim_min_states+size_tmp+i)
         end
-        tmp_idx += i
+        size_tmp += i
         n += i
     end
-    # Push the temporary values 
-    for k = eachindex(full_values) append!(full_values[k], tmp_full_values[k]) end
-    append!(times, tmp_times)
-    append!(transitions, tmp_transitions)
-    
     values = full_values[m._g_idx]
     if isbounded(m)
         # Add last value: the convention is the last transition is nothing,
@@ -144,13 +134,13 @@ function simulate(product::SynchronizedModel)
     S0 = init_state(A, m.x0, m.t0)
     # Values at time n
     n = 1
-    xn = view(reshape(m.x0, 1, m.d), 1, :) # View for type stability
+    xn = m.x0 # View for type stability
     tn = m.t0 
     Sn = copy(S0)
-    # at time n+1
     isabsorbing::Bool = m.isabsorbing(m.p,xn)
     isacceptedLHA::Bool = isaccepted(Sn)
-    if isabsorbing || isacceptedLHA
+    # If x0 is absorbing
+    if isabsorbing || isacceptedLHA 
         _resize_trajectory!(full_values, times, transitions, 1)
         values = full_values[m._g_idx]
         if isbounded(m)
@@ -158,95 +148,79 @@ function simulate(product::SynchronizedModel)
         end
         return SynchronizedTrajectory(Sn, product, values, times, transitions)
     end
-    # First we fill the allocated array
-    mat_x = zeros(Int, 1, m.d)
+    # Alloc of vectors where we stock n+1 values
+    vec_x = zeros(Int, m.d)
     l_t = Float64[0.0]
     l_tr = Transition[nothing]
     Snplus1 = copy(Sn)
+    # First we fill the allocated array
     for i = 2:m.estim_min_states
-        m.f!(mat_x, l_t, l_tr, 1, xn, tn, m.p)
+        m.f!(vec_x, l_t, l_tr, xn, tn, m.p)
         tn = l_t[1]
         if tn > m.time_bound
             break
         end
         n += 1
-        xn = view(mat_x, 1, :)
+        xn = vec_x
         tr_n = l_tr[1]
         next_state!(Snplus1, A, xn, tn, tr_n, Sn)
+        _update_values!(full_values, times, transitions, xn, tn, tr_n, i)
         Sn = Snplus1
-        # Updating value
-        for k = eachindex(full_values) full_values[k][n] = xn[k] end
-        times[n] = tn
-        transitions[n] = l_tr[1]
         isabsorbing = m.isabsorbing(m.p,xn)
         isacceptedLHA = isaccepted(Snplus1)
         if isabsorbing || isacceptedLHA 
             break
         end
     end
-    # If simulation ended
+    # If simulation ended before the estimation of states
     if n < m.estim_min_states
         _resize_trajectory!(full_values, times, transitions, n)
         values = full_values[m._g_idx]
         if isbounded(m)
             _finish_bounded_trajectory!(values, times, transitions, m.time_bound)
         end
-        return SynchronizedTrajectory(Snplus1, product, values, times, transitions)
+        return SynchronizedTrajectory(Sn, product, values, times, transitions)
     end
     # Otherwise, buffering system
-    mat_x = zeros(Int, m.buffer_size, m.d)
-    l_t = zeros(Float64, m.buffer_size)
-    l_tr = Vector{Transition}(undef, m.buffer_size)
-    # Alloc buffer values
-    tmp_full_values = Vector{Vector{Int}}(undef, m.d)
-    for i = eachindex(tmp_full_values) tmp_full_values[i] = zeros(Int, 0) end
-    tmp_times = zeros(Float64, 0)
-    tmp_transitions = Vector{Transition}(undef, 0)
-    tmp_idx = 0
+    size_tmp = 0
     while !isabsorbing && tn <= m.time_bound && !isacceptedLHA
-        _resize_trajectory!(tmp_full_values, tmp_times, tmp_transitions, tmp_idx+m.buffer_size)
+        # Alloc buffer
+        _resize_trajectory!(full_values, times, transitions, m.estim_min_states+size_tmp+m.buffer_size)
         i = 0
         while i < m.buffer_size
             i += 1
-            m.f!(mat_x, l_t, l_tr, i, xn, tn, m.p)
-            tn = l_t[i]
+            m.f!(vec_x, l_t, l_tr, xn, tn, m.p)
+            tn = l_t[1]
             if tn > m.time_bound
                 i -= 1
                 break
             end
-            xn = view(mat_x, i, :)
-            tr_n = l_tr[i]
+            xn = vec_x
+            tr_n = l_tr[1]
             next_state!(Snplus1, A, xn, tn, tr_n, Sn)
+            _update_values!(full_values, times, transitions, 
+                            xn, tn, tr_n, m.estim_min_states+size_tmp+i)
             Sn = Snplus1
             isabsorbing = m.isabsorbing(m.p,xn)
             isacceptedLHA = isaccepted(Snplus1)
-            if isabsorbing || isacceptedLHA 
+            if isabsorbing || isacceptedLHA
                 break
             end
         end
-        # Update values
-        rng_tmp = (tmp_idx+1):(tmp_idx+m.buffer_size)
-        for k = eachindex(tmp_full_values) tmp_full_values[k][rng_tmp] = view(mat_x, :, k) end
-        tmp_times[rng_tmp] = l_t
-        tmp_transitions[rng_tmp] = l_tr
+        # If simulation ended before the end of buffer
         if i < m.buffer_size
-            _resize_trajectory!(tmp_full_values, tmp_times, tmp_transitions, tmp_idx+i)
+            _resize_trajectory!(full_values, times, transitions, m.estim_min_states+size_tmp+i)
         end
-        tmp_idx += i
+        size_tmp += i
         n += i
     end
-    # Push the temporary values 
-    for k = eachindex(full_values) append!(full_values[k], tmp_full_values[k]) end
-    append!(times, tmp_times)
-    append!(transitions, tmp_transitions)
-    
     values = full_values[m._g_idx]
     if isbounded(m) && !isaccepted(Sn)
         # Add last value: the convention is the last transition is nothing,
         # the trajectory is bounded
         _finish_bounded_trajectory!(values, times, transitions, m.time_bound)
     end
-    return SynchronizedTrajectory(Snplus1, product, values, times, transitions)
+    return SynchronizedTrajectory(Sn, product, values, times, transitions)
 end
 
 
@@ -274,7 +248,7 @@ function check_consistency(m::ContinuousTimeModel)
     @assert length(m.g) <= m.d
     @assert length(m._g_idx) == length(m.g)
     @assert m.buffer_size >= 0
-    @assert typeof(m.isabsorbing(m.p, view(reshape(m.x0, 1, m.d), 1, :))) == Bool
+    @assert typeof(m.isabsorbing(m.p, m.x0)) == Bool
     return true
 end
 

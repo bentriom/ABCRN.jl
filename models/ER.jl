@@ -1,5 +1,5 @@
 
-import StaticArrays: SVector, SMatrix, @SMatrix
+import StaticArrays: SVector, SMatrix, @SVector, @SMatrix
 
 d=4
 k=3
@@ -9,18 +9,21 @@ l_tr_ER = ["R1","R2","R3"]
 p_ER = [1.0, 1.0, 1.0]
 x0_ER = [100, 100, 0, 0]
 t0_ER = 0.0
-function ER_f!(mat_x::Matrix{Int}, l_t::Vector{Float64}, l_tr::Vector{Union{Nothing,String}}, idx::Int,
-               xn::SubArray{Int,1}, tn::Float64, p::Vector{Float64})
+function ER_f!(xnplus1::Vector{Int}, l_t::Vector{Float64}, l_tr::Vector{Union{Nothing,String}},
+               xn::Vector{Int}, tn::Float64, p::Vector{Float64})
     a1 = p[1] * xn[1] * xn[2]
     a2 = p[2] * xn[3]
     a3 = p[3] * xn[3]
     l_a = SVector(a1, a2, a3)
     asum = sum(l_a)
-    l_nu = @SMatrix [-1 1 1;
-                     -1 1 0;
-                     1 -1 -1;
-                     0 0 1]
-    u1, u2 = rand(), rand()
+    nu_1 = SVector(-1, -1, 1, 0)
+    nu_2 = SVector(1, 1, -1, 0)
+    nu_3 = SVector(1, 0, -1, 1) 
+    l_nu = SVector(nu_1, nu_2, nu_3)
+    l_str_R = SVector("R1", "R2", "R3")
+
+    u1 = rand()
+    u2 = rand()
     tau = - log(u1) / asum
     b_inf = 0.0
     b_sup = a1
@@ -34,14 +37,14 @@ function ER_f!(mat_x::Matrix{Int}, l_t::Vector{Float64}, l_tr::Vector{Union{Noth
         b_sup += l_a[i+1]
     end
  
-    nu = @view l_nu[:,reaction] # macro for avoiding a copy
+    nu = l_nu[reaction]
     for i = 1:4
-        mat_x[idx,i] = xn[i]+nu[i]
+        xnplus1[i] = xn[i]+nu[i]
     end
-    l_t[idx] = tn + tau
-    l_tr[idx] = "R$(reaction)"
+    l_t[1] = tn + tau
+    l_tr[1] = l_str_R[reaction]
 end
-isabsorbing_ER(p::Vector{Float64},xn::SubArray{Int,1}) = 
+isabsorbing_ER(p::Vector{Float64},xn::Vector{Int}) = 
     (p[1]*xn[1]*xn[2] + (p[2]+p[3])*xn[3]) === 0.0
 g_ER = ["P"]
 

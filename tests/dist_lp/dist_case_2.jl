@@ -35,7 +35,6 @@ for p = 1:2
     res_int = int^(1/p)
     
     test_2 = isapprox(res, res_int; atol = err)
-    
     global test_all = test_all && test_1 && test_1_bis && test_2
 end
 

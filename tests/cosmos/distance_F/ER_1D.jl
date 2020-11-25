@@ -59,9 +59,14 @@ for exp in l_exp
             l_dist_i_threads[Threads.threadid()] += (σ.S)["d"]
         end
         l_dist_pkg[i] = sum(l_dist_i_threads) / nb_sim
-        global test_all = test_all && isapprox(l_dist_cosmos[i], l_dist_pkg[i]; atol = width)
+        test = isapprox(l_dist_cosmos[i], l_dist_pkg[i]; atol = width*1.01)
+        global test_all = test_all && test
+        if !test
+            @show l_dist_pkg[i], l_dist_cosmos[i]
+            @show exp
+            @show k3
+        end
     end
-
 end
 
 rm("Result_dist_F_$(str_model).res")

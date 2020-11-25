@@ -24,8 +24,8 @@ end
 σ2_dump = simulate(ER)
 
 for i = 1:nb_sim
-    σ = simulate(SIR)
-    σ2 = simulate(ER)
+    local σ = simulate(SIR)
+    local σ2 = simulate(ER)
     try
         global test_all = test_all && check_consistency(σ) && check_consistency(σ2) &&
                           !isbounded(σ) && !isbounded(σ2)
@@ -48,8 +48,8 @@ end
 SIR.time_bound = 1.0
 ER.time_bound = 0.01
 for i = 1:nb_sim
-    σ = simulate(SIR)
-    σ2 = simulate(ER)
+    local σ = simulate(SIR)
+    local σ2 = simulate(ER)
     try
         global test_all = test_all && check_consistency(σ) && check_consistency(σ2) &&
                           isbounded(σ) && isbounded(σ2)
@@ -71,8 +71,8 @@ end
 
 SIR.time_bound = Inf
 ER.time_bound = Inf
-new_x0_SIR = view(reshape([95, 0, 5], 1, :), 1, :)
-new_x0_ER = view(reshape([0, 0, 0, 100], 1, :), 1, :)
+new_x0_SIR = [95, 0, 5]
+new_x0_ER = [0, 0, 0, 100]
 SIR.x0 = new_x0_SIR
 ER.x0 = new_x0_ER
 σ = simulate(SIR)
