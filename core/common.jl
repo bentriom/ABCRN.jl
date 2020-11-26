@@ -32,7 +32,7 @@ struct Trajectory <: AbstractTrajectory
     transitions::Vector{Transition}
 end
 
-struct ModelPrior
+struct ParametricModel
     m::Model
     map_l_param_dist::Dict{Vector{String},Distribution}
 end
@@ -105,11 +105,16 @@ LHA(A::LHA, map_var::Dict{String,Int}) = LHA(A.l_transitions, A.l_loc, A.Λ,
 Base.:*(m::ContinuousTimeModel, A::LHA) = SynchronizedModel(m, A)
 Base.:*(A::LHA, m::ContinuousTimeModel) = SynchronizedModel(m, A)
 
-function ModelPrior(m::Model, priors::Tuple{Vector{String},Distribution}...)
+function ParametricModel(m::Model, priors::Tuple{Vector{String},Distribution}...)
     map = Dict{Vector{String},Distribution}()
     for prior in priors
+        check_vars = true
+        for var in prior[1] 
+            check_vars = check_vars && var in keys(get_proba_model(m).map_param_idx)
+        end
+        @assert check_vars
         map[prior[1]] = prior[2]
     end
-    return ModelPrior(m, map)
+    return ParametricModel(m, map)
 end
 

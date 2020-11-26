@@ -1,7 +1,16 @@
 
 import Plots: plot, plot!, scatter!
-import Plots: palette, display, png, close
+import Plots: current, palette, display, png, close
 
+"""
+    `plot(σ, var...; plot_transitions=false)`
+
+Plot a simulated trajectory σ. var... is a tuple of stirng variables.
+`plot(σ)` will plot all the variables simulated in σ 
+whereas `plot(σ, "I", "R")` only plots the variables I and R of the trajectory (if it exists).
+If `plot_transitions=true`, a marker that corresponds to a transition of the model will be plotted
+at each break of the trajectory.
+"""
 function plot(σ::AbstractTrajectory, vars::String...; filename::String = "", plot_transitions = false)
     # Setup 
     palette_tr = palette(:default)

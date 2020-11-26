@@ -1,6 +1,10 @@
 
 get_module_path() = dirname(dirname(pathof(@__MODULE__)))
 
+function create_results_dir()
+    return "./"
+end
+
 function cosmos_get_values(name_file::String) 
     output_file = open(name_file)
     dict_values = Dict{String}{Float64}()

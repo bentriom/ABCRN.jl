@@ -286,16 +286,31 @@ function getproperty(m::ContinuousTimeModel, sym::Symbol)
 end
 get_proba_model(m::ContinuousTimeModel) = m
 get_proba_model(sm::SynchronizedModel) = sm.m
+get_observed_var(m::ContinuousTimeModel) = m.g
+get_observed_var(sm::SynchronizedModel) = (sm.m).g
 
 # Prior methods
-function draw!(Π::ModelPrior)
-    dict_dist = Π.map_l_param_dist
+function draw_model!(pm::ParametricModel)
+    dict_dist = pm.map_l_param_dist
     for l_name in keys(dict_dist)
         if length(l_name) == 1
-            set_param!(get_proba_model(Π.m), l_name[1], rand(dict_dist[l_name]))
+            set_param!(get_proba_model(pm.m), l_name[1], rand(dict_dist[l_name]))
         else
-            set_param!(get_proba_model(Π.m), l_name, rand(dict_dist[l_name]))
+            set_param!(get_proba_model(pm.m), l_name, rand(dict_dist[l_name]))
         end
     end
+end
+
+function dim_free_param(pm::ParametricModel)
+    return 1
+end
+
+function draw!(vec_p::Vector{Float64}, pm::ParametricModel)
+end
+
+function draw!(mat_p::Matrix{Float64}, pm::ParametricModel)
+end
+
+function prior_density!(wl::Vector{Float64}, mat_p::Matrix{Float64}, pm::ParametricModel)
 end
 

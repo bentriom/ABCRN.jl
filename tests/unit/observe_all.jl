@@ -7,5 +7,5 @@ load_model("SIR")
 observe_all!(ER)
 observe_all!(SIR)
 
-return ER.g == ["E", "S", "ER", "P"] && SIR.g == ["S", "I", "R"]
+return (ER.g == ["E", "S", "ES", "P"] && SIR.g == ["S", "I", "R"])
 

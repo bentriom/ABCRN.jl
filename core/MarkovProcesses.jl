@@ -10,7 +10,7 @@ export Distribution, Product, Uniform, Normal
 
 # Common types and constructors
 export Observations, AbstractTrajectory, Trajectory, SynchronizedTrajectory
-export Model, ContinuousTimeModel, SynchronizedModel, ModelPrior
+export Model, ContinuousTimeModel, SynchronizedModel, ParametricModel
 export LHA, StateLHA, Edge
 
 # Trajectory related methods
@@ -25,12 +25,15 @@ export load_automaton, get_index, get_value, length_var, isaccepted
 
 # Model related methods
 export simulate, set_param!, get_param, set_observed_var!, observe_all!
-export set_time_bound!, getproperty, draw!
+export set_time_bound!, getproperty, draw!, draw_model!
 export isbounded, isaccepted, check_consistency
 export load_model, get_module_path
 
 # Utils
 export get_module_path, cosmos_get_values, load_plots
+
+# Algorithms
+export automaton_abc
 
 include("common.jl")
 
@@ -38,6 +41,7 @@ include("trajectory.jl")
 include("lha.jl")
 include("model.jl")
 include("utils.jl")
+include(get_module_path() * "/algorithms/automaton_abc.jl")
 
 end
 
