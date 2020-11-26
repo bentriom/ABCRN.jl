@@ -24,13 +24,13 @@ export init_state, next_state!, read_trajectory
 export load_automaton, get_index, get_value, length_var, isaccepted
 
 # Model related methods
-export simulate, set_param!, get_param, set_observed_var!
+export simulate, set_param!, get_param, set_observed_var!, observe_all!
 export set_time_bound!, getproperty, draw!
 export isbounded, isaccepted, check_consistency
 export load_model, get_module_path
 
 # Utils
-export get_module_path, cosmos_get_values
+export get_module_path, cosmos_get_values, load_plots
 
 include("common.jl")
 

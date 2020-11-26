@@ -15,3 +15,5 @@ function cosmos_get_values(name_file::String)
     return dict_values
 end
 
+load_plots() = include(get_module_path() * "/core/plots.jl")
+
