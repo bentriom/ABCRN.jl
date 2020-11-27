@@ -1,4 +1,7 @@
 
+import Distributions: Distribution, Univariate, Continuous, UnivariateDistribution, 
+                      MultivariateDistribution, product_distribution
+
 abstract type Model end 
 abstract type AbstractTrajectory end
 
@@ -30,11 +33,6 @@ struct Trajectory <: AbstractTrajectory
     values::Vector{Vector{Int}}
     times::Vector{Float64}
     transitions::Vector{Transition}
-end
-
-struct ParametricModel
-    m::Model
-    map_l_param_dist::Dict{Vector{String},Distribution}
 end
 
 struct Edge
@@ -76,6 +74,12 @@ struct SynchronizedTrajectory <: AbstractTrajectory
     transitions::Vector{Transition}
 end
 
+struct ParametricModel
+    m::Model
+    l_param::Vector{String}
+    dist::Distribution
+end
+
 # Constructors
 function ContinuousTimeModel(d::Int, k::Int, map_var_idx::Dict, map_param_idx::Dict, l_transitions::Vector{String}, 
               p::Vector{Float64}, x0::Vector{Int}, t0::Float64, 
@@ -105,16 +109,19 @@ LHA(A::LHA, map_var::Dict{String,Int}) = LHA(A.l_transitions, A.l_loc, A.Λ,
 Base.:*(m::ContinuousTimeModel, A::LHA) = SynchronizedModel(m, A)
 Base.:*(A::LHA, m::ContinuousTimeModel) = SynchronizedModel(m, A)
 
-function ParametricModel(m::Model, priors::Tuple{Vector{String},Distribution}...)
-    map = Dict{Vector{String},Distribution}()
+function ParametricModel(am::Model, priors::Tuple{String,UnivariateDistribution}...)
+    m = get_proba_model(am)
+    l_param = String[]
+    l_dist = Distribution{Univariate,Continuous}[]
     for prior in priors
         check_vars = true
-        for var in prior[1] 
-            check_vars = check_vars && var in keys(get_proba_model(m).map_param_idx)
-        end
-        @assert check_vars
-        map[prior[1]] = prior[2]
+        str_p = prior[1]
+        dist = prior[2]
+        @assert str_p in keys(m.map_param_idx)
+        push!(l_param, str_p)
+        push!(l_dist, dist) 
     end
-    return ParametricModel(m, map)
+    return ParametricModel(m, l_param, product_distribution(l_dist))
 end
+
 

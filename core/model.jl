@@ -1,4 +1,7 @@
 
+import Random: rand, rand!
+import Distributions: pdf
+
 load_model(name_model::String) = include(get_module_path() * "/models/" * name_model * ".jl")
 
 function _resize_trajectory!(values::Vector{Vector{Int}}, times::Vector{Float64}, 
@@ -29,7 +32,11 @@ end
 Simulates a model. If `m::SynchronizedModel`, the simulation is synchronized with a 
 Linear Hybrid Automaton.
 """
-function simulate(m::ContinuousTimeModel)
+function simulate(m::ContinuousTimeModel; p::Union{Nothing,Vector{Float64}} = nothing)
+    p_sim = m.p
+    if p != nothing
+        p_sim = p
+    end
     # First alloc
     full_values = Vector{Vector{Int}}(undef, m.d)
     for i = eachindex(full_values) full_values[i] = zeros(Int, m.estim_min_states) end
@@ -44,7 +51,7 @@ function simulate(m::ContinuousTimeModel)
     xn = m.x0 # View for type stability
     tn = m.t0 
     # at time n+1
-    isabsorbing::Bool = m.isabsorbing(m.p,xn)
+    isabsorbing::Bool = m.isabsorbing(p_sim,xn)
     # If x0 is absorbing
     if isabsorbing
         _resize_trajectory!(full_values, times, transitions, 1)
@@ -60,7 +67,7 @@ function simulate(m::ContinuousTimeModel)
     l_tr = Transition[nothing]
     # First we fill the allocated array
     for i = 2:m.estim_min_states
-        m.f!(vec_x, l_t, l_tr, xn, tn, m.p)
+        m.f!(vec_x, l_t, l_tr, xn, tn, p_sim)
         tn = l_t[1]
         if tn > m.time_bound
             break
@@ -68,7 +75,7 @@ function simulate(m::ContinuousTimeModel)
         n += 1
         xn = vec_x
         _update_values!(full_values, times, transitions, xn, tn, l_tr[1], i)
-        isabsorbing = m.isabsorbing(m.p,xn)
+        isabsorbing = m.isabsorbing(p_sim,xn)
         if isabsorbing 
             break
         end
@@ -90,7 +97,7 @@ function simulate(m::ContinuousTimeModel)
         i = 0
         while i < m.buffer_size
             i += 1
-            m.f!(vec_x, l_t, l_tr, xn, tn, m.p)
+            m.f!(vec_x, l_t, l_tr, xn, tn, p_sim)
             tn = l_t[1]
             if tn > m.time_bound
                 i -= 1
@@ -99,7 +106,7 @@ function simulate(m::ContinuousTimeModel)
             xn = vec_x
             _update_values!(full_values, times, transitions, 
                             xn, tn, l_tr[1], m.estim_min_states+size_tmp+i)
-            isabsorbing = m.isabsorbing(m.p,xn)
+            isabsorbing = m.isabsorbing(p_sim,xn)
             if isabsorbing 
                 break
             end
@@ -119,7 +126,11 @@ function simulate(m::ContinuousTimeModel)
     end
     return Trajectory(m, values, times, transitions)
 end
-function simulate(product::SynchronizedModel)
+function simulate(product::SynchronizedModel; p::Union{Nothing,Vector{Float64}} = nothing)
+    p_sim = m.p
+    if p != nothing
+        p_sim = p
+    end
     m = product.m
     A = product.automaton
     # First alloc
@@ -137,7 +148,7 @@ function simulate(product::SynchronizedModel)
     xn = m.x0 # View for type stability
     tn = m.t0 
     Sn = copy(S0)
-    isabsorbing::Bool = m.isabsorbing(m.p,xn)
+    isabsorbing::Bool = m.isabsorbing(p_sim,xn)
     isacceptedLHA::Bool = isaccepted(Sn)
     # If x0 is absorbing
     if isabsorbing || isacceptedLHA 
@@ -155,7 +166,7 @@ function simulate(product::SynchronizedModel)
     Snplus1 = copy(Sn)
     # First we fill the allocated array
     for i = 2:m.estim_min_states
-        m.f!(vec_x, l_t, l_tr, xn, tn, m.p)
+        m.f!(vec_x, l_t, l_tr, xn, tn, p_sim)
         tn = l_t[1]
         if tn > m.time_bound
             break
@@ -166,7 +177,7 @@ function simulate(product::SynchronizedModel)
         next_state!(Snplus1, A, xn, tn, tr_n, Sn)
         _update_values!(full_values, times, transitions, xn, tn, tr_n, i)
         Sn = Snplus1
-        isabsorbing = m.isabsorbing(m.p,xn)
+        isabsorbing = m.isabsorbing(p_sim,xn)
         isacceptedLHA = isaccepted(Snplus1)
         if isabsorbing || isacceptedLHA 
             break
@@ -189,7 +200,7 @@ function simulate(product::SynchronizedModel)
         i = 0
         while i < m.buffer_size
             i += 1
-            m.f!(vec_x, l_t, l_tr, xn, tn, m.p)
+            m.f!(vec_x, l_t, l_tr, xn, tn, p_sim)
             tn = l_t[1]
             if tn > m.time_bound
                 i -= 1
@@ -201,7 +212,7 @@ function simulate(product::SynchronizedModel)
             _update_values!(full_values, times, transitions, 
                             xn, tn, tr_n, m.estim_min_states+size_tmp+i)
             Sn = Snplus1
-            isabsorbing = m.isabsorbing(m.p,xn)
+            isabsorbing = m.isabsorbing(p_sim,xn)
             isacceptedLHA = isaccepted(Snplus1)
             if isabsorbing || isacceptedLHA
                 break
@@ -223,32 +234,7 @@ function simulate(product::SynchronizedModel)
     return SynchronizedTrajectory(Sn, product, values, times, transitions)
 end
 
-
 function simulate(m::ContinuousTimeModel, n::Int)
-end
-
-function set_observed_var!(m::Model, g::Vector{String})
-    dobs = length(g)
-    _map_obs_var_idx = Dict{String}{Int}()
-    _g_idx = zeros(Int, dobs)
-    for i = 1:dobs
-        _g_idx[i] = m.map_var_idx[g[i]] # = ( (g[i] = i-th obs var)::String => idx in state space )
-        _map_obs_var_idx[g[i]] = i
-    end
-    m.g = g
-    m._g_idx = _g_idx
-    m._map_obs_var_idx = _map_obs_var_idx
-end
-
-function observe_all!(m::Model)
-    g = Vector{String}(undef, m.d)
-    _g_idx = collect(1:m.d)
-    for var in keys(m.map_var_idx)
-        g[m.map_var_idx[var]] = var
-    end
-    m.g = g
-    m._g_idx = _g_idx
-    m._map_obs_var_idx = m.map_var_idx
 end
 
 isbounded(m::ContinuousTimeModel) = m.time_bound < Inf
@@ -263,19 +249,42 @@ function check_consistency(m::ContinuousTimeModel)
     return true
 end
 
+# Set and get Model fields
+function set_observed_var!(am::Model, g::Vector{String})
+    m = get_proba_model(am)
+    dobs = length(g)
+    _map_obs_var_idx = Dict{String}{Int}()
+    _g_idx = zeros(Int, dobs)
+    for i = 1:dobs
+        _g_idx[i] = m.map_var_idx[g[i]] # = ( (g[i] = i-th obs var)::String => idx in state space )
+        _map_obs_var_idx[g[i]] = i
+    end
+    m.g = g
+    m._g_idx = _g_idx
+    m._map_obs_var_idx = _map_obs_var_idx
+end
+function observe_all!(am::Model)
+    m = get_proba_model(am)
+    g = Vector{String}(undef, m.d)
+    _g_idx = collect(1:m.d)
+    for var in keys(m.map_var_idx)
+        g[m.map_var_idx[var]] = var
+    end
+    m.g = g
+    m._g_idx = _g_idx
+    m._map_obs_var_idx = m.map_var_idx
+end
 set_param!(m::ContinuousTimeModel, p::Vector{Float64}) = (m.p = p)
 set_param!(m::ContinuousTimeModel, name_p::String, p_i::Float64) = (m.p[m.map_param_idx[name_p]] = p_i)
 function set_param!(m::ContinuousTimeModel, l_name_p::Vector{String}, p::Vector{Float64}) 
-    nb_param = length(l_name_p)
-    for i = 1:nb_param
+    for i = eachindex(l_name_p)
         set_param!(m, l_name_p[i], p[i])
     end
 end
 
 get_param(m::ContinuousTimeModel) = m.p
 getindex(m::ContinuousTimeModel, name_p::String) = m.p[m.map_param_idx[name_p]]
-set_time_bound!(m::ContinuousTimeModel, b::Float64) = (m.time_bound = b)
-set_time_bound!(sm::SynchronizedModel, b::Float64) = set_time_bound!(sm.m, b)
+set_time_bound!(am::Model, b::Float64) = (get_proba_model(am).time_bound = b)
 
 function getproperty(m::ContinuousTimeModel, sym::Symbol)
     if sym == :dobs
@@ -284,33 +293,37 @@ function getproperty(m::ContinuousTimeModel, sym::Symbol)
         return getfield(m, sym)
     end
 end
+
+function getproperty(pm::ParametricModel, sym::Symbol)
+    if sym == :df
+        return length(pm.l_param)
+    else
+        return getfield(pm, sym)
+    end
+end
 get_proba_model(m::ContinuousTimeModel) = m
 get_proba_model(sm::SynchronizedModel) = sm.m
-get_observed_var(m::ContinuousTimeModel) = m.g
-get_observed_var(sm::SynchronizedModel) = (sm.m).g
+get_proba_model(pm::ParametricModel) = get_proba_model(pm.m)
+get_observed_var(m::Model) = get_proba_model(am).g
 
 # Prior methods
-function draw_model!(pm::ParametricModel)
-    dict_dist = pm.map_l_param_dist
-    for l_name in keys(dict_dist)
-        if length(l_name) == 1
-            set_param!(get_proba_model(pm.m), l_name[1], rand(dict_dist[l_name]))
-        else
-            set_param!(get_proba_model(pm.m), l_name, rand(dict_dist[l_name]))
-        end
+draw_model!(pm::ParametricModel) = set_param!(get_proba_model(pm), pm.l_param, rand(pm.dist))
+draw!(vec_p::AbstractVector{Float64}, pm::ParametricModel) = rand!(pm.dist, vec_p)
+function draw!(mat_p::Matrix{Float64}, pm::ParametricModel)
+    for i = 1:size(mat_p)[2]
+        draw!(view(mat_p, :, i), pm)
     end
 end
 
-function dim_free_param(pm::ParametricModel)
-    return 1
+prior_density(vec_p::AbstractVector{Float64}, pm::ParametricModel) = pdf(pm.dist, vec_p)
+function prior_density!(res_density::Vector{Float64}, mat_p::Matrix{Float64}, pm::ParametricModel)
+    for i = eachindex(res_density)
+        res_density[i] = prior_density(view(mat_p, :, i), pm)
+    end
 end
 
-function draw!(vec_p::Vector{Float64}, pm::ParametricModel)
-end
+function check_bounds() end
 
-function draw!(mat_p::Matrix{Float64}, pm::ParametricModel)
-end
-
-function prior_density!(wl::Vector{Float64}, mat_p::Matrix{Float64}, pm::ParametricModel)
-end
+# to do: simulate(pm), create_res_dir, check_bounds, ajouter un champ _param_idx pour pm.
+#
 
