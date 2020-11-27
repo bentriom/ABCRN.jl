@@ -19,5 +19,7 @@ function cosmos_get_values(name_file::String)
     return dict_values
 end
 
+load_model(name_model::String) = include(get_module_path() * "/models/" * name_model * ".jl")
+load_automaton(automaton::String) = include(get_module_path() * "/automata/$(automaton).jl")
 load_plots() = include(get_module_path() * "/core/plots.jl")
 

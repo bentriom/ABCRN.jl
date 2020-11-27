@@ -78,6 +78,7 @@ struct ParametricModel
     m::Model
     l_param::Vector{String}
     dist::Distribution
+    _param_idx::Vector{Int}
 end
 
 # Constructors
@@ -113,15 +114,25 @@ function ParametricModel(am::Model, priors::Tuple{String,UnivariateDistribution}
     m = get_proba_model(am)
     l_param = String[]
     l_dist = Distribution{Univariate,Continuous}[]
+    _param_idx = zeros(Int, 0)
     for prior in priors
         check_vars = true
         str_p = prior[1]
         dist = prior[2]
         @assert str_p in keys(m.map_param_idx)
         push!(l_param, str_p)
-        push!(l_dist, dist) 
+        push!(l_dist, dist)
+        push!(_param_idx, m.map_param_idx[str_p])
     end
-    return ParametricModel(m, l_param, product_distribution(l_dist))
+    return ParametricModel(am, l_param, product_distribution(l_dist), _param_idx)
 end
 
+function ParametricModel(am::Model, l_param::Vector{String}, dist::MultivariateDistribution)
+    m = get_proba_model(am)
+    _param_idx = zeros(Int, 0)
+    for str_p in l_param
+        push!(_param_idx, m.map_param_idx[str_p])
+    end
+    return ParametricModel(am, l_param, dist, _param_idx)
+end
 

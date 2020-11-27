@@ -12,5 +12,7 @@ if !isdir(str_dir_pics) mkdir(str_dir_pics) end
     @test include("simulation/sim_sir_row_buffer_bounded.jl")
     @test include("simulation/sim_er.jl")
     @test include("simulation/sim_er_row_buffer_bounded.jl")
+    @test include("simulation/sim_pm_er.jl")
+    @test include("simulation/sim_pm_sync_er.jl")
 end
 

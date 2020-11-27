@@ -1,8 +1,6 @@
 
 import Random: rand, rand!
-import Distributions: pdf
-
-load_model(name_model::String) = include(get_module_path() * "/models/" * name_model * ".jl")
+import Distributions: insupport, pdf
 
 function _resize_trajectory!(values::Vector{Vector{Int}}, times::Vector{Float64}, 
                              transitions::Vector{Transition}, size::Int)
@@ -32,7 +30,7 @@ end
 Simulates a model. If `m::SynchronizedModel`, the simulation is synchronized with a 
 Linear Hybrid Automaton.
 """
-function simulate(m::ContinuousTimeModel; p::Union{Nothing,Vector{Float64}} = nothing)
+function simulate(m::ContinuousTimeModel; p::Union{Nothing,AbstractVector{Float64}} = nothing)
     p_sim = m.p
     if p != nothing
         p_sim = p
@@ -126,13 +124,14 @@ function simulate(m::ContinuousTimeModel; p::Union{Nothing,Vector{Float64}} = no
     end
     return Trajectory(m, values, times, transitions)
 end
-function simulate(product::SynchronizedModel; p::Union{Nothing,Vector{Float64}} = nothing)
+
+function simulate(product::SynchronizedModel; p::Union{Nothing,AbstractVector{Float64}} = nothing)
+    m = product.m
+    A = product.automaton
     p_sim = m.p
     if p != nothing
         p_sim = p
     end
-    m = product.m
-    A = product.automaton
     # First alloc
     full_values = Vector{Vector{Int}}(undef, m.d)
     for i = eachindex(full_values) full_values[i] = zeros(Int, m.estim_min_states) end
@@ -234,10 +233,24 @@ function simulate(product::SynchronizedModel; p::Union{Nothing,Vector{Float64}} 
     return SynchronizedTrajectory(Sn, product, values, times, transitions)
 end
 
+"""
+    `simulate(pm::ParametricModel, p_prior::AbstractVector{Float64})
+
+Simulates the model contained in pm with p_prior values.
+It simulates the model by taking the parameters contained in get_proba_model(pm).p and
+replace the 1D parameters pm.l_param with p_prior.
+"""
+function simulate(pm::ParametricModel, p_prior::AbstractVector{Float64})
+    full_p = copy(get_proba_model(pm).p)
+    full_p[pm._param_idx] = p_prior
+    
+    return simulate(pm.m; p = full_p) 
+end
+
 function simulate(m::ContinuousTimeModel, n::Int)
 end
 
-isbounded(m::ContinuousTimeModel) = m.time_bound < Inf
+isbounded(m::Model) = get_proba_model(m).time_bound < Inf
 function check_consistency(m::ContinuousTimeModel) 
     @assert m.d == length(m.map_var_idx) 
     @assert m.k == length(m.map_param_idx)
@@ -293,7 +306,6 @@ function getproperty(m::ContinuousTimeModel, sym::Symbol)
         return getfield(m, sym)
     end
 end
-
 function getproperty(pm::ParametricModel, sym::Symbol)
     if sym == :df
         return length(pm.l_param)
@@ -301,28 +313,57 @@ function getproperty(pm::ParametricModel, sym::Symbol)
         return getfield(pm, sym)
     end
 end
+
 get_proba_model(m::ContinuousTimeModel) = m
 get_proba_model(sm::SynchronizedModel) = sm.m
 get_proba_model(pm::ParametricModel) = get_proba_model(pm.m)
+
 get_observed_var(m::Model) = get_proba_model(am).g
 
 # Prior methods
+"""
+    `draw_model!(pm::ParametricModel)`
+
+Draw a parameter from the prior disitribution defined in `pm::ParametricModel`
+and save it in the model contained in `pm`.
+"""
 draw_model!(pm::ParametricModel) = set_param!(get_proba_model(pm), pm.l_param, rand(pm.dist))
+"""
+    `draw!(vec_p, pm)`
+
+Draw a parameter from the prior distribution defined in pm and stores it in vec_p.
+"""
 draw!(vec_p::AbstractVector{Float64}, pm::ParametricModel) = rand!(pm.dist, vec_p)
+"""
+    `draw!(mat_p, pm)`
+
+Draw `size(mat_p)[2]` (number of columns of mat_p) parameters from the prior distribution 
+defined in pm and stores it in mat_p.
+"""
 function draw!(mat_p::Matrix{Float64}, pm::ParametricModel)
     for i = 1:size(mat_p)[2]
         draw!(view(mat_p, :, i), pm)
     end
 end
-
-prior_density(vec_p::AbstractVector{Float64}, pm::ParametricModel) = pdf(pm.dist, vec_p)
-function prior_density!(res_density::Vector{Float64}, mat_p::Matrix{Float64}, pm::ParametricModel)
-    for i = eachindex(res_density)
-        res_density[i] = prior_density(view(mat_p, :, i), pm)
+"""
+    `prior_pdf(p_prior, pm)`
+ 
+Computes the density of the prior distribution defined in pm on argument p_prior.
+"""
+prior_pdf(pm::ParametricModel, p_prior::AbstractVector{Float64}) = pdf(pm.dist, p_prior)
+"""
+    `prior_pdf(vec_res, mat_p, pm)`
+ 
+Computes the density of the prior distribution defined in pm on each column
+ov mat_p. Stores it in mat_p. (`length(vec_res) == size(mat_p)[2]`)
+"""
+function prior_pdf!(res_pdf::Vector{Float64}, pm::ParametricModel, mat_p::Matrix{Float64})
+    for i = eachindex(res_pdf)
+        res_pdf[i] = prior_pdf(pm, view(mat_p, :, i))
     end
 end
-
-function check_bounds() end
+fill!(pm::ParametricModel, p_prior::Vector{Float64}) = get_proba_model(pm).p[pm._param_idx] = p_prior
+insupport(pm::ParametricModel, p_prior::Vector{Float64}) = insupport(pm.dist, p_prior)
 
 # to do: simulate(pm), create_res_dir, check_bounds, ajouter un champ _param_idx pour pm.
 #

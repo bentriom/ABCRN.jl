@@ -1,7 +1,8 @@
 module MarkovProcesses
 
 import Base: +, -, *
-import Base: copy, getfield, getindex, lastindex, setindex!, getproperty, setproperty!
+import Base: copy, getfield, getindex, getproperty, lastindex
+import Base: setindex!, setproperty!, fill!
 
 import StaticArrays: SVector
 import Distributions: Distribution, Product, Uniform, Normal
@@ -21,27 +22,27 @@ export check_consistency, issteadystate, isaccepted
 
 # LHA related methods
 export init_state, next_state!, read_trajectory
-export load_automaton, get_index, get_value, length_var, isaccepted
+export get_index, get_value, length_var, isaccepted
 
 # Model related methods
-export simulate, set_param!, get_param, set_observed_var!, observe_all!
-export set_time_bound!, getproperty, draw!, draw_model!
+export simulate, set_param!, set_time_bound!, set_observed_var!, observe_all!
+export get_param, getproperty, get_proba_model, get_observed_var
 export isbounded, isaccepted, check_consistency
-export load_model, get_module_path
+export draw_model!, draw!, fill!, prior_pdf!, prior_pdf, insupport
 
 # Utils
-export get_module_path, cosmos_get_values, load_plots
+export get_module_path, cosmos_get_values
+export load_model, load_automaton, load_plots
 
 # Algorithms
 export automaton_abc
 
 include("common.jl")
-
 include("trajectory.jl")
 include("lha.jl")
 include("model.jl")
 include("utils.jl")
-include(get_module_path() * "/algorithms/automaton_abc.jl")
+include("../algorithms/automaton_abc.jl")
 
 end
 

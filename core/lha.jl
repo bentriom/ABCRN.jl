@@ -1,6 +1,4 @@
 
-load_automaton(automaton::String) = include(get_module_path() * "/automata/$(automaton).jl")
-
 length_var(A::LHA) = length(A.map_var_automaton_idx)
 get_value(A::LHA, x::Vector{Int}, var::String) = x[A.map_var_model_idx[var]]
 

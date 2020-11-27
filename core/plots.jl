@@ -22,7 +22,7 @@ function plot(σ::AbstractTrajectory, vars::String...; filename::String = "", pl
     end
     
     # Plots
-    p = plot(title = "Trajectory", palette = :lightrainbow)
+    p = plot(title = "Trajectory", palette = :lightrainbow, dpi = 480)
     for var in to_plot
         @assert var in get_obs_var(σ) 
         plot!(p, times(σ), σ[var], 
@@ -47,7 +47,6 @@ function plot(σ::AbstractTrajectory, vars::String...; filename::String = "", pl
         display(p)
     else
         png(p, filename)
-        close(p)
     end
 end
 

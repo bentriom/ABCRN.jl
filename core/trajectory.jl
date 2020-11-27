@@ -151,7 +151,7 @@ end
 
 function check_consistency(σ::AbstractTrajectory)
     test_length_var = true
-    for i = 1:(σ.m).dobs 
+    for i = 1:get_proba_model(σ.m).dobs 
         test_length_i = (length(σ.values[1]) == length(σ.values[i]))
         test_length_var = test_length_var && test_length_i 
     end
@@ -159,23 +159,23 @@ function check_consistency(σ::AbstractTrajectory)
                   (length(σ.times) == length(σ.values[1])) &&
                   test_length_var
             end
-    @assert length_obs_var(σ) == σ.m.dobs
+    @assert length_obs_var(σ) == get_proba_model(σ.m).dobs
     return true
 end
-issteadystate(σ::AbstractTrajectory) = (σ.m).isabsorbing((σ.m).p, view(reshape(σ[end], 1, m.d), 1, :))
+issteadystate(σ::AbstractTrajectory) = get_proba_model(σ.m).isabsorbing(get_proba_model(σ.m).p, view(reshape(σ[end], 1, m.d), 1, :))
 
 # Properties of the trajectory
 length_states(σ::AbstractTrajectory) = length(σ.times)
 length_obs_var(σ::AbstractTrajectory) = length(σ.values)
-get_obs_var(σ::AbstractTrajectory) = (σ.m).g
+get_obs_var(σ::AbstractTrajectory) = get_proba_model(σ.m).g
 isbounded(σ::AbstractTrajectory) = σ.transitions[end] == nothing && length_states(σ) >= 2
 isaccepted(σ::SynchronizedTrajectory) = isaccepted(σ.S)
 
 # Access to trajectory values
-get_var_values(σ::AbstractTrajectory, var::String) = σ.values[(σ.m)._map_obs_var_idx[var]]
+get_var_values(σ::AbstractTrajectory, var::String) = σ.values[get_proba_model(σ.m)._map_obs_var_idx[var]]
 get_state(σ::AbstractTrajectory, idx::Int) = [σ.values[i][idx] for i = 1:length(σ.values)] # /!\ Creates an array
 get_value(σ::AbstractTrajectory, var::String, idx::Int) = get_var_values(σ, var)[idx]
-# Operation @
+# Operation σ@t
 function get_state_from_time(σ::AbstractTrajectory, t::Float64)
     @assert t >= 0.0
     l_t = times(σ)

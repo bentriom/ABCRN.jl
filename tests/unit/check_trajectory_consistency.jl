@@ -3,13 +3,14 @@ using MarkovProcesses
 
 load_model("SIR")
 load_model("ER")
+load_automaton("automaton_F")
 
 test_all = true
 nb_sim = 1000
 
 function show_traj(io::IO, σ::AbstractTrajectory, m::Model)
     println(io, "length(σ.values[1]), length(σ.times), length(σ.transitions)")
-    println(io, "$(length(σ.values[1])), l$(length(σ.times)), $(length(σ.transitions))")
+    println(io, "$(length(σ.values[1])), $(length(σ.times)), $(length(σ.transitions))")
     println(io, "isbounded(m), isbounded(σ)")
     println(io, "$(isbounded(m)), $(isbounded(σ))")
     println(io, σ.values)
@@ -30,15 +31,41 @@ for i = 1:nb_sim
         global test_all = test_all && check_consistency(σ) && check_consistency(σ2) &&
                           !isbounded(σ) && !isbounded(σ2)
     catch err
-        show_traj(stdout,σ, SIR)
-        show_traj(stdout,σ2, ER)
+        show_traj(stdout, σ, SIR)
+        show_traj(stdout, σ2, ER)
         global σ_dump = σ
         global σ2_dump = σ2
         throw(err)
     end
     if !test_all
-        show_traj(stdout,σ, SIR)
-        show_traj(stdout,σ2, ER)
+        show_traj(stdout, σ, SIR)
+        show_traj(stdout, σ2, ER)
+        global σ_dump = σ
+        global σ2_dump = σ2
+        error("Ouch")
+    end
+end
+
+new_SIR = deepcopy(SIR)
+sync_SIR = new_SIR * create_automaton_F(new_SIR, 0.0, Inf, 100.0, 110.0, "I")
+new_ER = deepcopy(ER)
+sync_ER = new_ER * create_automaton_F(new_ER, 0.0, 100.0, 4.0, 5.0, "P")
+for i = 1:nb_sim
+    local σ = simulate(sync_SIR)
+    local σ2 = simulate(sync_ER)
+    try
+        global test_all = test_all && check_consistency(σ) && check_consistency(σ2) &&
+                          !isbounded(σ) && !isbounded(σ2)
+    catch err
+        show_traj(stdout, σ, sync_SIR)
+        show_traj(stdout, σ2, sync_ER)
+        global σ_dump = σ
+        global σ2_dump = σ2
+        throw(err)
+    end
+    if !test_all
+        show_traj(stdout, σ, sync_SIR)
+        show_traj(stdout, σ2, sync_ER)
         global σ_dump = σ
         global σ2_dump = σ2
         error("Ouch")
