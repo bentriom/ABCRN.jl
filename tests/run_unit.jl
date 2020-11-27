@@ -11,8 +11,10 @@ using Test
     @test include("unit/create_automata.jl")
     @test include("unit/create_models.jl")
     
+    @test include("unit/density_pm.jl")
     @test include("unit/dist_lp.jl")
     @test include("unit/dist_lp_var.jl")
+    @test include("unit/draw_pm.jl")
     
     @test include("unit/getindex_access_trajectory.jl")
     @test include("unit/is_always_bounded_sir.jl")
