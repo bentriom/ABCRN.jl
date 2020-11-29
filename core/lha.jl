@@ -33,9 +33,44 @@ function init_state(A::LHA, x0::Vector{Int}, t0::Float64)
     return S0
 end
 
+function _find_edge_candidates!(edge_candidates::Vector{Edge}, current_loc::Location, 
+                                A::LHA, Snplus1::StateLHA)
+     
+    for loc in A.l_loc
+        tuple_edges = (current_loc, loc)
+        if haskey(A.map_edges, tuple_edges)
+            for edge in A.map_edges[tuple_edges]
+                if edge.check_constraints(A, Snplus1)
+                    push!(edge_candidates, edge)
+                end
+            end
+        end
+    end
+end
+
+function _get_edge_index(edge_candidates::Vector{Edge}, first_round::Bool, 
+                         detected_event::Bool, tr_nplus1::Transition)
+    ind_edge = 0
+    bool_event = detected_event
+    for i in eachindex(edge_candidates)
+        edge = edge_candidates[i]
+        if edge.transitions[1] == nothing
+            return (i, bool_event)
+        end
+        if first_round || !detected_event
+            if (length(edge.transitions) == 1 && tr_nplus1 != nothing && edge.transitions[1] == "ALL") || 
+                (tr_nplus1 in edge.transitions)
+                ind_edge = i
+                bool_event = true
+            end
+        end
+    end
+    return (ind_edge, bool_event)
+end
+
 function next_state!(Snplus1::StateLHA, A::LHA, 
                     xnplus1::Vector{Int}, tnplus1::Float64, tr_nplus1::Transition, 
-                    Sn::StateLHA; verbose = false)
+                    Sn::StateLHA; verbose::Bool = false)
     for i in eachindex(Snplus1.l_var)
         Snplus1.l_var[i] += (A.l_flow[Sn.loc])[i]*(tnplus1 - Sn.time) 
     end
@@ -43,61 +78,34 @@ function next_state!(Snplus1::StateLHA, A::LHA,
 
     # En fait d'apres observation de Cosmos, après qu'on ait lu la transition on devrait stop.
     edge_candidates = Edge[]
-    tuple_candidates = Tuple{Location, Location}[]
-    first_round = true
-    detected_event = (tr_nplus1 == nothing) ? true : false
+    first_round::Bool = true
+    detected_event::Bool = (tr_nplus1 == nothing) ? true : false
     turns = 1
     while first_round || !detected_event || length(edge_candidates) > 0
-        edge_candidates = Edge[]
-        tuple_candidates = Tuple{Location,Location}[]
+        edge_candidates = empty!(edge_candidates)
         current_loc = Snplus1.loc
-        if verbose
-            @show turns
-        end
+        if verbose @show turns end
         # Save all edges that satisfies transition predicate (synchronous or autonomous)
-        for loc in A.l_loc
-            tuple_edges = (current_loc, loc)
-            if haskey(A.map_edges, tuple_edges)
-                for edge in A.map_edges[tuple_edges]
-                    if edge.check_constraints(A, Snplus1)
-                        push!(edge_candidates, edge)
-                        push!(tuple_candidates, tuple_edges)
-                    end
-                end
-            end
-        end
+        _find_edge_candidates!(edge_candidates, current_loc, A, Snplus1)
         # Search the one we must chose
-        ind_edge = 0
-        for (i, edge) in enumerate(edge_candidates)
-            if edge.transitions[1] == nothing
-                ind_edge = i
-                break
-            end
-            if first_round || !detected_event
-                if (length(edge.transitions) == 1 && tr_nplus1 != nothing && edge.transitions[1] == "ALL") || 
-                    (tr_nplus1 in edge.transitions)
-                    detected_event = true
-                    ind_edge = i
-                end
-            end
-        end
+        ind_edge, detected_event = _get_edge_index(edge_candidates, first_round, detected_event, tr_nplus1)
         # Update the state with the chosen one (if it exists)
         if ind_edge > 0
             edge_candidates[ind_edge].update_state!(A, Snplus1, xnplus1)
             # Should add something like if edges_candidates[ind_edge].transition != nohting break end ??
         end
+        if ind_edge == 0 break end
         if verbose
-            @show first_round, detected_event
-            @show tnplus1, tr_nplus1, xnplus1
+            @show first_round detected_event
+            @show tnplus1 tr_nplus1 xnplus1
             @show ind_edge
             @show edge_candidates
             @show tuple_candidates
             @show Snplus1
         end
-        if ind_edge == 0 break end
         # For debug
-        if turns > 10
-            println("Turns, Bad behavior of region2 automaton")
+        if turns > 100
+            println("Number of turns in next_state! is suspicious")
             @show first_round, detected_event
             @show length(edge_candidates)
             @show tnplus1, tr_nplus1, xnplus1
@@ -105,14 +113,14 @@ function next_state!(Snplus1::StateLHA, A::LHA,
             for edge in edge_candidates
                 @show edge.check_constraints(A, Snplus1)
             end
-            error("Unpredicted behavior automaton F v2")
+            error("Unpredicted behavior automaton")
         end
         turns += 1
         first_round = false
     end
 end
 
-# For debug purposes
+# For tests purposes
 function read_trajectory(A::LHA, σ::Trajectory; verbose = false)
     A_new = LHA(A, (σ.m)._map_obs_var_idx)
     l_t = times(σ)

@@ -46,7 +46,7 @@ function simulate(m::ContinuousTimeModel; p::Union{Nothing,AbstractVector{Float6
     transitions[1] = nothing
     # Values at time n
     n = 1
-    xn = m.x0 # View for type stability
+    xn = m.x0 
     tn = m.t0 
     # at time n+1
     isabsorbing::Bool = m.isabsorbing(p_sim,xn)
@@ -144,7 +144,7 @@ function simulate(product::SynchronizedModel; p::Union{Nothing,AbstractVector{Fl
     S0 = init_state(A, m.x0, m.t0)
     # Values at time n
     n = 1
-    xn = m.x0 # View for type stability
+    xn = m.x0 
     tn = m.t0 
     Sn = copy(S0)
     isabsorbing::Bool = m.isabsorbing(p_sim,xn)
