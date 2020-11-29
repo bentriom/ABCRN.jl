@@ -5,6 +5,7 @@ import Base: copy, getfield, getindex, getproperty, lastindex
 import Base: setindex!, setproperty!, fill!
 
 import StaticArrays: SVector
+import Distributed: @everywhere
 import Distributions: Distribution, Product, Uniform, Normal
 
 export Distribution, Product, Uniform, Normal

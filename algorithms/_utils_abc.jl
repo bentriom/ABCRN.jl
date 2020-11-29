@@ -1,16 +1,10 @@
 
-import StatsBase: cov, ProbabilityWeights
-import Statistics: quantile
-import NearestNeighbors: knn, KDTree
-import Distributions: MvNormal, Categorical
-import Random: rand!
-
-function _init_abc_automaton!(old_mat_p::Matrix{Float64}, vec_dist::Vector{Float64}, 
+function _init_abc_automaton!(mat_p_old::Matrix{Float64}, vec_dist::Vector{Float64}, 
                               pm::ParametricModel, str_var_aut::String)
     vec_p = zeros(pm.df)
     for i = eachindex(vec_dist)
         draw!(vec_p, pm)
-        old_mat_p[:,i] = vec_p
+        mat_p_old[:,i] = vec_p
         σ = simulate(pm, vec_p)
         vec_dist[i] = σ.S[str_var_aut]
     end
@@ -39,16 +33,35 @@ function _compute_epsilon(vec_dist::Vector{Float64}, α::Float64,
     epsilon = (epsilon < last_eps) ? last_eps : epsilon
 end
 
+function _task_worker!(d_mat_p::DArray{Float64,2}, d_vec_dist::DArray{Float64,1},
+                       d_wl_current::DArray{Float64,1},
+                       pm::ParametricModel, epsilon::Float64,
+                       wl_old::Vector{Float64}, mat_p_old::Matrix{Float64},
+                       mat_cov::Matrix{Float64}, tree_mat_p::Union{Nothing,KDTree}, 
+                       kernel_type::String, str_var_aut::String)
+    mat_p = localpart(d_mat_p)
+    vec_dist = localpart(d_vec_dist)
+    wl_current = localpart(d_wl_current)
+    l_nbr_sim = zeros(Int, length(vec_dist))
+    Threads.@threads for i = eachindex(vec_dist)
+        _update_param!(mat_p, vec_dist, l_nbr_sim, wl_current, i, pm, epsilon,
+                       wl_old, mat_p_old, mat_cov, tree_mat_p, kernel_type, str_var_aut)
+    end
+    return sum(l_nbr_sim)
+end
+
 function _draw_param_kernel!(vec_p_prime::Vector{Float64}, 
-                             vec_p_star::SubArray{Float64,1}, old_mat_p::Matrix{Float64}, wl_old::Vector{Float64},
-                             mat_cov::Matrix{Float64}, tree_mat_p::Union{KDTree,Nothing}, kernel_type::String)
+                                         vec_p_star::SubArray{Float64,1}, 
+                                         mat_p_old::Matrix{Float64}, wl_old::Vector{Float64},
+                                         mat_cov::Matrix{Float64}, 
+                                         tree_mat_p::Union{KDTree,Nothing}, kernel_type::String)
     if kernel_type == "mvnormal"
         d_mvnormal = MvNormal(vec_p_star, mat_cov)
         rand!(d_mvnormal, vec_p_prime)
     elseif kernel_type == "knn_mvnormal"
-        k = Int(round(0.25 * size(old_mat_p)[2]))
+        k = Int(round(0.25 * size(mat_p_old)[2]))
         idxs, dist = knn(tree_mat_p, vec_p_star, k, true)
-        knn_mat_cov = 2 * cov(old_mat_p[:,idxs], ProbabilityWeights(wl_old[idxs]), 2; corrected=false)
+        knn_mat_cov = 2 * cov(mat_p_old[:,idxs], ProbabilityWeights(wl_old[idxs]), 2; corrected=false)
         d_knn_mvnormal = Distributions.MvNormal(vec_p_star, knn_mat_cov)
         rand!(d_knn_mvnormal, vec_p_prime)
         return knn_mat_cov
@@ -58,19 +71,20 @@ function _draw_param_kernel!(vec_p_prime::Vector{Float64},
 end
 
 function _update_param!(mat_p::Matrix{Float64}, vec_dist::Vector{Float64}, 
-                       l_nbr_sim::Vector{Int}, wl_current::Vector{Float64}, idx::Int,
-                       pm::ParametricModel, epsilon::Float64,
-                       wl_old::Vector{Float64}, old_mat_p::Matrix{Float64},
-                       mat_cov::Matrix{Float64}, tree_mat_p::Union{Nothing,KDTree}, 
-                       kernel_type::String, str_var_aut::String)
+                                    l_nbr_sim::Vector{Int}, wl_current::Vector{Float64}, 
+                                    idx::Int,
+                                    pm::ParametricModel, epsilon::Float64,
+                                    wl_old::Vector{Float64}, mat_p_old::Matrix{Float64},
+                                    mat_cov::Matrix{Float64}, tree_mat_p::Union{Nothing,KDTree}, 
+                                    kernel_type::String, str_var_aut::String)
     d_weights = Categorical(wl_old)
     dist_sim = Inf
     nbr_sim = 0
     vec_p_prime = zeros(pm.df)
     while dist_sim > epsilon
         ind_p_star = rand(d_weights)
-        vec_p_star = view(old_mat_p, :, ind_p_star)
-        knn_mat_cov = _draw_param_kernel!(vec_p_prime, vec_p_star, old_mat_p, wl_old, mat_cov, tree_mat_p, kernel_type)
+        vec_p_star = view(mat_p_old, :, ind_p_star)
+        knn_mat_cov = _draw_param_kernel!(vec_p_prime, vec_p_star, mat_p_old, wl_old, mat_cov, tree_mat_p, kernel_type)
         if !insupport(pm, vec_p_prime)
             continue
         end
@@ -90,24 +104,23 @@ function _update_param!(mat_p::Matrix{Float64}, vec_dist::Vector{Float64},
     mat_p[:,idx] = vec_p_prime
     vec_dist[idx] = dist_sim
     l_nbr_sim[idx] = nbr_sim
-    _update_weight!(wl_current, idx, pm, wl_old, old_mat_p, vec_p_prime, mat_cov_kernel, kernel_type)
+    _update_weight!(wl_current, idx, pm, wl_old, mat_p_old, vec_p_prime, mat_cov_kernel, kernel_type)
 end
 
 function _update_weight!(wl_current::Vector{Float64}, idx::Int,
-                         pm::ParametricModel,
-                         wl_old::Vector{Float64}, old_mat_p::Matrix{Float64}, 
-                         vec_p_prime::Vector{Float64},
-                         mat_cov_kernel::Matrix{Float64}, 
-                         kernel_type::String) 
+                                     pm::ParametricModel,
+                                     wl_old::Vector{Float64}, mat_p_old::Matrix{Float64}, 
+                                     vec_p_prime::Vector{Float64},
+                                     mat_cov_kernel::Matrix{Float64}, kernel_type::String) 
     denom = 0.0
     for j in 1:length(wl_old)
-        #denom += wl_old[j] * Distributions.pdf(d_normal, inv_sqrt_mat_cov * (vec_p_current - old_mat_p[:,j]))::Float64 
-        denom += wl_old[j] * pdf(MvNormal(old_mat_p[:,j], mat_cov_kernel), vec_p_prime)::Float64 
+        #denom += wl_old[j] * Distributions.pdf(d_normal, inv_sqrt_mat_cov * (vec_p_current - mat_p_old[:,j]))::Float64 
+        denom += wl_old[j] * pdf(MvNormal(mat_p_old[:,j], mat_cov_kernel), vec_p_prime)::Float64 
     end
     wl_current[idx] = prior_pdf(pm, vec_p_prime) / denom 
 end
 
-function effective_sample_size(wl::Vector{Float64})
+function effective_sample_size(wl::AbstractVector{Float64})
     n_eff = 0.0
     wls = sum(wl)
     if wls > 0.0

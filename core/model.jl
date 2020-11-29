@@ -340,7 +340,7 @@ draw!(vec_p::AbstractVector{Float64}, pm::ParametricModel) = rand!(pm.dist, vec_
 Draw `size(mat_p)[2]` (number of columns of mat_p) parameters from the prior distribution 
 defined in pm and stores it in mat_p.
 """
-function draw!(mat_p::Matrix{Float64}, pm::ParametricModel)
+function draw!(mat_p::AbstractMatrix{Float64}, pm::ParametricModel)
     for i = 1:size(mat_p)[2]
         draw!(view(mat_p, :, i), pm)
     end
@@ -357,13 +357,13 @@ prior_pdf(pm::ParametricModel, p_prior::AbstractVector{Float64}) = pdf(pm.dist, 
 Computes the density of the prior distribution defined in pm on each column
 ov mat_p. Stores it in mat_p. (`length(vec_res) == size(mat_p)[2]`)
 """
-function prior_pdf!(res_pdf::Vector{Float64}, pm::ParametricModel, mat_p::Matrix{Float64})
+function prior_pdf!(res_pdf::AbstractVector{Float64}, pm::ParametricModel, mat_p::AbstractMatrix{Float64})
     for i = eachindex(res_pdf)
         res_pdf[i] = prior_pdf(pm, view(mat_p, :, i))
     end
 end
-fill!(pm::ParametricModel, p_prior::Vector{Float64}) = get_proba_model(pm).p[pm._param_idx] = p_prior
-insupport(pm::ParametricModel, p_prior::Vector{Float64}) = insupport(pm.dist, p_prior)
+fill!(pm::ParametricModel, p_prior::AbstractVector{Float64}) = get_proba_model(pm).p[pm._param_idx] = p_prior
+insupport(pm::ParametricModel, p_prior::AbstractVector{Float64}) = insupport(pm.dist, p_prior)
 
 # to do: simulate(pm), create_res_dir, check_bounds, ajouter un champ _param_idx pour pm.
 #
