@@ -1,5 +1,5 @@
 
-import Plots: plot, plot!, scatter!
+import Plots: plot, plot!, scatter!, Shape
 import Plots: current, palette, display, png, close
 
 """
@@ -50,5 +50,11 @@ function plot(σ::AbstractTrajectory, vars::String...; filename::String = "", pl
     end
 end
 
-export plot
+function plot!(A::LHA)
+    x1, x2, t1, t2 = A.l_ctes["x1"], A.l_ctes["x2"], A.l_ctes["t1"], A.l_ctes["t2"] 
+    rectangle(w, h, x, y) = Shape(x .+ [0,w,w,0], y .+ [0,0,h,h])
+    plot!(rectangle(t2, x2, t1, x1), opacity = 0.5)
+end
+
+export plot, plot!
 

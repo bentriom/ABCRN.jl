@@ -162,7 +162,6 @@ function check_consistency(σ::AbstractTrajectory)
     @assert length_obs_var(σ) == get_proba_model(σ.m).dobs
     return true
 end
-issteadystate(σ::AbstractTrajectory) = get_proba_model(σ.m).isabsorbing(get_proba_model(σ.m).p, view(reshape(σ[end], 1, m.d), 1, :))
 
 # Properties of the trajectory
 length_states(σ::AbstractTrajectory) = length(σ.times)
@@ -170,6 +169,7 @@ length_obs_var(σ::AbstractTrajectory) = length(σ.values)
 get_obs_var(σ::AbstractTrajectory) = get_proba_model(σ.m).g
 isbounded(σ::AbstractTrajectory) = σ.transitions[end] == nothing && length_states(σ) >= 2
 isaccepted(σ::SynchronizedTrajectory) = isaccepted(σ.S)
+issteadystate(σ::AbstractTrajectory) = @warn "Unimplemented"
 
 # Access to trajectory values
 get_var_values(σ::AbstractTrajectory, var::String) = σ.values[get_proba_model(σ.m)._map_obs_var_idx[var]]

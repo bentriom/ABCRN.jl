@@ -27,6 +27,7 @@ using Test
     @test include("unit/long_sim_er.jl")
     
     @test include("unit/model_prior.jl")
+    @test include("unit/models_exps_er_1d.jl")
     @test include("unit/observe_all.jl")
     
     

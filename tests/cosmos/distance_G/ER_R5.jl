@@ -1,26 +1,25 @@
 
-using MarkovProcesses
-absolute_path = get_module_path() * "/tests/cosmos/"
-
-# Remarque: la valeur estimée par Cosmos varie plus que de 0.01
-
-# Values x1, x2  t1, t2
-str_model = "ER"
-load_model(str_model)
-model = ER
-ER.buffer_size = 100
-load_automaton("automaton_G")
+@everywhere begin 
+    using MarkovProcesses
+    absolute_path = get_module_path() * "/tests/cosmos/"
+    # Values x1, x2  t1, t2
+    str_model = "ER"
+    load_model(str_model)
+    model = ER
+    observe_all!(ER)
+    ER.buffer_size = 100
+    load_automaton("automaton_G")
+    width = 0.5
+    level = 0.95
+    x1, x2, t1, t2 = 50.0, 100.0, 0.0, 0.8
+    A_G = create_automaton_G(model, x1, x2, t1, t2, "E")  
+    l_k1 = 0.0:0.5:1.5
+    #l_k1 = 0.2:0.2
+    l_k2 = 0:40:100
+    #l_k2 = 40:40
+end
 
 test_all = true
-width = 0.1
-level = 0.95
-x1, x2, t1, t2 = 50.0, 100.0, 0.0, 0.8
-A_G = create_automaton_G(model, x1, x2, t1, t2, "P")  
-
-l_k1 = 0.0:0.2:1.4
-l_k1 = 0.2:0.2
-l_k2 = 0:20:100
-l_k2 = 40:40
 nb_k1 = length(l_k1)
 nb_k2 = length(l_k2)
 mat_dist_cosmos = zeros(nb_k1,nb_k2)
@@ -34,11 +33,10 @@ for i = 1:nb_k1
         k2 = l_k2[j]
         command = `Cosmos $(absolute_path * "models/" * str_model * ".gspn") 
         $(absolute_path * "distance_G/dist_G_"  * str_model * ".lha") --njob $(ENV["JULIA_NUM_THREADS"]) 
-        --const k_1=$(k1),k2=$(k2),x1=$x1,x2=$x2,t1=$t1,t2=$t2 
+        --const k_1=$(k1),k_2=$(k2),x1=$x1,x2=$x2,t1=$t1,t2=$t2 
         --level $(level) --width $(width) 
-        --verbose 2` 
-        #run(pipeline(command, stderr=devnull))
-        @timev run(pipeline(command))
+        --verbose 0` 
+        run(pipeline(command, stderr=devnull))
         dict_values = cosmos_get_values("Result_dist_G_$(str_model).res")
         mat_dist_cosmos[i,j] = dict_values["Estimated value"]
         nb_sim = dict_values["Total paths"]
@@ -48,18 +46,17 @@ for i = 1:nb_k1
         set_param!(ER, "k1", convert(Float64, k1))
         set_param!(ER, "k2", convert(Float64, k2))
         sync_ER = ER*A_G
-        mat_dist_ij_threads = zeros(Threads.nthreads()) 
-        @timev Threads.@threads for j = 1:nb_sim
-            σ = simulate(sync_ER)
-            mat_dist_ij_threads[Threads.threadid()] += (σ.S)["d"]
+        mat_dist_pkg[i,j] = distribute_mean_value_lha(sync_ER, "d", nb_sim)
+        test = isapprox(mat_dist_cosmos[i,j], mat_dist_pkg[i,j]; atol = width*1.01)
+        if !test
+            @info "Distances too different" (k1,k2) mat_dist_pkg[i,j] mat_dist_cosmos[i,j]
         end
-        mat_dist_pkg[i,j] = sum(mat_dist_ij_threads) / nb_sim
-        global test_all = test_all && isapprox(mat_dist_cosmos[i,j], mat_dist_pkg[i,j]; atol = width)
+        global test_all = test_all && test 
     end
 end
 
-@show mat_dist_pkg
-@show mat_dist_cosmos
+@info mat_dist_pkg
+@info mat_dist_cosmos
 
 rm("Result_dist_G_$(str_model).res")
 rm("Result.res")

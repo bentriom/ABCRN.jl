@@ -16,100 +16,183 @@ function create_automaton_G(m::ContinuousTimeModel, x1::Float64, x2::Float64, t1
 
     ## Map of automaton variables
     map_var_automaton_idx = Dict{VariableAutomaton,Int}("t'" => 1, "in" => 2,
-                                                         "n" => 3,  "d" => 4)
+                                                         "n" => 3,  "d" => 4, "isabs" => 5)
 
     ## Flow of variables
-    l_flow = Dict{VariableAutomaton,Vector{Float64}}("l0" => [0.0,0.0,0.0,0.0], 
-                                                     "l1" => [0.0,0.0,0.0,0.0], 
-                                                     "l2" => [0.0,0.0,0.0,0.0], 
-                                                     "l3" => [0.0,0.0,0.0,0.0], 
-                                                     "l4" => [1.0,0.0,0.0,0.0])
+    l_flow = Dict{VariableAutomaton,Vector{Float64}}("l0" => [0.0,0.0,0.0,0.0,0.0], 
+                                                     "l1" => [0.0,0.0,0.0,0.0,0.0], 
+                                                     "l2" => [0.0,0.0,0.0,0.0,0.0], 
+                                                     "l3" => [0.0,0.0,0.0,0.0,0.0], 
+                                                     "l4" => [1.0,0.0,0.0,0.0,0.0])
 
     ## Edges
     map_edges = Dict{Tuple{Location,Location}, Vector{Edge}}()
 
-    isin(val::Float64) = convert(Bool, val)
+    istrue(val::Float64) = convert(Bool, val)
 
     # l0 loc
     tuple = ("l0", "l1")
     cc_aut_G_l0l1_1(A::LHA, S::StateLHA) = true
-    us_aut_G_l0l1_1!(A::LHA, S::StateLHA, x::Vector{Int}) = (S.loc = "l1"; S["d"] = 0; S["n"] = get_value(A, x, str_obs); S["in"] = true)
+    us_aut_G_l0l1_1!(A::LHA, S::StateLHA, x::Vector{Int}) = 
+    (S.loc = "l1"; S["d"] = 0; S["n"] = get_value(A, x, str_obs); S["in"] = true; S["isabs"] = m.isabsorbing(m.p,x))
     edge1 = Edge([nothing], cc_aut_G_l0l1_1, us_aut_G_l0l1_1!)
     map_edges[tuple] = [edge1]
 
     # l1 loc
     tuple = ("l1", "l3")
     cc_aut_G_l1l3_1(A::LHA, S::StateLHA) = 
-        (S.time < A.l_ctes["t1"] && (S["n"] < A.l_ctes["x1"] || S["n"] > A.l_ctes["x2"]))
+        (S.time < A.l_ctes["t1"] && 
+         (S["n"] < A.l_ctes["x1"] || S["n"] > A.l_ctes["x2"]))
     us_aut_G_l1l3_1!(A::LHA, S::StateLHA, x::Vector{Int}) = 
-        (S.loc = "l3"; S["d"] = min(abs(A.l_ctes["x1"] - S["n"]), abs(A.l_ctes["x2"] - S["n"])); S["in"] = false)
+        (S.loc = "l3"; 
+         S["d"] = min(abs(A.l_ctes["x1"] - S["n"]), abs(A.l_ctes["x2"] - S["n"])); 
+         S["in"] = false)
     edge1 = Edge([nothing], cc_aut_G_l1l3_1, us_aut_G_l1l3_1!)
-    cc_aut_G_l1l3_2(A::LHA, S::StateLHA) = 
-        (S.time < A.l_ctes["t1"] && (A.l_ctes["x1"] <= S["n"] <= A.l_ctes["x2"]))
-    us_aut_G_l1l3_2!(A::LHA, S::StateLHA, x::Vector{Int}) = 
-        (S.loc = "l3"; S["d"] = 0; S["in"] = false)
-    edge2 = Edge([nothing], cc_aut_G_l1l3_2, us_aut_G_l1l3_2!)
+
     cc_aut_G_l1l3_3(A::LHA, S::StateLHA) = 
-        (!isin(S["in"]) && (A.l_ctes["t1"] <= S.time <= A.l_ctes["t2"]) && (A.l_ctes["x1"] <= S["n"] <= A.l_ctes["x2"]))
-    us_aut_G_l1l3_3!(A::LHA, S::StateLHA, x::Vector{Int}) = (S.loc = "l3"; S["d"] = S["d"] * (S.time - A.l_ctes["t1"]); S["t'"] = 0.0)
+         !istrue(S["in"]) && 
+         (A.l_ctes["t1"] <= S.time <= A.l_ctes["t2"]) && 
+         (A.l_ctes["x1"] <= S["n"] <= A.l_ctes["x2"])
+    us_aut_G_l1l3_3!(A::LHA, S::StateLHA, x::Vector{Int}) = 
+        (S.loc = "l3"; 
+         S["d"] = S["d"] * (S.time - A.l_ctes["t1"]); 
+         S["t'"] = 0.0)
     edge3 = Edge([nothing], cc_aut_G_l1l3_3, us_aut_G_l1l3_3!)
+   
+    cc_aut_G_l1l3_2(A::LHA, S::StateLHA) = 
+        (S.time <= A.l_ctes["t1"]) && 
+        (A.l_ctes["x1"] <= S["n"] <= A.l_ctes["x2"])
+    us_aut_G_l1l3_2!(A::LHA, S::StateLHA, x::Vector{Int}) = 
+        (S.loc = "l3"; 
+         S["d"] = 0; 
+         S["in"] = false)
+    edge2 = Edge([nothing], cc_aut_G_l1l3_2, us_aut_G_l1l3_2!)
+
     cc_aut_G_l1l3_4(A::LHA, S::StateLHA) = 
-        (isin(S["in"]) && (A.l_ctes["t1"] <= S.time <= A.l_ctes["t2"]) && (A.l_ctes["x1"] <= S["n"] <= A.l_ctes["x2"]))
-    us_aut_G_l1l3_4!(A::LHA, S::StateLHA, x::Vector{Int}) = (S.loc = "l3"; S["t'"] = 0.0)
+        istrue(S["in"]) && 
+        (A.l_ctes["t1"] <= S.time <= A.l_ctes["t2"]) && 
+        (A.l_ctes["x1"] <= S["n"] <= A.l_ctes["x2"])
+    us_aut_G_l1l3_4!(A::LHA, S::StateLHA, x::Vector{Int}) = 
+        (S.loc = "l3"; 
+         S["t'"] = 0.0)
     edge4 = Edge([nothing], cc_aut_G_l1l3_4, us_aut_G_l1l3_4!)
+    
     map_edges[tuple] = [edge1, edge2, edge3, edge4]
 
     tuple = ("l1", "l4")
     cc_aut_G_l1l4_1(A::LHA, S::StateLHA) = 
-        (!isin(S["in"]) && (A.l_ctes["t1"] <= S.time <= A.l_ctes["t2"]) && (S["n"] < A.l_ctes["x1"] || S["n"] > A.l_ctes["x2"]))
-    us_aut_G_l1l4_1!(A::LHA, S::StateLHA, x::Vector{Int}) = (S.loc = "l4"; S["d"] += S["d"] * (S.time - A.l_ctes["t1"]))
+        !istrue(S["in"]) && 
+        (A.l_ctes["t1"] <= S.time <= A.l_ctes["t2"]) && 
+        (S["n"] < A.l_ctes["x1"] || S["n"] > A.l_ctes["x2"])
+    us_aut_G_l1l4_1!(A::LHA, S::StateLHA, x::Vector{Int}) = 
+        (S.loc = "l4"; 
+         S["d"] += S["d"] * (S.time - A.l_ctes["t1"]))
     edge1 = Edge([nothing], cc_aut_G_l1l4_1, us_aut_G_l1l4_1!)
     cc_aut_G_l1l4_2(A::LHA, S::StateLHA) = 
-        (isin(S["in"]) && (A.l_ctes["t1"] <= S.time <= A.l_ctes["t2"]) && (S["n"] < A.l_ctes["x1"] || S["n"] > A.l_ctes["x2"]))
-    us_aut_G_l1l4_2!(A::LHA, S::StateLHA, x::Vector{Int}) = (S.loc = "l4")
+        istrue(S["in"]) && 
+        (A.l_ctes["t1"] <= S.time <= A.l_ctes["t2"]) && 
+        (S["n"] < A.l_ctes["x1"] || S["n"] > A.l_ctes["x2"])
+    us_aut_G_l1l4_2!(A::LHA, S::StateLHA, x::Vector{Int}) = 
+        (S.loc = "l4")
     edge2 = Edge([nothing], cc_aut_G_l1l4_2, us_aut_G_l1l4_2!)
     map_edges[tuple] = [edge1, edge2]
 
     tuple = ("l1", "l2")
-    cc_aut_G_l1l2_1(A::LHA, S::StateLHA) = (isin(S["in"]) && S.time >= A.l_ctes["t2"])
-    us_aut_G_l1l2_1!(A::LHA, S::StateLHA, x::Vector{Int}) = (S.loc = "l2")
+    cc_aut_G_l1l2_1(A::LHA, S::StateLHA) = 
+        istrue(S["in"]) && 
+        S.time >= A.l_ctes["t2"]
+    us_aut_G_l1l2_1!(A::LHA, S::StateLHA, x::Vector{Int}) = 
+        (S.loc = "l2")
     edge1 = Edge([nothing], cc_aut_G_l1l2_1, us_aut_G_l1l2_1!)
-    cc_aut_G_l1l2_2(A::LHA, S::StateLHA) = (!isin(S["in"]) && S.time >= A.l_ctes["t2"])
-    us_aut_G_l1l2_2!(A::LHA, S::StateLHA, x::Vector{Int}) = (S.loc = "l2"; S["d"] = S["d"] * (A.l_ctes["t2"] - A.l_ctes["t1"]))
+    cc_aut_G_l1l2_2(A::LHA, S::StateLHA) = 
+        !istrue(S["in"]) && 
+        S.time >= A.l_ctes["t2"]
+    us_aut_G_l1l2_2!(A::LHA, S::StateLHA, x::Vector{Int}) = 
+        (S.loc = "l2"; 
+         S["d"] = S["d"] * (A.l_ctes["t2"] - A.l_ctes["t1"]))
     edge2 = Edge([nothing], cc_aut_G_l1l2_2, us_aut_G_l1l2_2!)
     map_edges[tuple] = [edge1, edge2]
 
     # l3 loc
     tuple = ("l3", "l1")
     cc_aut_G_l3l1_1(A::LHA, S::StateLHA) = true
-    us_aut_G_l3l1_1!(A::LHA, S::StateLHA, x::Vector{Int}) = (S.loc = "l1"; S["n"] = get_value(A, x, str_obs))
+    us_aut_G_l3l1_1!(A::LHA, S::StateLHA, x::Vector{Int}) = 
+        (S.loc = "l1"; 
+         S["n"] = get_value(A, x, str_obs); 
+         S["isabs"] = m.isabsorbing(m.p,x))
     edge1 = Edge(["ALL"], cc_aut_G_l3l1_1, us_aut_G_l3l1_1!)
     map_edges[tuple] = [edge1]
 
     tuple = ("l3", "l2")
-    cc_aut_G_l3l2_1(A::LHA, S::StateLHA) = (isin(S["in"]) && S.time >= A.l_ctes["t2"])
-    us_aut_G_l3l2_1!(A::LHA, S::StateLHA, x::Vector{Int}) = (S.loc = "l2")
+    cc_aut_G_l3l2_1(A::LHA, S::StateLHA) = 
+        istrue(S["in"]) && 
+        (S.time >= A.l_ctes["t2"] || istrue(S["isabs"]))
+    us_aut_G_l3l2_1!(A::LHA, S::StateLHA, x::Vector{Int}) = 
+        (S.loc = "l2")
     edge1 = Edge([nothing], cc_aut_G_l3l2_1, us_aut_G_l3l2_1!)
-    cc_aut_G_l3l2_2(A::LHA, S::StateLHA) = (!isin(S["in"]) && S.time >= A.l_ctes["t2"])
-    us_aut_G_l3l2_2!(A::LHA, S::StateLHA, x::Vector{Int}) = (S.loc = "l2"; S["d"] = S["d"] * (A.l_ctes["t2"] - A.l_ctes["t1"]))
+    cc_aut_G_l3l2_2(A::LHA, S::StateLHA) = 
+        !istrue(S["in"]) && 
+        (S.time >= A.l_ctes["t2"] || istrue(S["isabs"]))
+    us_aut_G_l3l2_2!(A::LHA, S::StateLHA, x::Vector{Int}) = 
+        (S.loc = "l2";
+         S["d"] = S["d"] * (A.l_ctes["t2"] - A.l_ctes["t1"]))
     edge2 = Edge([nothing], cc_aut_G_l3l2_2, us_aut_G_l3l2_2!)
-    map_edges[tuple] = [edge1, edge2]
+    cc_aut_G_l3l2_3(A::LHA, S::StateLHA) = 
+        istrue(S["isabs"]) && 
+        S.time <= A.l_ctes["t1"]
+    us_aut_G_l3l2_3!(A::LHA, S::StateLHA, x::Vector{Int}) = 
+        (S.loc = "l2"; 
+         S["d"] = S["d"] * (A.l_ctes["t2"] - A.l_ctes["t1"]))
+    edge3 = Edge([nothing], cc_aut_G_l3l2_3, us_aut_G_l3l2_3!)
+    cc_aut_G_l3l2_4(A::LHA, S::StateLHA) = 
+        istrue(S["isabs"]) && 
+        S.time >= A.l_ctes["t1"]
+    us_aut_G_l3l2_4!(A::LHA, S::StateLHA, x::Vector{Int}) = 
+        (S.loc = "l2"; 
+         S["d"] += (A.l_ctes["t2"] - A.l_ctes["t1"]) * 
+                    min(abs(S["n"] - A.l_ctes["x1"]), abs(S["n"] - A.l_ctes["x2"])))
+    edge4 = Edge([nothing], cc_aut_G_l3l2_4, us_aut_G_l3l2_4!)
+ 
+    map_edges[tuple] = [edge1, edge2, edge3, edge4]
 
     # l4 loc
     tuple = ("l4", "l1")
     cc_aut_G_l4l1_1(A::LHA, S::StateLHA) = true
     us_aut_G_l4l1_1!(A::LHA, S::StateLHA, x::Vector{Int}) = 
-        (S.loc = "l1"; S["d"] += S["t'"] * min(abs(A.l_ctes["x1"] - S["n"]), abs(A.l_ctes["x2"] - S["n"])); 
-         S["t'"] = 0.0; S["n"] = get_value(A, x, str_obs); S["in"] = true)
+        (S.loc = "l1"; 
+         S["d"] += S["t'"] * min(abs(A.l_ctes["x1"] - S["n"]), abs(A.l_ctes["x2"] - S["n"])); 
+         S["t'"] = 0.0; 
+         S["n"] = get_value(A, x, str_obs); 
+         S["in"] = true; 
+         S["isabs"] = m.isabsorbing(m.p,x))
     edge1 = Edge(["ALL"], cc_aut_G_l4l1_1, us_aut_G_l4l1_1!)
     map_edges[tuple] = [edge1]
 
     tuple = ("l4", "l2")
-    cc_aut_G_l4l2_1(A::LHA, S::StateLHA) = (S.time >= A.l_ctes["t2"])
+    cc_aut_G_l4l2_1(A::LHA, S::StateLHA) = 
+        (S.time >= A.l_ctes["t2"] || istrue(S["isabs"]))
     us_aut_G_l4l2_1!(A::LHA, S::StateLHA, x::Vector{Int}) = 
-        (S.loc = "l2"; S["d"] +=  S["t'"] * min(abs(A.l_ctes["x1"] - S["n"]), abs(A.l_ctes["x2"] - S["n"])); S["t'"] = 0.0)
+        (S.loc = "l2"; 
+         S["d"] +=  S["t'"] * min(abs(A.l_ctes["x1"] - S["n"]), abs(A.l_ctes["x2"] - S["n"])); 
+         S["t'"] = 0.0)
     edge1 = Edge([nothing], cc_aut_G_l4l2_1, us_aut_G_l4l2_1!)
-    map_edges[tuple] = [edge1]
+    cc_aut_G_l4l2_2(A::LHA, S::StateLHA) = 
+        istrue(S["isabs"]) && 
+        S.time <= A.l_ctes["t1"]
+    us_aut_G_l4l2_2!(A::LHA, S::StateLHA, x::Vector{Int}) = 
+        (S.loc = "l2"; 
+         S["d"] = S["d"] * (A.l_ctes["t2"] - A.l_ctes["t1"]))
+    edge2 = Edge([nothing], cc_aut_G_l4l2_2, us_aut_G_l4l2_2!)
+    cc_aut_G_l4l2_3(A::LHA, S::StateLHA) = 
+        istrue(S["isabs"]) && 
+        S.time >= A.l_ctes["t1"]
+    us_aut_G_l4l2_3!(A::LHA, S::StateLHA, x::Vector{Int}) = 
+        (S.loc = "l2"; 
+         S["d"] += (A.l_ctes["t2"] - A.l_ctes["t1"]) * 
+                    min(abs(S["n"] - A.l_ctes["x1"]), abs(S["n"] - A.l_ctes["x2"])))
+    edge3 = Edge([nothing], cc_aut_G_l4l2_3, us_aut_G_l4l2_3!)
+    
+    map_edges[tuple] = [edge1, edge2, edge3]
 
     ## Constants
     l_ctes = Dict{String,Float64}("x1" => x1, "x2" => x2, "t1" => t1, "t2" => t2)
@@ -117,6 +200,7 @@ function create_automaton_G(m::ContinuousTimeModel, x1::Float64, x2::Float64, t1
     A = LHA(m.l_transitions, l_loc, Λ_F, l_loc_init, l_loc_final, 
             map_var_automaton_idx, l_flow, map_edges, l_ctes, m.map_var_idx)
     return A
+   
 end
 
 export create_automaton_G

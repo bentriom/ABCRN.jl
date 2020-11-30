@@ -46,7 +46,7 @@ function simulate(m::ContinuousTimeModel; p::Union{Nothing,AbstractVector{Float6
     transitions[1] = nothing
     # Values at time n
     n = 1
-    xn = m.x0 
+    xn = copy(m.x0)
     tn = m.t0 
     # at time n+1
     isabsorbing::Bool = m.isabsorbing(p_sim,xn)
@@ -71,7 +71,7 @@ function simulate(m::ContinuousTimeModel; p::Union{Nothing,AbstractVector{Float6
             break
         end
         n += 1
-        xn = vec_x
+        copyto!(xn, vec_x)
         _update_values!(full_values, times, transitions, xn, tn, l_tr[1], i)
         isabsorbing = m.isabsorbing(p_sim,xn)
         if isabsorbing 
@@ -101,7 +101,7 @@ function simulate(m::ContinuousTimeModel; p::Union{Nothing,AbstractVector{Float6
                 i -= 1
                 break
             end
-            xn = vec_x
+            copyto!(xn, vec_x)
             _update_values!(full_values, times, transitions, 
                             xn, tn, l_tr[1], m.estim_min_states+size_tmp+i)
             isabsorbing = m.isabsorbing(p_sim,xn)
@@ -144,7 +144,7 @@ function simulate(product::SynchronizedModel; p::Union{Nothing,AbstractVector{Fl
     S0 = init_state(A, m.x0, m.t0)
     # Values at time n
     n = 1
-    xn = m.x0 
+    xn = copy(m.x0)
     tn = m.t0 
     Sn = copy(S0)
     isabsorbing::Bool = m.isabsorbing(p_sim,xn)
@@ -171,11 +171,11 @@ function simulate(product::SynchronizedModel; p::Union{Nothing,AbstractVector{Fl
             break
         end
         n += 1
-        xn = vec_x
+        copyto!(xn, vec_x)
         tr_n = l_tr[1]
         next_state!(Snplus1, A, xn, tn, tr_n, Sn)
         _update_values!(full_values, times, transitions, xn, tn, tr_n, i)
-        Sn = Snplus1
+        copyto!(Sn, Snplus1)
         isabsorbing = m.isabsorbing(p_sim,xn)
         isacceptedLHA = isaccepted(Snplus1)
         if isabsorbing || isacceptedLHA 
@@ -205,12 +205,12 @@ function simulate(product::SynchronizedModel; p::Union{Nothing,AbstractVector{Fl
                 i -= 1
                 break
             end
-            xn = vec_x
+            copyto!(xn, vec_x)
             tr_n = l_tr[1]
             next_state!(Snplus1, A, xn, tn, tr_n, Sn)
             _update_values!(full_values, times, transitions, 
                             xn, tn, tr_n, m.estim_min_states+size_tmp+i)
-            Sn = Snplus1
+            copyto!(Sn, Snplus1)
             isabsorbing = m.isabsorbing(p_sim,xn)
             isacceptedLHA = isaccepted(Snplus1)
             if isabsorbing || isacceptedLHA
@@ -233,6 +233,54 @@ function simulate(product::SynchronizedModel; p::Union{Nothing,AbstractVector{Fl
     return SynchronizedTrajectory(Sn, product, values, times, transitions)
 end
 
+function volatile_simulate(product::SynchronizedModel; 
+                           p::Union{Nothing,AbstractVector{Float64}} = nothing, verbose::Bool = false)
+    m = product.m
+    A = product.automaton
+    p_sim = m.p
+    if p != nothing
+        p_sim = p
+    end
+    S0 = init_state(A, m.x0, m.t0)
+    # Values at time n
+    n = 1
+    xn = copy(m.x0)
+    tn = m.t0 
+    Sn = copy(S0)
+    isabsorbing::Bool = m.isabsorbing(p_sim,xn)
+    isacceptedLHA::Bool = isaccepted(Sn)
+    # If x0 is absorbing
+    if isabsorbing || isacceptedLHA 
+        return Sn
+    end
+    # Alloc of vectors where we stock n+1 values
+    vec_x = zeros(Int, m.d)
+    l_t = Float64[0.0]
+    l_tr = Transition[nothing]
+    Snplus1 = copy(Sn)
+    while !isabsorbing && tn <= m.time_bound && !isacceptedLHA
+        if verbose
+            @show vec_x
+            @show Sn
+        end
+        m.f!(vec_x, l_t, l_tr, xn, tn, p_sim)
+        tn = l_t[1]
+        if tn > m.time_bound
+            i -= 1
+            break
+        end
+        copyto!(xn, vec_x)
+        tr_n = l_tr[1]
+        next_state!(Snplus1, A, xn, tn, tr_n, Sn)
+        copyto!(Sn, Snplus1)
+        isabsorbing = m.isabsorbing(p_sim,xn)
+        isacceptedLHA = isaccepted(Snplus1)
+        n += 1
+    end
+    return Sn
+end
+
+
 """
     `simulate(pm::ParametricModel, p_prior::AbstractVector{Float64})
 
@@ -246,8 +294,28 @@ function simulate(pm::ParametricModel, p_prior::AbstractVector{Float64})
     
     return simulate(pm.m; p = full_p) 
 end
+"""
+    `distribute_mean_value_lha(sm::SynchronizedModel, str_var::String, nbr_stim::Int)`
 
-function simulate(m::ContinuousTimeModel, n::Int)
+Distribute over workers the computation of the mean value 
+of a LHA over `nbr_sim` simulations of the model.
+"""
+function distribute_mean_value_lha(sm::SynchronizedModel, str_var::String, nbr_sim::Int)
+    sum_val = @distributed (+) for i = 1:nbr_sim volatile_simulate(sm)[str_var] end
+    return sum_val / nbr_sim
+end
+
+function mean_value_lha(sm::SynchronizedModel, str_var::String, nbr_sim::Int)
+    sum_val = 0.0 
+    for i = 1:nbr_sim 
+        sum_val += volatile_simulate(sm)[str_var] 
+    end
+    return sum_val / nbr_sim
+end
+
+function distribute_prob_accept_lha(sm::SynchronizedModel, str_var::String, nbr_sim::Int)
+    sum_val = @distributed (+) for i = 1:nbr_sim Int(isaccepted(volatile_simulate(sm))) end
+    return sum_val / nbr_sim
 end
 
 isbounded(m::Model) = get_proba_model(m).time_bound < Inf

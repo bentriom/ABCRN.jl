@@ -1,28 +1,26 @@
 
-
-using MarkovProcesses
-absolute_path = get_module_path() * "/tests/cosmos/"
-
-# Remarque: la valeur estimée par Cosmos varie plus que de 0.01
-
-# Values x1, x2  t1, t2
-dict_exp = Dict(
-                "R1" => [50, 75, 0.025, 0.05],
-                "R2" => [50, 75, 0.05, 0.075],
-                "R3" => [25, 50, 0.05, 0.075]
-               )
-
-str_model = "ER"
-if str_model == "ER"
-    load_model(str_model)
-    model = ER
+@everywhere begin
+    using MarkovProcesses
+    import Distributed: nworkers
+    absolute_path = get_module_path() * "/tests/cosmos/"
+    # Values x1, x2  t1, t2
+    dict_exp = Dict(
+                    "R1" => [50, 75, 0.025, 0.05],
+                    "R2" => [50, 75, 0.05, 0.075],
+                    "R3" => [25, 50, 0.05, 0.075]
+                   )
+    str_model = "ER"
+    if str_model == "ER"
+        load_model(str_model)
+        model = ER
+        observe_all!(ER)
+    end
+    load_automaton("automaton_F")
+    test_all = true
+    width = 0.2
+    level = 0.95
+    l_exp = ["R1", "R2", "R3"]
 end
-load_automaton("automaton_F")
-
-test_all = true
-width = 0.1
-level = 0.95
-l_exp = ["R1", "R2", "R3"]
 #l_exp = ["R2"]
 for exp in l_exp
     if !(exp in keys(dict_exp))
@@ -40,7 +38,7 @@ for exp in l_exp
         # Cosmos estimation
         k3 = l_k3[i]
         command = `Cosmos $(absolute_path * "models/" * str_model * ".gspn") 
-        $(absolute_path * "distance_F/dist_F_"  * str_model * ".lha") --njob $(ENV["JULIA_NUM_THREADS"]) 
+        $(absolute_path * "distance_F/dist_F_"  * str_model * ".lha") --njob $(nworkers()) 
         --const k_3=$(k3),x1=$x1,x2=$x2,t1=$t1,t2=$t2 
         --level $(level) --width $(width) 
         --verbose 0` 
@@ -53,20 +51,17 @@ for exp in l_exp
         # MarkovProcesses estimation
         set_param!(ER, "k3", convert(Float64, k3))
         sync_ER = ER*A_F
-        l_dist_i_threads = zeros(Threads.nthreads()) 
-        Threads.@threads for j = 1:nb_sim
-            σ = simulate(sync_ER)
-            l_dist_i_threads[Threads.threadid()] += (σ.S)["d"]
-        end
-        l_dist_pkg[i] = sum(l_dist_i_threads) / nb_sim
+        l_dist_pkg[i] = distribute_mean_value_lha(sync_ER, "d", nb_sim)
         test = isapprox(l_dist_cosmos[i], l_dist_pkg[i]; atol = width*1.01)
         global test_all = test_all && test
         if !test
             @show l_dist_pkg[i], l_dist_cosmos[i]
             @show exp
             @show k3
+            @show nb_sim
         end
     end
+    @info exp l_dist_pkg l_dist_cosmos
 end
 
 rm("Result_dist_F_$(str_model).res")

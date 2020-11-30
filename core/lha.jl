@@ -15,8 +15,17 @@ function Base.show(io::IO, S::StateLHA)
     print(io, "- time: $(S.time)\n")
     print(io, "- variables:\n")
     for (var, idx) in (S.A).map_var_automaton_idx
-        print(io, "* $var = $(S.l_var[idx])\n")
+        print(io, "* $var = $(S.l_var[idx]) (idx = $idx)\n")
     end
+end
+
+function Base.copyto!(Sdest::StateLHA, Ssrc::StateLHA)
+    Sdest.A = Ssrc.A
+    Sdest.loc = Ssrc.loc
+    for i = eachindex(Sdest.l_var)
+        Sdest.l_var[i] = Ssrc.l_var[i]
+    end
+    Sdest.time = Ssrc.time
 end
 
 isaccepted(S::StateLHA) = (S.loc in (S.A).l_loc_final)
@@ -72,7 +81,7 @@ function next_state!(Snplus1::StateLHA, A::LHA,
                     xnplus1::Vector{Int}, tnplus1::Float64, tr_nplus1::Transition, 
                     Sn::StateLHA; verbose::Bool = false)
     for i in eachindex(Snplus1.l_var)
-        Snplus1.l_var[i] += (A.l_flow[Sn.loc])[i]*(tnplus1 - Sn.time) 
+        Snplus1.l_var[i] += (A.l_flow[Sn.loc])[i]*(tnplus1 - Sn.time)
     end
     Snplus1.time = tnplus1
 
@@ -94,7 +103,10 @@ function next_state!(Snplus1::StateLHA, A::LHA,
             edge_candidates[ind_edge].update_state!(A, Snplus1, xnplus1)
             # Should add something like if edges_candidates[ind_edge].transition != nohting break end ??
         end
-        if ind_edge == 0 break end
+        if (ind_edge == 0) 
+        #if (ind_edge == 0 || detected_event) 
+            break 
+        end
         if verbose
             @show first_round detected_event
             @show tnplus1 tr_nplus1 xnplus1
@@ -122,6 +134,7 @@ end
 
 # For tests purposes
 function read_trajectory(A::LHA, σ::Trajectory; verbose = false)
+    @assert σ.m.d == σ.m.dobs # Model should be entirely obserbed 
     A_new = LHA(A, (σ.m)._map_obs_var_idx)
     l_t = times(σ)
     l_tr = transitions(σ)
@@ -131,10 +144,10 @@ function read_trajectory(A::LHA, σ::Trajectory; verbose = false)
     if verbose @show Sn end
     for n in 1:length_states(σ)
         next_state!(Snplus1, A_new, σ[n], l_t[n], l_tr[n], Sn; verbose = verbose)
+        copyto!(Sn, Snplus1)
         if Snplus1.loc in A_new.l_loc_final 
             break 
         end
-        Sn = Snplus1 
     end
     return Sn
 end

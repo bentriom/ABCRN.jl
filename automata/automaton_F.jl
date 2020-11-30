@@ -17,17 +17,19 @@ function create_automaton_F(m::ContinuousTimeModel, x1::Float64, x2::Float64, t1
     #P <=> xn[map_var_model_idx[l_ctes[str_O]] with str_O = "P". On stock str_O dans l_ctes
     # P = get_value(A, x, str_obs) 
     ## Map of automaton variables
-    map_var_automaton_idx = Dict{VariableAutomaton,Int}("n" => 1, "d" => 2)
+    map_var_automaton_idx = Dict{VariableAutomaton,Int}("n" => 1, "d" => 2, "isabs" => 3)
 
     ## Flow of variables
-    l_flow = Dict{VariableAutomaton,Vector{Float64}}("l0" => [0.0,0.0], 
-                                                     "l1" => [0.0,0.0], 
-                                                     "l2" => [0.0,0.0], 
-                                                     "l3" => [0.0,0.0])
+    l_flow = Dict{VariableAutomaton,Vector{Float64}}("l0" => [0.0,0.0,0.0], 
+                                                     "l1" => [0.0,0.0,0.0], 
+                                                     "l2" => [0.0,0.0,0.0], 
+                                                     "l3" => [0.0,0.0,0.0])
 
     ## Edges
     map_edges = Dict{Tuple{Location,Location}, Vector{Edge}}()
 
+    istrue(val::Float64) = convert(Bool, val)
+    
     # l0 loc : we construct  the edges of the form l0 => (..)
     # "cc" as check_constraints
     tuple = ("l0", "l1")
@@ -44,7 +46,7 @@ function create_automaton_F(m::ContinuousTimeModel, x1::Float64, x2::Float64, t1
     us_aut_F_l1l2_1!(A::LHA, S::StateLHA, x::Vector{Int}) = (S["d"] = 0; S.loc = "l2")
     edge1 = Edge([nothing], cc_aut_F_l1l2_1, us_aut_F_l1l2_1!)
 
-    cc_aut_F_l1l2_2(A::LHA, S::StateLHA) = (S["d"] > 0 && S.time > A.l_ctes["t2"])
+    cc_aut_F_l1l2_2(A::LHA, S::StateLHA) = (S["d"] > 0 && (S.time > A.l_ctes["t2"] || istrue(S["isabs"])))
     us_aut_F_l1l2_2!(A::LHA, S::StateLHA, x::Vector{Int}) = (S.loc = "l2")
     edge2 = Edge([nothing], cc_aut_F_l1l2_2, us_aut_F_l1l2_2!)
     
@@ -76,7 +78,8 @@ function create_automaton_F(m::ContinuousTimeModel, x1::Float64, x2::Float64, t1
     # l3 loc
     tuple = ("l3", "l1")
     cc_aut_F_l3l1_1(A::LHA, S::StateLHA) = true
-    us_aut_F_l3l1_1!(A::LHA, S::StateLHA, x::Vector{Int}) = (S["n"] = get_value(A, x, str_obs); S.loc = "l1")
+    us_aut_F_l3l1_1!(A::LHA, S::StateLHA, x::Vector{Int}) = 
+    (S["n"] = get_value(A, x, str_obs); S.loc = "l1"; S["isabs"] = m.isabsorbing(m.p,x))
     edge1 = Edge(["ALL"], cc_aut_F_l3l1_1, us_aut_F_l3l1_1!)
     tuple = ("l3", "l2")
     cc_aut_F_l3l2_1(A::LHA, S::StateLHA) = (S.time >= A.l_ctes["t2"])
