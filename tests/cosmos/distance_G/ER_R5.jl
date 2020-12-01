@@ -1,6 +1,7 @@
 
 @everywhere begin 
     using MarkovProcesses
+    import Distributed: nworkers
     absolute_path = get_module_path() * "/tests/cosmos/"
     # Values x1, x2  t1, t2
     str_model = "ER"
@@ -32,7 +33,7 @@ for i = 1:nb_k1
         k1 = l_k1[i]
         k2 = l_k2[j]
         command = `Cosmos $(absolute_path * "models/" * str_model * ".gspn") 
-        $(absolute_path * "distance_G/dist_G_"  * str_model * ".lha") --njob $(ENV["JULIA_NUM_THREADS"]) 
+        $(absolute_path * "distance_G/dist_G_"  * str_model * ".lha") --njob $(nworkers()) 
         --const k_1=$(k1),k_2=$(k2),x1=$x1,x2=$x2,t1=$t1,t2=$t2 
         --level $(level) --width $(width) 
         --verbose 0` 
@@ -47,16 +48,19 @@ for i = 1:nb_k1
         set_param!(ER, "k2", convert(Float64, k2))
         sync_ER = ER*A_G
         mat_dist_pkg[i,j] = distribute_mean_value_lha(sync_ER, "d", nb_sim)
+        nb_accepts_pkg = distribute_prob_accept_lha(sync_ER, nb_sim)
+        #@info "About accepts" nb_sim nb_accepted nb_accepts_pkg
         test = isapprox(mat_dist_cosmos[i,j], mat_dist_pkg[i,j]; atol = width*1.01)
+        test2 = nb_accepts_pkg == (nb_sim / nb_accepted)
         if !test
             @info "Distances too different" (k1,k2) mat_dist_pkg[i,j] mat_dist_cosmos[i,j]
         end
-        global test_all = test_all && test 
+        global test_all = test_all && test && test2 
     end
 end
 
-@info mat_dist_pkg
-@info mat_dist_cosmos
+@info "Distances R5 pkg" mat_dist_pkg
+@info "Distances R5 Cosmos" mat_dist_cosmos
 
 rm("Result_dist_G_$(str_model).res")
 rm("Result.res")

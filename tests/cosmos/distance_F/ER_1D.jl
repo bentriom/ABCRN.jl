@@ -42,6 +42,7 @@ for exp in l_exp
         --const k_3=$(k3),x1=$x1,x2=$x2,t1=$t1,t2=$t2 
         --level $(level) --width $(width) 
         --verbose 0` 
+        #run(command)
         run(pipeline(command, stderr=devnull))
         dict_values = cosmos_get_values("Result_dist_F_$(str_model).res")
         l_dist_cosmos[i] = dict_values["Estimated value"]
@@ -52,8 +53,11 @@ for exp in l_exp
         set_param!(ER, "k3", convert(Float64, k3))
         sync_ER = ER*A_F
         l_dist_pkg[i] = distribute_mean_value_lha(sync_ER, "d", nb_sim)
+        nb_accepts_pkg = distribute_prob_accept_lha(sync_ER, nb_sim)
+        #@info "About accepts" nb_sim nb_accepted nb_accepts_pkg
         test = isapprox(l_dist_cosmos[i], l_dist_pkg[i]; atol = width*1.01)
-        global test_all = test_all && test
+        test2 = nb_accepts_pkg == (nb_sim / nb_accepted)
+        global test_all = test_all && test && test2
         if !test
             @show l_dist_pkg[i], l_dist_cosmos[i]
             @show exp
