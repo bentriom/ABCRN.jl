@@ -29,7 +29,7 @@ _get_value_row(σ::OldTrajectory, var::String, idx::Int) =
 
 function _simulate_col(m::ContinuousTimeModel)
     # trajectory fields
-    full_values = zeros(m.d, 0)
+    full_values = zeros(m.dim_state, 0)
     times = zeros(0)
     transitions = Vector{Union{String,Nothing}}(undef,0)
     # values at time n
@@ -38,7 +38,7 @@ function _simulate_col(m::ContinuousTimeModel)
     tn = m.t0 
     tr = [""]
     # at time n+1
-    xnplus1 = zeros(Int, m.d)
+    xnplus1 = zeros(Int, m.dim_state)
     tnplus1 = zeros(Float64, 1)
     isabsorbing = (m.isabsorbing(m.p,xn))::Bool
     while !isabsorbing && (tn <= m.time_bound)
@@ -63,7 +63,7 @@ end
 
 function _simulate_row(m::ContinuousTimeModel)
     # trajectory fields
-    full_values = zeros(m.d, 0)
+    full_values = zeros(m.dim_state, 0)
     times = zeros(0)
     transitions = Vector{Union{String,Nothing}}(undef,0)
     # values at time n
@@ -72,7 +72,7 @@ function _simulate_row(m::ContinuousTimeModel)
     tn = m.t0 
     tr = [""]
     # at time n+1
-    xnplus1 = zeros(Int, m.d)
+    xnplus1 = zeros(Int, m.dim_state)
     tnplus1 = zeros(Float64, 1)
     isabsorbing = (m.isabsorbing(m.p,xn))::Bool
     while !isabsorbing && (tn <= m.time_bound)
@@ -98,7 +98,7 @@ end
 
 function _simulate_col_buffer(m::ContinuousTimeModel; buffer_size::Int = 5)
     # trajectory fields
-    full_values = zeros(m.d, 0)
+    full_values = zeros(m.dim_state, 0)
     times = zeros(0)
     transitions = Vector{Union{String,Nothing}}(undef,0)
     # values at time n
@@ -106,7 +106,7 @@ function _simulate_col_buffer(m::ContinuousTimeModel; buffer_size::Int = 5)
     xn = @view m.x0[:]
     tn = m.t0 
     # at time n+1
-    mat_x = zeros(Int, m.d, buffer_size)
+    mat_x = zeros(Int, m.dim_state, buffer_size)
     l_t = zeros(Float64, buffer_size)
     l_tr = Vector{Union{String,Nothing}}(undef, buffer_size)
     isabsorbing = m.isabsorbing(m.p,xn)::Bool
@@ -138,7 +138,7 @@ end
 
 function _simulate_row_buffer(m::ContinuousTimeModel; buffer_size::Int = 5)
     # trajectory fields
-    full_values = zeros(0, m.d)
+    full_values = zeros(0, m.dim_state)
     times = zeros(0)
     transitions = Vector{Union{String,Nothing}}(undef,0)
     # values at time n
@@ -146,7 +146,7 @@ function _simulate_row_buffer(m::ContinuousTimeModel; buffer_size::Int = 5)
     xn = @view m.x0[:]
     tn = m.t0 
     # at time n+1
-    mat_x = zeros(Int, buffer_size, m.d)
+    mat_x = zeros(Int, buffer_size, m.dim_state)
     l_t = zeros(Float64, buffer_size)
     l_tr = Vector{Union{String,Nothing}}(undef, buffer_size)
     isabsorbing = m.isabsorbing(m.p,xn)::Bool
@@ -178,7 +178,7 @@ end
 
 function _simulate_without_view(m::ContinuousTimeModel)
     # trajectory fields
-    full_values = Matrix{Int}(undef, 1, m.d)
+    full_values = Matrix{Int}(undef, 1, m.dim_state)
     full_values[1,:] = m.x0
     times = Float64[m.t0]
     transitions = Union{String,Nothing}[nothing]
@@ -187,7 +187,7 @@ function _simulate_without_view(m::ContinuousTimeModel)
     xn = @view m.x0[:]
     tn = m.t0 
     # at time n+1
-    mat_x = zeros(Int, m.buffer_size, m.d)
+    mat_x = zeros(Int, m.buffer_size, m.dim_state)
     l_t = zeros(Float64, m.buffer_size)
     l_tr = Vector{Union{String,Nothing}}(undef, m.buffer_size)
     isabsorbing = m.isabsorbing(m.p,xn)::Bool
@@ -212,7 +212,7 @@ function _simulate_without_view(m::ContinuousTimeModel)
             times[end] = m.time_bound
             transitions[end] = nothing
         else
-            full_values = vcat(full_values, reshape(full_values[end,:], 1, m.d))
+            full_values = vcat(full_values, reshape(full_values[end,:], 1, m.dim_state))
             push!(times, m.time_bound)
             push!(transitions, nothing)
         end
@@ -224,16 +224,16 @@ end
 # With trajectory values in Matrix type
 function _simulate_27d56(m::ContinuousTimeModel)
     # trajectory fields
-    full_values = Matrix{Int}(undef, 1, m.d)
+    full_values = Matrix{Int}(undef, 1, m.dim_state)
     full_values[1,:] = m.x0
     times = Float64[m.t0]
     transitions = Union{String,Nothing}[nothing]
     # values at time n
     n = 0
-    xn = view(reshape(m.x0, 1, m.d), 1, :) # View for type stability
+    xn = view(reshape(m.x0, 1, m.dim_state), 1, :) # View for type stability
     tn = m.t0 
     # at time n+1
-    mat_x = zeros(Int, m.buffer_size, m.d)
+    mat_x = zeros(Int, m.buffer_size, m.dim_state)
     l_t = zeros(Float64, m.buffer_size)
     l_tr = Vector{Union{String,Nothing}}(undef, m.buffer_size)
     isabsorbing::Bool = m.isabsorbing(m.p,xn)
@@ -265,7 +265,7 @@ function _simulate_27d56(m::ContinuousTimeModel)
         else
         end
         =#
-        full_values = vcat(full_values, reshape(full_values[end,:], 1, m.d))
+        full_values = vcat(full_values, reshape(full_values[end,:], 1, m.dim_state))
         push!(times, m.time_bound)
         push!(transitions, nothing)
     end
@@ -276,17 +276,17 @@ end
 
 function _simulate_d7458(m::ContinuousTimeModel)
     # trajectory fields
-    full_values = Vector{Vector{Int}}(undef, m.d)
-    for i = 1:m.d full_values[i] = Int[m.x0[i]] end
-    for i = 1:m.d sizehint!(full_values[i], m.estim_min_states) end
+    full_values = Vector{Vector{Int}}(undef, m.dim_state)
+    for i = 1:m.dim_state full_values[i] = Int[m.x0[i]] end
+    for i = 1:m.dim_state sizehint!(full_values[i], m.estim_min_states) end
     times = Float64[m.t0]
     transitions = Transition[nothing]
     # values at time n
     n = 0
-    xn = view(reshape(m.x0, 1, m.d), 1, :) # View for type stability
+    xn = view(reshape(m.x0, 1, m.dim_state), 1, :) # View for type stability
     tn = m.t0 
     # at time n+1
-    mat_x = zeros(Int, m.buffer_size, m.d)
+    mat_x = zeros(Int, m.buffer_size, m.dim_state)
     l_t = zeros(Float64, m.buffer_size)
     l_tr = Vector{Union{String,Nothing}}(undef, m.buffer_size)
     isabsorbing::Bool = m.isabsorbing(m.p,xn)
@@ -311,20 +311,20 @@ function _simulate_d7458(m::ContinuousTimeModel)
         if end_idx != -1
             break 
         end
-        for k = 1:m.d
+        for k = 1:m.dim_state
             append!(full_values[k], view(mat_x, :, k))
         end
         append!(times, l_t)
         append!(transitions,  l_tr)
         n += m.buffer_size
     end
-    for k = 1:m.d
+    for k = 1:m.dim_state
         append!(full_values[k], view(mat_x, 1:end_idx, k))
     end
     append!(times, view(l_t, 1:end_idx))
     append!(transitions,  view(l_tr, 1:end_idx))
     if isbounded(m)
-        for k = 1:m.d
+        for k = 1:m.dim_state
             push!(full_values[k], full_values[k][end])
         end
         push!(times, m.time_bound)

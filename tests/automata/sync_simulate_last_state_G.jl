@@ -11,7 +11,7 @@ sync_ER = A_G * ER
 
 function test_last_state(A::LHA, m::SynchronizedModel)
     σ = simulate(m)
-    test = (get_state_from_time(σ, (σ.S).time)[1] == (σ.S)["n"]) && ((σ.S)["d"] == 0)
+    test = (get_state_from_time(σ, (σ.state_lha_end).time)[1] == (σ.state_lha_end)["n"]) && ((σ.state_lha_end)["d"] == 0)
     return test
 end
 

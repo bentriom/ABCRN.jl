@@ -51,7 +51,7 @@ function plot(σ::AbstractTrajectory, vars::String...; filename::String = "", pl
 end
 
 function plot!(A::LHA)
-    x1, x2, t1, t2 = A.l_ctes["x1"], A.l_ctes["x2"], A.l_ctes["t1"], A.l_ctes["t2"] 
+    x1, x2, t1, t2 = A.constants["x1"], A.constants["x2"], A.constants["t1"], A.constants["t2"] 
     plot!(Shape([(t1,x1), (t1,x2), (t2,x2), (t2,x1), (t1,x1)]), opacity = 0.5)
 end
 

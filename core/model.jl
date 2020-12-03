@@ -36,7 +36,7 @@ function simulate(m::ContinuousTimeModel; p::Union{Nothing,AbstractVector{Float6
         p_sim = p
     end
     # First alloc
-    full_values = Vector{Vector{Int}}(undef, m.d)
+    full_values = Vector{Vector{Int}}(undef, m.dim_state)
     for i = eachindex(full_values) full_values[i] = zeros(Int, m.estim_min_states) end
     times = zeros(Float64, m.estim_min_states)
     transitions = Vector{Transition}(undef, m.estim_min_states)
@@ -60,7 +60,7 @@ function simulate(m::ContinuousTimeModel; p::Union{Nothing,AbstractVector{Float6
         return Trajectory(m, values, times, transitions)
     end
     # Alloc of vectors where we stock n+1 values
-    vec_x = zeros(Int, m.d)
+    vec_x = zeros(Int, m.dim_state)
     l_t = Float64[0.0]
     l_tr = Transition[nothing]
     # First we fill the allocated array
@@ -134,7 +134,7 @@ function simulate(product::SynchronizedModel; p::Union{Nothing,AbstractVector{Fl
         p_sim = p
     end
     # First alloc
-    full_values = Vector{Vector{Int}}(undef, m.d)
+    full_values = Vector{Vector{Int}}(undef, m.dim_state)
     for i = eachindex(full_values) full_values[i] = zeros(Int, m.estim_min_states) end
     times = zeros(Float64, m.estim_min_states)
     transitions = Vector{Transition}(undef, m.estim_min_states)
@@ -151,7 +151,7 @@ function simulate(product::SynchronizedModel; p::Union{Nothing,AbstractVector{Fl
     isabsorbing::Bool = m.isabsorbing(p_sim,xn)
     isacceptedLHA::Bool = isaccepted(Sn)
     # Alloc of vectors where we stock n+1 values
-    vec_x = zeros(Int, m.d)
+    vec_x = zeros(Int, m.dim_state)
     l_t = Float64[0.0]
     l_tr = Transition[nothing]
     Snplus1 = copy(Sn)
@@ -269,7 +269,7 @@ function volatile_simulate(product::SynchronizedModel;
     isabsorbing::Bool = m.isabsorbing(p_sim,xn)
     isacceptedLHA::Bool = isaccepted(Sn)
     # Alloc of vectors where we stock n+1 values
-    vec_x = zeros(Int, m.d)
+    vec_x = zeros(Int, m.dim_state)
     l_t = Float64[0.0]
     l_tr = Transition[nothing]
     Snplus1 = copy(Sn)
@@ -309,7 +309,7 @@ end
 
 Simulates the model contained in pm with p_prior values.
 It simulates the model by taking the parameters contained in get_proba_model(pm).p and
-replace the 1D parameters pm.l_param with p_prior.
+replace the 1D parameters pm.params with p_prior.
 """
 function simulate(pm::ParametricModel, p_prior::AbstractVector{Float64})
     full_p = copy(get_proba_model(pm).p)
@@ -338,7 +338,9 @@ Distribute over workers the computation of the mean value
 of a LHA over `nbr_sim` simulations of the model.
 """
 function distribute_mean_value_lha(sm::SynchronizedModel, str_var::String, nbr_sim::Int)
-    sum_val = @distributed (+) for i = 1:nbr_sim volatile_simulate(sm)[str_var] end
+    sum_val = @distributed (+) for i = 1:nbr_sim 
+        volatile_simulate(sm)[str_var] 
+    end
     return sum_val / nbr_sim
 end
 
@@ -351,17 +353,19 @@ function mean_value_lha(sm::SynchronizedModel, str_var::String, nbr_sim::Int)
 end
 
 function distribute_prob_accept_lha(sm::SynchronizedModel, nbr_sim::Int)
-    sum_val = @distributed (+) for i = 1:nbr_sim Int(isaccepted(volatile_simulate(sm))) end
+    sum_val = @distributed (+) for i = 1:nbr_sim 
+        Int(isaccepted(volatile_simulate(sm))) 
+    end
     return sum_val / nbr_sim
 end
 
 isbounded(m::Model) = get_proba_model(m).time_bound < Inf
 function check_consistency(m::ContinuousTimeModel) 
-    @assert m.d == length(m.map_var_idx) 
-    @assert m.d == length(m.x0) 
-    @assert m.k == length(m.map_param_idx)
-    @assert m.k == length(m.p)
-    @assert length(m.g) <= m.d
+    @assert m.dim_state == length(m.map_var_idx) 
+    @assert m.dim_state == length(m.x0) 
+    @assert m.dim_params == length(m.map_param_idx)
+    @assert m.dim_params == length(m.p)
+    @assert length(m.g) <= m.dim_state
     @assert length(m._g_idx) == length(m.g)
     @assert m.buffer_size >= 0
     @assert typeof(m.isabsorbing(m.p, m.x0)) == Bool
@@ -371,10 +375,10 @@ end
 # Set and get Model fields
 function set_observed_var!(am::Model, g::Vector{String})
     m = get_proba_model(am)
-    dobs = length(g)
+    dim_obs_state = length(g)
     _map_obs_var_idx = Dict{String}{Int}()
-    _g_idx = zeros(Int, dobs)
-    for i = 1:dobs
+    _g_idx = zeros(Int, dim_obs_state)
+    for i = 1:dim_obs_state
         _g_idx[i] = m.map_var_idx[g[i]] # = ( (g[i] = i-th obs var)::String => idx in state space )
         _map_obs_var_idx[g[i]] = i
     end
@@ -384,8 +388,8 @@ function set_observed_var!(am::Model, g::Vector{String})
 end
 function observe_all!(am::Model)
     m = get_proba_model(am)
-    g = Vector{String}(undef, m.d)
-    _g_idx = collect(1:m.d)
+    g = Vector{String}(undef, m.dim_state)
+    _g_idx = collect(1:m.dim_state)
     for var in keys(m.map_var_idx)
         g[m.map_var_idx[var]] = var
     end
@@ -395,7 +399,7 @@ function observe_all!(am::Model)
 end
 function set_param!(am::Model, new_p::Vector{Float64})
     m = get_proba_model(am)
-    @assert length(new_p) == m.k
+    @assert length(new_p) == m.dim_params
     m.p = new_p
 end
 function set_param!(am::Model, name_p::String, p_i::Float64) 
@@ -411,7 +415,7 @@ function set_param!(am::Model, l_name_p::Vector{String}, p::Vector{Float64})
 end
 function set_x0!(am::Model, new_x0::Vector{Int})
     m = get_proba_model(am)
-    @assert length(new_x0) == m.d
+    @assert length(new_x0) == m.dim_state
     m.x0 = new_x0
 end
 set_time_bound!(am::Model, b::Float64) = (get_proba_model(am).time_bound = b)
@@ -423,7 +427,7 @@ function getindex(am::Model, name_p::String)
     m.p[m.map_param_idx[name_p]]
 end
 function getproperty(m::ContinuousTimeModel, sym::Symbol)
-    if sym == :dobs
+    if sym == :dim_obs_state
         return length(m.g)
     else
         return getfield(m, sym)
@@ -431,7 +435,7 @@ function getproperty(m::ContinuousTimeModel, sym::Symbol)
 end
 function getproperty(pm::ParametricModel, sym::Symbol)
     if sym == :df
-        return length(pm.l_param)
+        return length(pm.params)
     else
         return getfield(pm, sym)
     end
@@ -450,13 +454,13 @@ get_observed_var(m::Model) = get_proba_model(am).g
 Draw a parameter from the prior disitribution defined in `pm::ParametricModel`
 and save it in the model contained in `pm`.
 """
-draw_model!(pm::ParametricModel) = set_param!(get_proba_model(pm), pm.l_param, rand(pm.dist))
+draw_model!(pm::ParametricModel) = set_param!(get_proba_model(pm), pm.params, rand(pm.distribution))
 """
     `draw!(vec_p, pm)`
 
 Draw a parameter from the prior distribution defined in pm and stores it in vec_p.
 """
-draw!(vec_p::AbstractVector{Float64}, pm::ParametricModel) = rand!(pm.dist, vec_p)
+draw!(vec_p::AbstractVector{Float64}, pm::ParametricModel) = rand!(pm.distribution, vec_p)
 """
     `draw!(mat_p, pm)`
 
@@ -473,7 +477,7 @@ end
  
 Computes the density of the prior distribution defined in pm on argument p_prior.
 """
-prior_pdf(pm::ParametricModel, p_prior::AbstractVector{Float64}) = pdf(pm.dist, p_prior)
+prior_pdf(pm::ParametricModel, p_prior::AbstractVector{Float64}) = pdf(pm.distribution, p_prior)
 """
     `prior_pdf(vec_res, mat_p, pm)`
  
@@ -486,7 +490,7 @@ function prior_pdf!(res_pdf::AbstractVector{Float64}, pm::ParametricModel, mat_p
     end
 end
 fill!(pm::ParametricModel, p_prior::AbstractVector{Float64}) = get_proba_model(pm).p[pm._param_idx] = p_prior
-insupport(pm::ParametricModel, p_prior::AbstractVector{Float64}) = insupport(pm.dist, p_prior)
+insupport(pm::ParametricModel, p_prior::AbstractVector{Float64}) = insupport(pm.distribution, p_prior)
 
 # to do: simulate(pm), create_res_dir, check_bounds, ajouter un champ _param_idx pour pm.
 #

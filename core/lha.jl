@@ -2,12 +2,12 @@
 length_var(A::LHA) = length(A.map_var_automaton_idx)
 get_value(A::LHA, x::Vector{Int}, var::String) = x[A.map_var_model_idx[var]]
 
-copy(S::StateLHA) = StateLHA(S.A, S.loc, S.l_var, S.time)
+copy(S::StateLHA) = StateLHA(S.A, S.loc, S.values, S.time)
 # Not overring getproperty, setproperty to avoid a conversion Symbol => String for the dict key
-getindex(S::StateLHA, var::VariableAutomaton) = (S.l_var)[(S.A).map_var_automaton_idx[var]]
-setindex!(S::StateLHA, val::Float64, var::VariableAutomaton) = (S.l_var)[(S.A).map_var_automaton_idx[var]] = val
-setindex!(S::StateLHA, val::Int, var::VariableAutomaton) = (S.l_var)[(S.A).map_var_automaton_idx[var]] = convert(Float64, val)
-setindex!(S::StateLHA, val::Bool, var::VariableAutomaton) = (S.l_var)[(S.A).map_var_automaton_idx[var]] = convert(Float64, val)
+getindex(S::StateLHA, var::VariableAutomaton) = (S.values)[(S.A).map_var_automaton_idx[var]]
+setindex!(S::StateLHA, val::Float64, var::VariableAutomaton) = (S.values)[(S.A).map_var_automaton_idx[var]] = val
+setindex!(S::StateLHA, val::Int, var::VariableAutomaton) = (S.values)[(S.A).map_var_automaton_idx[var]] = convert(Float64, val)
+setindex!(S::StateLHA, val::Bool, var::VariableAutomaton) = (S.values)[(S.A).map_var_automaton_idx[var]] = convert(Float64, val)
 
 function Base.show(io::IO, S::StateLHA)
     print(io, "State of LHA\n")
@@ -15,25 +15,25 @@ function Base.show(io::IO, S::StateLHA)
     print(io, "- time: $(S.time)\n")
     print(io, "- variables:\n")
     for (var, idx) in (S.A).map_var_automaton_idx
-        print(io, "* $var = $(S.l_var[idx]) (idx = $idx)\n")
+        print(io, "* $var = $(S.values[idx]) (idx = $idx)\n")
     end
 end
 
 function Base.copyto!(Sdest::StateLHA, Ssrc::StateLHA)
     Sdest.A = Ssrc.A
     Sdest.loc = Ssrc.loc
-    for i = eachindex(Sdest.l_var)
-        Sdest.l_var[i] = Ssrc.l_var[i]
+    for i = eachindex(Sdest.values)
+        Sdest.values[i] = Ssrc.values[i]
     end
     Sdest.time = Ssrc.time
 end
 
-isaccepted(S::StateLHA) = (S.loc in (S.A).l_loc_final)
+isaccepted(S::StateLHA) = (S.loc in (S.A).locations_final)
 
 # Methods for synchronize / read the trajectory
 function init_state(A::LHA, x0::Vector{Int}, t0::Float64)
     S0 = StateLHA(A, "", zeros(length_var(A)), t0)
-    for loc in A.l_loc_init
+    for loc in A.locations_init
         if A.Λ[loc](A,S0) 
             S0.loc = loc
             break
@@ -44,7 +44,7 @@ end
 
 function _find_edge_candidates!(edge_candidates::Vector{Edge}, current_loc::Location, 
                                 A::LHA, Snplus1::StateLHA, only_asynchronous::Bool)
-    for loc in A.l_loc
+    for loc in A.locations
         tuple_edges = (current_loc, loc)
         if haskey(A.map_edges, tuple_edges)
             for edge in A.map_edges[tuple_edges]
@@ -142,10 +142,10 @@ function next_state!(Snplus1::StateLHA, A::LHA,
         println("Time flies with the flow...")
     end
     # Now time flies according to the flow
-    for i in eachindex(Snplus1.l_var)
-        coeff_deriv = (A.l_flow[Snplus1.loc])[i]
+    for i in eachindex(Snplus1.values)
+        coeff_deriv = (A.flow[Snplus1.loc])[i]
         if coeff_deriv > 0
-            Snplus1.l_var[i] += coeff_deriv*(tnplus1 - Snplus1.time)
+            Snplus1.values[i] += coeff_deriv*(tnplus1 - Snplus1.time)
         end
     end
     Snplus1.time = tnplus1
@@ -196,7 +196,7 @@ end
 
 # For tests purposes
 function read_trajectory(A::LHA, σ::Trajectory; verbose = false)
-    @assert σ.m.d == σ.m.dobs # Model should be entirely obserbed 
+    @assert (σ.m).dim_state == σ.m.dim_obs_state # Model should be entirely obserbed 
     A_new = LHA(A, (σ.m)._map_obs_var_idx)
     l_t = times(σ)
     l_tr = transitions(σ)
@@ -207,7 +207,7 @@ function read_trajectory(A::LHA, σ::Trajectory; verbose = false)
     for n in 1:length_states(σ)
         next_state!(Snplus1, A_new, σ[n], l_t[n], l_tr[n], Sn; verbose = verbose)
         copyto!(Sn, Snplus1)
-        if Snplus1.loc in A_new.l_loc_final 
+        if Snplus1.loc in A_new.locations_final 
             break 
         end
     end
