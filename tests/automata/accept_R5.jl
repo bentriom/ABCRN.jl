@@ -16,11 +16,12 @@ set_param!(ER, "k2", 40.0)
 
 test_all = true
 sync_ER = ER*A_G
-σ = nothing
 nb_sim = 1000
 for i = 1:nb_sim
-    global σ = simulate(sync_ER)
+    local σ = simulate(sync_ER) 
+    global test_all = test_all && isaccepted(σ)
     if !isaccepted(σ)
+        @show σ
         error("Ouch")
     end
 end

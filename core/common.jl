@@ -100,8 +100,9 @@ function ContinuousTimeModel(d::Int, k::Int, map_var_idx::Dict, map_param_idx::D
     if length(methods(isabsorbing)) >= 2
         @warn "You have possibly redefined a function Model.isabsorbing used in a previously instantiated model."
     end
-
-    return ContinuousTimeModel(d, k, map_var_idx, _map_obs_var_idx, map_param_idx, l_transitions, p, x0, t0, f!, g, _g_idx, isabsorbing, time_bound, buffer_size, estim_min_states)
+    new_model = ContinuousTimeModel(d, k, map_var_idx, _map_obs_var_idx, map_param_idx, l_transitions, p, x0, t0, f!, g, _g_idx, isabsorbing, time_bound, buffer_size, estim_min_states)
+    @assert check_consistency(new_model)
+    return new_model
 end
 
 LHA(A::LHA, map_var::Dict{String,Int}) = LHA(A.l_transitions, A.l_loc, A.Λ, 

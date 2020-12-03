@@ -1,12 +1,19 @@
 
 function _init_abc_automaton!(mat_p_old::Matrix{Float64}, vec_dist::Vector{Float64}, 
-                              pm::ParametricModel, str_var_aut::String)
+                              pm::ParametricModel, str_var_aut::String;
+                              l_obs::Union{Nothing,AbstractVector} = nothing, 
+                              func_dist::Union{Nothing,Function} = nothing)
     vec_p = zeros(pm.df)
     for i = eachindex(vec_dist)
         draw!(vec_p, pm)
         mat_p_old[:,i] = vec_p
-        S = volatile_simulate(pm, vec_p)
-        vec_dist[i] = S[str_var_aut]
+        if l_obs == nothing
+            S = volatile_simulate(pm, vec_p)
+            vec_dist[i] = S[str_var_aut]
+        else
+            σ = simulate(pm, vec_p)
+            vec_dist[i] = func_dist(σ, l_obs)
+        end
     end
 end
 
@@ -38,23 +45,26 @@ function _task_worker!(d_mat_p::DArray{Float64,2}, d_vec_dist::DArray{Float64,1}
                        pm::ParametricModel, epsilon::Float64,
                        wl_old::Vector{Float64}, mat_p_old::Matrix{Float64},
                        mat_cov::Matrix{Float64}, tree_mat_p::Union{Nothing,KDTree}, 
-                       kernel_type::String, str_var_aut::String)
+                       kernel_type::String, str_var_aut::String;
+                       l_obs::Union{Nothing,AbstractVector} = nothing, 
+                       func_dist::Union{Nothing,Function} = nothing)
     mat_p = localpart(d_mat_p)
     vec_dist = localpart(d_vec_dist)
     wl_current = localpart(d_wl_current)
     l_nbr_sim = zeros(Int, length(vec_dist))
     Threads.@threads for i = eachindex(vec_dist)
         _update_param!(mat_p, vec_dist, l_nbr_sim, wl_current, i, pm, epsilon,
-                       wl_old, mat_p_old, mat_cov, tree_mat_p, kernel_type, str_var_aut)
+                       wl_old, mat_p_old, mat_cov, tree_mat_p, kernel_type, str_var_aut;
+                       l_obs = l_obs, func_dist = func_dist)
     end
     return sum(l_nbr_sim)
 end
 
 function _draw_param_kernel!(vec_p_prime::Vector{Float64}, 
-                                         vec_p_star::SubArray{Float64,1}, 
-                                         mat_p_old::Matrix{Float64}, wl_old::Vector{Float64},
-                                         mat_cov::Matrix{Float64}, 
-                                         tree_mat_p::Union{KDTree,Nothing}, kernel_type::String)
+                             vec_p_star::SubArray{Float64,1}, 
+                             mat_p_old::Matrix{Float64}, wl_old::Vector{Float64},
+                             mat_cov::Matrix{Float64}, 
+                             tree_mat_p::Union{KDTree,Nothing}, kernel_type::String)
     if kernel_type == "mvnormal"
         d_mvnormal = MvNormal(vec_p_star, mat_cov)
         rand!(d_mvnormal, vec_p_prime)
@@ -71,12 +81,14 @@ function _draw_param_kernel!(vec_p_prime::Vector{Float64},
 end
 
 function _update_param!(mat_p::Matrix{Float64}, vec_dist::Vector{Float64}, 
-                                    l_nbr_sim::Vector{Int}, wl_current::Vector{Float64}, 
-                                    idx::Int,
-                                    pm::ParametricModel, epsilon::Float64,
-                                    wl_old::Vector{Float64}, mat_p_old::Matrix{Float64},
-                                    mat_cov::Matrix{Float64}, tree_mat_p::Union{Nothing,KDTree}, 
-                                    kernel_type::String, str_var_aut::String)
+                        l_nbr_sim::Vector{Int}, wl_current::Vector{Float64}, 
+                        idx::Int,
+                        pm::ParametricModel, epsilon::Float64,
+                        wl_old::Vector{Float64}, mat_p_old::Matrix{Float64},
+                        mat_cov::Matrix{Float64}, tree_mat_p::Union{Nothing,KDTree}, 
+                        kernel_type::String, str_var_aut::String;
+                        l_obs::Union{Nothing,AbstractVector} = nothing, 
+                        func_dist::Union{Nothing,Function} = nothing)
     d_weights = Categorical(wl_old)
     dist_sim = Inf
     nbr_sim = 0
@@ -88,8 +100,13 @@ function _update_param!(mat_p::Matrix{Float64}, vec_dist::Vector{Float64},
         if !insupport(pm, vec_p_prime)
             continue
         end
-        S = volatile_simulate(pm, vec_p_prime)
-        dist_sim = S[str_var_aut]
+        if l_obs == nothing
+            S = volatile_simulate(pm, vec_p_prime)
+            dist_sim = S[str_var_aut]
+        else
+            σ = simulate(pm, vec_p)
+            dist_sim = func_dist(σ, l_obs)
+        end
         nbr_sim += 1
     end
     
@@ -108,10 +125,10 @@ function _update_param!(mat_p::Matrix{Float64}, vec_dist::Vector{Float64},
 end
 
 function _update_weight!(wl_current::Vector{Float64}, idx::Int,
-                                     pm::ParametricModel,
-                                     wl_old::Vector{Float64}, mat_p_old::Matrix{Float64}, 
-                                     vec_p_prime::Vector{Float64},
-                                     mat_cov_kernel::Matrix{Float64}, kernel_type::String) 
+                         pm::ParametricModel,
+                         wl_old::Vector{Float64}, mat_p_old::Matrix{Float64}, 
+                         vec_p_prime::Vector{Float64},
+                         mat_cov_kernel::Matrix{Float64}, kernel_type::String) 
     denom = 0.0
     for j in 1:length(wl_old)
         #denom += wl_old[j] * Distributions.pdf(d_normal, inv_sqrt_mat_cov * (vec_p_current - mat_p_old[:,j]))::Float64 

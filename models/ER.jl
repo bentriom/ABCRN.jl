@@ -3,8 +3,8 @@ import StaticArrays: SVector, SMatrix, @SVector, @SMatrix
 
 d=4
 k=3
-dict_var = Dict("E" => 1, "S" => 2, "ES" => 3, "P" => 4)
-dict_p = Dict("k1" => 1, "k2" => 2, "k3" => 3)
+dict_var_ER = Dict("E" => 1, "S" => 2, "ES" => 3, "P" => 4)
+dict_p_ER = Dict("k1" => 1, "k2" => 2, "k3" => 3)
 l_tr_ER = ["R1","R2","R3"]
 p_ER = [1.0, 1.0, 1.0]
 x0_ER = [100, 100, 0, 0]
@@ -48,7 +48,7 @@ isabsorbing_ER(p::Vector{Float64},xn::Vector{Int}) =
     (p[1]*xn[1]*xn[2] + (p[2]+p[3])*xn[3]) === 0.0
 g_ER = ["P"]
 
-ER = ContinuousTimeModel(d,k,dict_var,dict_p,l_tr_ER,p_ER,x0_ER,t0_ER,ER_f!,isabsorbing_ER; g=g_ER)
+ER = ContinuousTimeModel(d,k,dict_var_ER,dict_p_ER,l_tr_ER,p_ER,x0_ER,t0_ER,ER_f!,isabsorbing_ER; g=g_ER)
 
 function create_ER(new_p::Vector{Float64})
     ER_new = deepcopy(ER)

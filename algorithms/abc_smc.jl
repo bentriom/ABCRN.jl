@@ -15,7 +15,7 @@ using Logging
 main_pkg_path = get_module_path()
 include("$(main_pkg_path)/algorithms/_utils_abc.jl")
 
-struct ResultAutomatonAbc
+struct ResultAbc
 	mat_p_end::Matrix{Float64}
 	mat_cov::Matrix{Float64}
     nbr_sim::Int64
@@ -176,7 +176,7 @@ function _abc_smc(pm::ParametricModel, nbr_particles::Int, alpha::Float64,
         writedlm(dir_res * "weights_end.csv", wl_old, ',')
         writedlm(dir_res * "mat_p_end.csv", mat_p_old, ',')
     end
-    r = ResultAutomatonAbc(mat_p, mat_cov, nbr_tot_sim, time() - begin_time, vec_dist, epsilon, wl_old, l_ess)
+    r = ResultAbc(mat_p, mat_cov, nbr_tot_sim, time() - begin_time, vec_dist, epsilon, wl_old, l_ess)
     return r
 end
 
@@ -277,8 +277,7 @@ function _distributed_abc_smc(pm::ParametricModel, nbr_particles::Int, alpha::Fl
         writedlm(dir_res * "weights_end.csv", wl_current, ',')
         writedlm(dir_res * "mat_p_end.csv", mat_p, ',')
     end
-    r = ResultAutomatonAbc(mat_p, mat_cov, nbr_tot_sim, time() - begin_time, convert(Array, d_vec_dist), epsilon, wl_current, l_ess)
+    r = ResultAbc(mat_p, mat_cov, nbr_tot_sim, time() - begin_time, convert(Array, d_vec_dist), epsilon, wl_current, l_ess)
     return r
 end
-
 

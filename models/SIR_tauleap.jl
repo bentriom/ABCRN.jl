@@ -3,7 +3,7 @@ import StaticArrays: SVector, SMatrix, @SVector, @SMatrix
 import Distributions: Poisson, rand
 
 d=3
-k=2
+k=3
 dict_var_SIR_tauleap = Dict("S" => 1, "I" => 2, "R" => 3)
 dict_p_SIR_tauleap = Dict("ki" => 1, "kr" => 2, "tau" => 3)
 l_tr_SIR_tauleap = ["U"]

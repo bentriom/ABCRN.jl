@@ -358,6 +358,7 @@ end
 isbounded(m::Model) = get_proba_model(m).time_bound < Inf
 function check_consistency(m::ContinuousTimeModel) 
     @assert m.d == length(m.map_var_idx) 
+    @assert m.d == length(m.x0) 
     @assert m.k == length(m.map_param_idx)
     @assert m.k == length(m.p)
     @assert length(m.g) <= m.d

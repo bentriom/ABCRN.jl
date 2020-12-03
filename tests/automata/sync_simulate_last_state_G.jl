@@ -18,7 +18,7 @@ end
 test_all = true
 nbr_sim = 10000
 for i = 1:nbr_sim
-    test = test_last_state(A_G, sync_ER)
+    local test = test_last_state(A_G, sync_ER)
     global test_all = test_all && test
 end
 

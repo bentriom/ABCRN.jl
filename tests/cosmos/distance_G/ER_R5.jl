@@ -10,7 +10,7 @@
     observe_all!(ER)
     ER.buffer_size = 100
     load_automaton("automaton_G")
-    width = 0.5
+    width = 0.2
     level = 0.95
     x1, x2, t1, t2 = 50.0, 100.0, 0.0, 0.8
     A_G = create_automaton_G(model, x1, x2, t1, t2, "E")  
