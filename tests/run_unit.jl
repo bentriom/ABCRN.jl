@@ -32,6 +32,7 @@ using Test
     
     
     @test include("unit/set_param.jl")
+    @test include("unit/set_x0.jl")
     @test include("unit/side_effects_1.jl")
     @test include("unit/simulate_available_models.jl")
     @test include("unit/simulate_sir.jl")

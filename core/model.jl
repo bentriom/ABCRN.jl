@@ -393,18 +393,35 @@ function observe_all!(am::Model)
     m._g_idx = _g_idx
     m._map_obs_var_idx = m.map_var_idx
 end
-set_param!(m::ContinuousTimeModel, p::Vector{Float64}) = (m.p = p)
-set_param!(m::ContinuousTimeModel, name_p::String, p_i::Float64) = (m.p[m.map_param_idx[name_p]] = p_i)
-function set_param!(m::ContinuousTimeModel, l_name_p::Vector{String}, p::Vector{Float64}) 
+function set_param!(am::Model, new_p::Vector{Float64})
+    m = get_proba_model(am)
+    @assert length(new_p) == m.k
+    m.p = new_p
+end
+function set_param!(am::Model, name_p::String, p_i::Float64) 
+    m = get_proba_model(am)
+    m.p[m.map_param_idx[name_p]] = p_i
+end
+function set_param!(am::Model, l_name_p::Vector{String}, p::Vector{Float64}) 
+    m = get_proba_model(am)
+    @assert length(l_name_p) == length(p)
     for i = eachindex(l_name_p)
         set_param!(m, l_name_p[i], p[i])
     end
 end
-
-get_param(m::ContinuousTimeModel) = m.p
-getindex(m::ContinuousTimeModel, name_p::String) = m.p[m.map_param_idx[name_p]]
+function set_x0!(am::Model, new_x0::Vector{Int})
+    m = get_proba_model(am)
+    @assert length(new_x0) == m.d
+    m.x0 = new_x0
+end
 set_time_bound!(am::Model, b::Float64) = (get_proba_model(am).time_bound = b)
 
+
+get_param(am::Model) = get_proba_model(am).p
+function getindex(am::Model, name_p::String)
+    m = get_proba_model(am)
+    m.p[m.map_param_idx[name_p]]
+end
 function getproperty(m::ContinuousTimeModel, sym::Symbol)
     if sym == :dobs
         return length(m.g)
