@@ -245,7 +245,13 @@ function simulate(product::SynchronizedModel; p::Union{Nothing,AbstractVector{Fl
     end
     return SynchronizedTrajectory(Sn, product, values, times, transitions)
 end
+"""
+    `volatile_simulate(sm::SynchronizedModel; p, verbose)`
 
+Simulates a model synchronized with an automaton but does not store the values of the simulation
+in order to improve performance.
+It returns the last state of the simulation `S::StateLHA` not a trajectory `σ::SynchronizedTrajectory`.
+"""
 function volatile_simulate(product::SynchronizedModel; 
                            p::Union{Nothing,AbstractVector{Float64}} = nothing, verbose::Bool = false)
     m = product.m
@@ -310,6 +316,20 @@ function simulate(pm::ParametricModel, p_prior::AbstractVector{Float64})
     full_p[pm._param_idx] = p_prior
     
     return simulate(pm.m; p = full_p) 
+end
+"""
+    `volatile_simulate(pm::ParametricModel, p_prior::AbstractVector{Float64})
+
+A volatile version of `simulate(pm::ParametricModel, p_prior::AbstractVector{Float64})`.
+The model in pm should be of type SynchronizedModel (`typeof(pm.m) <: SynchronizedModel`).
+It returns `S::StateLHA`, not a trajectory.
+"""
+function volatile_simulate(pm::ParametricModel, p_prior::AbstractVector{Float64})
+    @assert typeof(pm.m) <: SynchronizedModel
+    full_p = copy(get_proba_model(pm).p)
+    full_p[pm._param_idx] = p_prior
+    
+    return volatile_simulate(pm.m; p = full_p) 
 end
 """
     `distribute_mean_value_lha(sm::SynchronizedModel, str_var::String, nbr_stim::Int)`
