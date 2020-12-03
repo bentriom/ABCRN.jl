@@ -38,14 +38,14 @@ export get_module_path, cosmos_get_values
 export load_model, load_automaton, load_plots
 
 # Algorithms
-export automaton_abc
+export automaton_abc, abc_smc
 
 include("common.jl")
 include("trajectory.jl")
 include("lha.jl")
 include("model.jl")
 include("utils.jl")
-include("../algorithms/automaton_abc.jl")
+include("../algorithms/abc_smc.jl")
 
 end
 
