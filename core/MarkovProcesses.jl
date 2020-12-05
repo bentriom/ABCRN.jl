@@ -40,11 +40,15 @@ export load_model, load_automaton, load_plots
 # Algorithms
 export automaton_abc, abc_smc
 
+# About biochemical networks
+export @biochemical_network
+
 include("common.jl")
 include("trajectory.jl")
 include("lha.jl")
 include("model.jl")
 include("utils.jl")
+include("biochemical_network.jl")
 include("../algorithms/abc_smc.jl")
 
 end

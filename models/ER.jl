@@ -14,13 +14,13 @@ function ER_f!(xnplus1::Vector{Int}, l_t::Vector{Float64}, l_tr::Vector{Union{No
     a1 = p[1] * xn[1] * xn[2]
     a2 = p[2] * xn[3]
     a3 = p[3] * xn[3]
-    l_a = SVector(a1, a2, a3)
+    l_a = (a1, a2, a3)
     asum = sum(l_a)
-    nu_1 = SVector(-1, -1, 1, 0)
-    nu_2 = SVector(1, 1, -1, 0)
-    nu_3 = SVector(1, 0, -1, 1) 
-    l_nu = SVector(nu_1, nu_2, nu_3)
-    l_str_R = SVector("R1", "R2", "R3")
+    nu_1 = (-1, -1, 1, 0)
+    nu_2 = (1, 1, -1, 0)
+    nu_3 = (1, 0, -1, 1) 
+    l_nu = (nu_1, nu_2, nu_3)
+    l_str_R = ("R1", "R2", "R3")
 
     u1 = rand()
     u2 = rand()

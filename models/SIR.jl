@@ -13,13 +13,13 @@ function SIR_f!(xnplus1::Vector{Int}, l_t::Vector{Float64}, l_tr::Vector{Union{N
                 xn::Vector{Int}, tn::Float64, p::Vector{Float64})
     a1 = p[1] * xn[1] * xn[2]
     a2 = p[2] * xn[2]
-    l_a = SVector(a1, a2)
+    l_a = (a1, a2)
     asum = sum(l_a)
     # column-major order
-    nu_1 = SVector(-1, 1, 0)
-    nu_2 = SVector(0, -1, 1)
-    l_nu = SVector(nu_1, nu_2)
-    l_str_R = SVector("R1","R2")
+    nu_1 = (-1, 1, 0)
+    nu_2 = (0, -1, 1)
+    l_nu = (nu_1, nu_2)
+    l_str_R = ("R1","R2")
 
     u1 = rand()
     u2 = rand()
