@@ -23,6 +23,7 @@ import Distributed: @everywhere
 @everywhere push!(LOAD_PATH, /path/to/markovprocesses.jl/core")`
 ```
 on your Julia startup file which is often located in `~/.julia/config/startup.jl` in Unix systems.
+    
     * If you don't want to add this in your startup file, you can add these lines in your Julia script before `using MarkovProcesses`.
 
 ## Getting started 
@@ -35,8 +36,7 @@ Execution tests and statistical tests are available. It can be run by:
 
 `julia tests/run_all.jl`
 
-!!! Statistical tests
-    The statistical tests run by tests/run_cosmos.jl needs Cosmos in your PATH environment variable.
+> :warning: The statistical tests run by `tests/run_cosmos.jl` needs [Cosmos](http://cosmos.lacl.fr/) in your PATH environment variable.
 
 ## Benchmarks
 
