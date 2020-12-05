@@ -37,7 +37,7 @@ g_SIR_tauleap = ["I"]
 
 SIR_tauleap = ContinuousTimeModel(d,k,dict_var_SIR_tauleap,dict_p_SIR_tauleap,l_tr_SIR_tauleap,
                                   p_SIR_tauleap,x0_SIR_tauleap,t0_SIR_tauleap,
-                                  SIR_tauleap_f!,isabsorbing_SIR_tauleap; g=g_SIR_tauleap)
+                                  SIR_tauleap_f!,isabsorbing_SIR_tauleap; g=g_SIR_tauleap, name="SIR tauleap pkg")
 function create_SIR_tauleap(new_p::Vector{Float64})
     SIR_tauleap_new = deepcopy(SIR_tauleap)
     @assert length(SIR_tauleap_new.p) == length(new_p)

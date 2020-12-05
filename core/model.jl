@@ -364,6 +364,23 @@ function distribute_prob_accept_lha(sm::SynchronizedModel, nbr_sim::Int)
     return sum_val / nbr_sim
 end
 
+function Base.show(io::IO, m::ContinuousTimeModel)
+    print(io, "$(m.name) model\n")
+    print(io, "- variables :\n")
+    for (var, idx) in m.map_var_idx
+        print(io, "* $var (idx = $idx in state space)\n")
+    end
+    print(io, "- parameters :\n")
+    for (param, idx) in m.map_param_idx
+        print(io, "* $param (idx = $idx in parameter space)\n")
+    end
+    print(io, "- transitions : $(m.transitions)\n")
+    print(io, "- observed variables :\n")
+    for i in eachindex(m.g)
+        print(io, "* $(m.g[i]) (idx = $i in observed state space)\n")
+    end
+end
+
 isbounded(m::Model) = get_proba_model(m).time_bound < Inf
 function check_consistency(m::ContinuousTimeModel) 
     @assert m.dim_state == length(m.map_var_idx) 

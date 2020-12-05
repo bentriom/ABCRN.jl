@@ -52,7 +52,7 @@ isabsorbing_ER(p::Vector{Float64},xn::Vector{Int}) =
     (p[1]*xn[1]*xn[2] + (p[2]+p[3])*xn[3]) === 0.0
 g_ER = ["P"]
 
-ER = ContinuousTimeModel(d,k,dict_var_ER,dict_p_ER,l_tr_ER,p_ER,x0_ER,t0_ER,ER_f!,isabsorbing_ER; g=g_ER)
+ER = ContinuousTimeModel(d,k,dict_var_ER,dict_p_ER,l_tr_ER,p_ER,x0_ER,t0_ER,ER_f!,isabsorbing_ER; g=g_ER,name="ER pkg")
 
 function create_ER(new_p::Vector{Float64})
     ER_new = deepcopy(ER)

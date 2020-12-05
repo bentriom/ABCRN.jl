@@ -35,7 +35,8 @@ function get_str_propensity(propensity::Symbol, dict_species::Dict, dict_params:
     return str_propensity
 end
 
-macro biochemical_network(expr_name,expr_network)
+macro biochemical_network(expr_network,expr_name...)
+    model_name = isempty(expr_name) ? "Unnamed macro generated" : expr_name[1]
     transitions = String[]
     dict_species = Dict{String,Int}()
     dict_params = Dict{String,Int}()
@@ -103,7 +104,7 @@ macro biochemical_network(expr_name,expr_network)
     # Let's write some lines that creates the function f! (step of a simulation) for this biochemical network
     nbr_rand = rand(1:1000)
     nbr_reactions = length(list_expr_reactions)
-    basename_func = "$(replace(expr_name, ' '=>'_'))_$(nbr_rand)"
+    basename_func = "$(replace(model_name, ' '=>'_'))_$(nbr_rand)"
     expr_model_f! = "function $(basename_func)_f!(xnplus1::Vector{Int}, l_t::Vector{Float64}, l_tr::Vector{Union{Nothing,String}}, xn::Vector{Int}, tn::Float64, p::Vector{Float64})\n\t"
     # Computation of nu and propensity functions in f!
     str_l_a = "l_a = ("
@@ -178,6 +179,7 @@ macro biochemical_network(expr_name,expr_network)
     model_f! = eval(Meta.parse(expr_model_f!))
     model_isabsorbing = eval(Meta.parse(expr_model_isabsorbing))
     return :(ContinuousTimeModel($dim_state, $dim_params, $dict_species, $dict_params, $transitions, 
-                                 $(zeros(dim_params)), $(zeros(Int, dim_state)), 0.0, $model_f!, $model_isabsorbing; g = $list_species))
+                                 $(zeros(dim_params)), $(zeros(Int, dim_state)), 0.0, $model_f!, $model_isabsorbing; 
+                                 g = $list_species, name=$model_name))
 end
 

@@ -24,7 +24,8 @@ g_poisson = ["N"]
 
 poisson = ContinuousTimeModel(d,k,dict_var_poisson,dict_p_poisson,l_tr_poisson,
                                   p_poisson,x0_poisson,t0_poisson,
-                                  poisson_f!,isabsorbing_poisson; g=g_poisson, time_bound=1.0)
+                                  poisson_f!,isabsorbing_poisson; 
+                                  g=g_poisson, time_bound=1.0, name="Poisson process pkg")
 function create_poisson(new_p::Vector{Float64})
     poisson_new = deepcopy(poisson)
     @assert length(poisson_new.p) == length(new_p)

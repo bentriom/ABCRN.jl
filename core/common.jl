@@ -10,6 +10,7 @@ const Location = String
 const VariableAutomaton = String
 
 mutable struct ContinuousTimeModel <: Model
+    name::String
     dim_state::Int # state space dim
     dim_params::Int # parameter space dim
     map_var_idx::Dict{String,Int} # maps variable str to index in the state space
@@ -85,7 +86,8 @@ end
 function ContinuousTimeModel(dim_state::Int, dim_params::Int, map_var_idx::Dict, map_param_idx::Dict, transitions::Vector{String}, 
               p::Vector{Float64}, x0::Vector{Int}, t0::Float64, 
               f!::Function, isabsorbing::Function; 
-              g::Vector{String} = keys(map_var_idx), time_bound::Float64 = Inf, buffer_size::Int = 10, estim_min_states::Int = 50)
+              g::Vector{String} = keys(map_var_idx), time_bound::Float64 = Inf, 
+              buffer_size::Int = 10, estim_min_states::Int = 50, name::String = "Unnamed")
     dim_obs_state = length(g)
     _map_obs_var_idx = Dict()
     _g_idx = Vector{Int}(undef, dim_obs_state)
@@ -100,7 +102,8 @@ function ContinuousTimeModel(dim_state::Int, dim_params::Int, map_var_idx::Dict,
     if length(methods(isabsorbing)) >= 2
         @warn "You have possibly redefined a function Model.isabsorbing used in a previously instantiated model."
     end
-    new_model = ContinuousTimeModel(dim_state, dim_params, map_var_idx, _map_obs_var_idx, map_param_idx, transitions, p, x0, t0, f!, g, _g_idx, isabsorbing, time_bound, buffer_size, estim_min_states)
+    new_model = ContinuousTimeModel(name, dim_state, dim_params, map_var_idx, _map_obs_var_idx, map_param_idx, transitions, 
+                                    p, x0, t0, f!, g, _g_idx, isabsorbing, time_bound, buffer_size, estim_min_states)
     @assert check_consistency(new_model)
     return new_model
 end
