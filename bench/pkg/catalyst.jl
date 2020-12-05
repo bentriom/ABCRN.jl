@@ -11,6 +11,7 @@ ER.buffer_size = 100
 ER.estim_min_states = 8000
 
 b_pkg = @benchmark simulate(ER)
+@show minimum(b_pkg), mean(b_pkg), maximum(b_pkg)
 
 rs = @reaction_network begin
   c1, S + E --> SE
@@ -27,6 +28,7 @@ jprob = JumpProblem(rs, dprob, Direct())
 jsol = solve(jprob, SSAStepper())
 
 b_catalyst = @benchmark solve(jprob, SSAStepper())
+@show minimum(b_catalyst), mean(b_catalyst), maximum(b_catalyst)
 
 #plot(jsol,lw=2,title="Gillespie: Michaelis-Menten Enzyme Kinetics")
 

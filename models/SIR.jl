@@ -11,8 +11,8 @@ x0_SIR = [95, 5, 0]
 t0_SIR = 0.0
 function SIR_f!(xnplus1::Vector{Int}, l_t::Vector{Float64}, l_tr::Vector{Union{Nothing,String}},
                 xn::Vector{Int}, tn::Float64, p::Vector{Float64})
-    a1 = p[1] * xn[1] * xn[2]
-    a2 = p[2] * xn[2]
+    @inbounds a1 = p[1] * xn[1] * xn[2]
+    @inbounds a2 = p[2] * xn[2]
     l_a = (a1, a2)
     asum = sum(l_a)
     if asum == 0.0
@@ -36,16 +36,16 @@ function SIR_f!(xnplus1::Vector{Int}, l_t::Vector{Float64}, l_tr::Vector{Union{N
             reaction = i
             break
         end
-        b_inf += l_a[i]
-        b_sup += l_a[i+1]
+        @inbounds b_inf += l_a[i]
+        @inbounds b_sup += l_a[i+1]
     end
  
     nu = l_nu[reaction]
     for i = 1:3
-        xnplus1[i] = xn[i]+nu[i]
+        @inbounds xnplus1[i] = xn[i]+nu[i]
     end
-    l_t[1] = tn + tau
-    l_tr[1] = l_str_R[reaction]
+    @inbounds l_t[1] = tn + tau
+    @inbounds l_tr[1] = l_str_R[reaction]
 end
 isabsorbing_SIR(p::Vector{Float64}, xn::Vector{Int}) = (p[1]*xn[1]*xn[2] + p[2]*xn[2]) === 0.0
 g_SIR = ["I"]

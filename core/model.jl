@@ -4,24 +4,23 @@ import Distributions: insupport, pdf
 
 function _resize_trajectory!(values::Vector{Vector{Int}}, times::Vector{Float64}, 
                              transitions::Vector{Transition}, size::Int)
-    for i = eachindex(values) resize!(values[i], size) end
+    for i = eachindex(values) resize!(@inbounds(values[i]), size) end
     resize!(times, size)
     resize!(transitions, size)
 end
 
-
 function _finish_bounded_trajectory!(values::Vector{Vector{Int}}, times::Vector{Float64}, 
                                     transitions::Vector{Transition}, time_bound::Float64)
-    for i = eachindex(values) push!(values[i], values[i][end]) end
+    for i = eachindex(values) push!(@inbounds(values[i]), @inbounds(values[i][end])) end
     push!(times, time_bound)
     push!(transitions, nothing)
 end
 
 function _update_values!(values::Vector{Vector{Int}}, times::Vector{Float64}, transitions::Vector{Transition},
                          xn::Vector{Int}, tn::Float64, tr_n::Transition, idx::Int)
-    for k = eachindex(values) values[k][idx] = xn[k] end
-    times[idx] = tn
-    transitions[idx] = tr_n
+    for k = eachindex(values) @inbounds(values[k][idx] = xn[k]) end
+    @inbounds(times[idx] = tn)
+    @inbounds(transitions[idx] = tr_n)
 end
 
 """

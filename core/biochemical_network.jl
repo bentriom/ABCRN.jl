@@ -108,13 +108,13 @@ macro biochemical_network(expr_network,expr_name...)
     expr_model_f! = "function $(basename_func)_f!(xnplus1::Vector{Int}, l_t::Vector{Float64}, l_tr::Vector{Union{Nothing,String}}, xn::Vector{Int}, tn::Float64, p::Vector{Float64})\n\t"
     # Computation of nu and propensity functions in f!
     str_l_a = "l_a = ("
-    str_test_isabsorbing = "("
+    str_test_isabsorbing = "@inbounds("
     l_nu = [zeros(Int, dim_state) for i = 1:nbr_reactions]
     for (i, expr_reaction) in enumerate(list_expr_reactions)
         local isreaction = @capture(expr_reaction, TR_: (reactants_ => products_, propensity_))
         # Writing of propensities function
         str_propensity = get_str_propensity(propensity, dict_species, dict_params)
-        expr_model_f! *= "a$(i) = " * str_propensity * "\n\t"
+        expr_model_f! *= "@inbounds a$(i) = " * str_propensity * "\n\t"
         # Anticipating the write of the function isabsorbing
         str_test_isabsorbing *= str_propensity * "+"
         # Update the nu of the i-th reaction 
@@ -164,17 +164,16 @@ macro biochemical_network(expr_network,expr_name...)
     expr_model_f! *= "reaction = i\n\t\t\t"
     expr_model_f! *= "break\n\t\t"
     expr_model_f! *= "end\n\t\t"
-    expr_model_f! *= "b_inf += l_a[i]\n\t\t"
-    expr_model_f! *= "b_sup += l_a[i+1]\n\t"
+    expr_model_f! *= "@inbounds b_inf += l_a[i]\n\t\t"
+    expr_model_f! *= "@inbounds b_sup += l_a[i+1]\n\t"
     expr_model_f! *= "end\n\t"
     expr_model_f! *= "nu = l_nu[reaction]\n\t"
     expr_model_f! *= "for i = 1:$(dim_state)\n\t\t"
-    expr_model_f! *= "xnplus1[i] = xn[i]+nu[i]\n\t"
+    expr_model_f! *= "@inbounds xnplus1[i] = xn[i]+nu[i]\n\t"
     expr_model_f! *= "end\n\t"
-    expr_model_f! *= "l_t[1] = tn + tau\n\t"
-    expr_model_f! *= "l_tr[1] = l_str_R[reaction]\n"
+    expr_model_f! *= "@inbounds l_t[1] = tn + tau\n\t"
+    expr_model_f! *= "@inbounds l_tr[1] = l_str_R[reaction]\n"
     expr_model_f! *= "end\n"
-    
     expr_model_isabsorbing = "isabsorbing_$(basename_func)(p::Vector{Float64},xn::Vector{Int}) = $(str_test_isabsorbing) === 0.0"
     model_f! = eval(Meta.parse(expr_model_f!))
     model_isabsorbing = eval(Meta.parse(expr_model_isabsorbing))

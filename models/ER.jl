@@ -11,9 +11,9 @@ x0_ER = [100, 100, 0, 0]
 t0_ER = 0.0
 function ER_f!(xnplus1::Vector{Int}, l_t::Vector{Float64}, l_tr::Vector{Union{Nothing,String}},
                xn::Vector{Int}, tn::Float64, p::Vector{Float64})
-    a1 = p[1] * xn[1] * xn[2]
-    a2 = p[2] * xn[3]
-    a3 = p[3] * xn[3]
+    @inbounds a1 = p[1] * xn[1] * xn[2]
+    @inbounds a2 = p[2] * xn[3]
+    @inbounds a3 = p[3] * xn[3]
     l_a = (a1, a2, a3)
     asum = sum(l_a)
     if asum == 0.0
@@ -37,19 +37,19 @@ function ER_f!(xnplus1::Vector{Int}, l_t::Vector{Float64}, l_tr::Vector{Union{No
             reaction = i
             break
         end
-        b_inf += l_a[i]
-        b_sup += l_a[i+1]
+        @inbounds b_inf += l_a[i]
+        @inbounds b_sup += l_a[i+1]
     end
  
     nu = l_nu[reaction]
     for i = 1:4
-        xnplus1[i] = xn[i]+nu[i]
+        @inbounds xnplus1[i] = xn[i]+nu[i]
     end
-    l_t[1] = tn + tau
-    l_tr[1] = l_str_R[reaction]
+    @inbounds l_t[1] = tn + tau
+    @inbounds l_tr[1] = l_str_R[reaction]
 end
 isabsorbing_ER(p::Vector{Float64},xn::Vector{Int}) = 
-    (p[1]*xn[1]*xn[2] + (p[2]+p[3])*xn[3]) === 0.0
+    @inbounds(p[1]*xn[1]*xn[2] + (p[2]+p[3])*xn[3] === 0.0)
 g_ER = ["P"]
 
 ER = ContinuousTimeModel(d,k,dict_var_ER,dict_p_ER,l_tr_ER,p_ER,x0_ER,t0_ER,ER_f!,isabsorbing_ER; g=g_ER,name="ER pkg")
