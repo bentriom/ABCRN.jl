@@ -6,23 +6,24 @@ A Julia package for efficient simulation, statistical inference and verification
 
 It implements:
 
-* A core of simulation for Markov Processes
+* A core of simulation for Markov Processes.
+* A simple interface for Biochemical Networks / Stochastic Petri Nets.
 * Synchronized simulation with Linear Hybrid Automata.
 * Approximate Bayesian Computation (a likelihood-free inference method)
 * Automaton-ABC: a statistical method for verification of parametric CTMC (cite paper)
 
 ## Install
 
-This package is not yet accessible via the Julia package manager. For installatation of the package:
+This package is not yet accessible via the Julia package manager. For the install of the package:
 
 1. Clone this git repository on your computer.
-2. Add the "core" directory of this repository to your LOAD_PATH. This can be done by two different ways:
+2. Add the "core" directory of this repository to your `LOAD_PATH`. This can be done by two different ways:
     * Add the Julia line code 
-```julia
-import Distributed: @everywhere
-@everywhere push!(LOAD_PATH, /path/to/markovprocesses.jl/core")`
-```
-on your Julia startup file which is often located in `~/.julia/config/startup.jl` in Unix systems.
+    ```julia
+    import Distributed: @everywhere
+    @everywhere push!(LOAD_PATH, /path/to/markovprocesses.jl/core")
+    ```
+    on your Julia startup file which is often located in `~/.julia/config/startup.jl` in Unix systems.
     
     * If you don't want to add this in your startup file, you can add these lines in your Julia script before `using MarkovProcesses`.
 
@@ -30,7 +31,7 @@ on your Julia startup file which is often located in `~/.julia/config/startup.jl
 
 A few notebooks are available in examples/notebooks for a quick presentation of the different features of the package.
 
-## Test
+## Tests
 
 Execution tests and statistical tests are available. It can be run by:
 
@@ -40,7 +41,7 @@ Execution tests and statistical tests are available. It can be run by:
 
 ## Benchmarks
 
-Efforts have been made for efficient computation of simulations with 100% Julia code. These benchmark can be found in bench/. 
+Benchmarks have been made to test the performance of the package compared to well-known efficient other packages such as `DifferentialEquations.jl`.
 
 ## Info
 
