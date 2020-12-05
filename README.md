@@ -1,5 +1,6 @@
 
-# MarkovProcesses.jl 
+MarkovProcesses.jl 
+==================
 
 A Julia package for efficient simulation, statistical inference and verification of Continuous Time Markov Chains.
 
@@ -17,8 +18,10 @@ This package is not yet accessible via the Julia package manager. For installata
 1. Clone this git repository on your computer.
 2. Add the "core" directory of this repository to your LOAD_PATH. This can be done by two different ways:
     * Add the Julia line code 
-` import Distributed: @everywhere
+```julia
+import Distributed: @everywhere
 @everywhere push!(LOAD_PATH, /path/to/markovprocesses.jl/core")`
+```
 on your Julia startup file which is often located in `~/.julia/config/startup.jl` in Unix systems.
     * If you don't want to add this in your startup file, you can add these lines in your Julia script before `using MarkovProcesses`.
 
