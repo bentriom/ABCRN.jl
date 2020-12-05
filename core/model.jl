@@ -67,16 +67,13 @@ function simulate(m::ContinuousTimeModel; p::Union{Nothing,AbstractVector{Float6
     for i = 2:m.estim_min_states
         m.f!(vec_x, l_t, l_tr, xn, tn, p_sim)
         tn = l_t[1]
-        if tn > m.time_bound
+        if tn > m.time_bound || vec_x == xn
+            isabsorbing = (vec_x == xn)
             break
         end
         n += 1
         copyto!(xn, vec_x)
         _update_values!(full_values, times, transitions, xn, tn, l_tr[1], i)
-        isabsorbing = m.isabsorbing(p_sim,xn)
-        if isabsorbing 
-            break
-        end
     end
     # If simulation ended before the estimation of states
     if n < m.estim_min_states
@@ -97,17 +94,18 @@ function simulate(m::ContinuousTimeModel; p::Union{Nothing,AbstractVector{Float6
             i += 1
             m.f!(vec_x, l_t, l_tr, xn, tn, p_sim)
             tn = l_t[1]
-            if tn > m.time_bound
+            if tn > m.time_bound 
+                i -= 1
+                break
+            end
+            if vec_x == xn
+                isabsorbing = true
                 i -= 1
                 break
             end
             copyto!(xn, vec_x)
             _update_values!(full_values, times, transitions, 
                             xn, tn, l_tr[1], m.estim_min_states+size_tmp+i)
-            isabsorbing = m.isabsorbing(p_sim,xn)
-            if isabsorbing 
-                break
-            end
         end
         # If simulation ended before the end of buffer
         if i < m.buffer_size
@@ -172,7 +170,8 @@ function simulate(product::SynchronizedModel; p::Union{Nothing,AbstractVector{Fl
     for i = 2:m.estim_min_states
         m.f!(vec_x, l_t, l_tr, xn, tn, p_sim)
         tn = l_t[1]
-        if tn > m.time_bound
+        if tn > m.time_bound || vec_x == xn
+            isabsorbing = (vec_x == xn)
             break
         end
         n += 1
@@ -181,7 +180,6 @@ function simulate(product::SynchronizedModel; p::Union{Nothing,AbstractVector{Fl
         next_state!(Snplus1, A, xn, tn, tr_n, Sn; verbose = verbose)
         _update_values!(full_values, times, transitions, xn, tn, tr_n, i)
         copyto!(Sn, Snplus1)
-        isabsorbing = m.isabsorbing(p_sim,xn)
         isacceptedLHA = isaccepted(Snplus1)
         if isabsorbing || isacceptedLHA 
             break
@@ -214,13 +212,17 @@ function simulate(product::SynchronizedModel; p::Union{Nothing,AbstractVector{Fl
                 i -= 1
                 break
             end
+            if vec_x == xn
+                isabsorbing = true
+                i -= 1
+                break
+            end
             copyto!(xn, vec_x)
             tr_n = l_tr[1]
             next_state!(Snplus1, A, xn, tn, tr_n, Sn; verbose = verbose)
             _update_values!(full_values, times, transitions, 
                             xn, tn, tr_n, m.estim_min_states+size_tmp+i)
             copyto!(Sn, Snplus1)
-            isabsorbing = m.isabsorbing(p_sim,xn)
             isacceptedLHA = isaccepted(Snplus1)
             if isabsorbing || isacceptedLHA
                 break
@@ -288,11 +290,14 @@ function volatile_simulate(product::SynchronizedModel;
             i -= 1
             break
         end
+        if vec_x == xn
+            isabsorbing = true
+            break
+        end
         copyto!(xn, vec_x)
         tr_n = l_tr[1]
         next_state!(Snplus1, A, xn, tn, tr_n, Sn; verbose = verbose)
         copyto!(Sn, Snplus1)
-        isabsorbing = m.isabsorbing(p_sim,xn)
         isacceptedLHA = isaccepted(Snplus1)
         n += 1
     end

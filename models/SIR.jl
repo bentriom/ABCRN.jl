@@ -15,6 +15,10 @@ function SIR_f!(xnplus1::Vector{Int}, l_t::Vector{Float64}, l_tr::Vector{Union{N
     a2 = p[2] * xn[2]
     l_a = (a1, a2)
     asum = sum(l_a)
+    if asum == 0.0
+        copyto!(xnplus1, xn)
+        return nothing
+    end
     # column-major order
     nu_1 = (-1, 1, 0)
     nu_2 = (0, -1, 1)

@@ -16,6 +16,10 @@ function ER_f!(xnplus1::Vector{Int}, l_t::Vector{Float64}, l_tr::Vector{Union{No
     a3 = p[3] * xn[3]
     l_a = (a1, a2, a3)
     asum = sum(l_a)
+    if asum == 0.0
+        copyto!(xnplus1, xn)
+        return nothing
+    end
     nu_1 = (-1, -1, 1, 0)
     nu_2 = (1, 1, -1, 0)
     nu_3 = (1, 0, -1, 1) 
