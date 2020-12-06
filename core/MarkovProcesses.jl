@@ -41,14 +41,14 @@ export load_model, load_automaton, load_plots
 export automaton_abc, abc_smc
 
 # About biochemical networks
-export @biochemical_network
+export @network_model
 
 include("common.jl")
 include("trajectory.jl")
 include("lha.jl")
 include("model.jl")
 include("utils.jl")
-include("biochemical_network.jl")
+include("network_model.jl")
 include("../algorithms/abc_smc.jl")
 
 end

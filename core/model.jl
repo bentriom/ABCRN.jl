@@ -378,6 +378,10 @@ function Base.show(io::IO, m::ContinuousTimeModel)
     for i in eachindex(m.g)
         print(io, "* $(m.g[i]) (idx = $i in observed state space)\n")
     end
+    print(io, "p = $(m.p)\n")
+    print(io, "x0 = $(m.x0) (in full state space)\n")
+    print(io, "t0 = $(m.t0)\n")
+    print(io, "time bound = $(m.time_bound)")
 end
 
 isbounded(m::Model) = get_proba_model(m).time_bound < Inf

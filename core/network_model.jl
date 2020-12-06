@@ -35,7 +35,7 @@ function get_str_propensity(propensity::Symbol, dict_species::Dict, dict_params:
     return str_propensity
 end
 
-macro biochemical_network(expr_network,expr_name...)
+macro network_model(expr_network,expr_name...)
     model_name = isempty(expr_name) ? "Unnamed macro generated" : expr_name[1]
     transitions = String[]
     dict_species = Dict{String,Int}()

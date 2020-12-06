@@ -26,7 +26,7 @@ using Test
     @test include("unit/load_module.jl")
     @test include("unit/long_sim_er.jl")
     
-    @test include("unit/macro_biochemical_network.jl")
+    @test include("unit/macro_network_model.jl")
     @test include("unit/model_prior.jl")
     @test include("unit/models_exps_er_1d.jl")
     @test include("unit/observe_all.jl")
