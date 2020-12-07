@@ -12,11 +12,20 @@ setindex!(S::StateLHA, val::Bool, var::VariableAutomaton) = (S.values)[(S.A).map
 function Base.show(io::IO, S::StateLHA)
     print(io, "State of LHA\n")
     print(io, "- location: $(S.loc)\n")
-    print(io, "- time: $(S.time)\n")
     print(io, "- variables:\n")
     for (var, idx) in (S.A).map_var_automaton_idx
         print(io, "* $var = $(S.values[idx]) (idx = $idx)\n")
     end
+    print(io, "- time: $(S.time)")
+end
+
+function Base.show(io::IO, E::Edge)
+    print(io, "(Edge: ")
+    print(io, (E.transitions[1] == nothing) ? "Asynchronous #, " : ("Synchronized with " * join(E.transitions,',') * ", "))
+    print(io, Symbol(E.check_constraints))
+    print(io, ", ")
+    print(io, Symbol(E.update_state!))
+    print(io, ")")
 end
 
 function Base.copyto!(Sdest::StateLHA, Ssrc::StateLHA)
@@ -88,7 +97,7 @@ function next_state!(Snplus1::StateLHA, A::LHA,
     # En fait d'apres observation de Cosmos, après qu'on ait lu la transition on devrait stop.
     edge_candidates = Edge[]
     first_round::Bool = true
-    detected_event::Bool = (tr_nplus1 == nothing) ? true : false
+    detected_event::Bool = false
     turns = 0
        
     if verbose 
@@ -174,6 +183,7 @@ function next_state!(Snplus1::StateLHA, A::LHA,
         first_round = false
         if verbose
             println("After update")
+            @show detected_event
             @show Snplus1
         end
         if (ind_edge == 0 || detected_event) 

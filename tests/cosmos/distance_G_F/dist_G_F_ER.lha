@@ -1,0 +1,83 @@
+
+NbVariables = 7;
+NbLocations = 8;
+
+const int x1 = 50;
+const int x2 = 100;
+const int x3 = 30;
+const int x4 = 100;
+
+const double t1 = 0.0;
+const double t2 = 0.8;
+const double t3 = 0.8;
+const double t4 = 0.9;
+
+VariablesList = {t, tprime, d, dprime, n, in, test_abs};
+
+LocationsList = {l0G, l1G, l2G, l3G, l4G, l1F, l2F, l3F};
+
+AVG(Last(t));
+AVG(Last(d));
+
+InitialLocations={l0G};
+FinalLocations={l2F};
+
+Locations={
+(l0G,   TRUE , (t:1));
+(l1G,   TRUE , (t:1));
+(l2G,   TRUE , (t:1));
+(l3G,   TRUE , (t:1));
+(l4G,   TRUE , (t:1,tprime:1));
+(l1F,   TRUE , (t:1));
+(l2F,   TRUE , (t:1));
+(l3F,   TRUE , (t:1));
+};
+
+Edges={
+% G automaton
+((l0G,l1G), #, t>=0, {n=E,d=0,in=1,test_abs=k_1*(E*S)+k_2*ES});
+
+((l1G,l3G), #, t<=t1 & n<=x1-1, {d=min(((n-x1)^2)^0.5,((n-x2)^2)^0.5),in=0});
+((l1G,l3G), #, t<=t1 & n>=x2+1, {d=min(((n-x1)^2)^0.5,((n-x2)^2)^0.5),in=0});
+((l1G,l3G), #, in=0 & t>=t1 & t<=t2 & n>=x1 & n<=x2, {d=d*(t-t1),tprime=0});
+((l1G,l3G), #, t<=t1 & n>=x1 & n<=x2, {d=0,in=0});
+((l1G,l3G), #, in=1 & t>=t1 & t<=t2 & n>=x1 & n<=x2, {tprime=0});
+
+((l1G,l4G), #, in=0 & t>=t1 & t<=t2 & n<=x1-1, {d=d+d*(t-t1)});
+((l1G,l4G), #, in=0 & t>=t1 & t<=t2 & n>=x2+1, {d=d+d*(t-t1)});
+((l1G,l4G), #, in=1 & t>=t1 & t<=t2 & n<=x1-1, #);
+((l1G,l4G), #, in=1 & t>=t1 & t<=t2 & n>=x2+1, #);
+
+((l1G,l2G), #, in=1 & t>=t2, #);
+((l1G,l2G), #, in=0 & t>=t2, {d=d*(t2-t1)});
+((l1G,l2G), #, test_abs=0 & t<=t1, {d=min(((n-x1)^2)^0.5,((n-x2)^2)^0.5)*(t2-t1)});
+((l1G,l2G), #, test_abs=0 & t>=t1 & t<=t2, {d=d+(t2-t)*min(((n-x1)^2)^0.5,((n-x2)^2)^0.5)});
+
+((l3G,l1G), ALL, t>=0, {n=E,test_abs=k_1*(E*S)+k_2*ES});
+
+((l3G,l2G), #, in=1 & t>=t2, {d=d*(t2-t1)});
+((l3G,l2G), #, in=0 & t>=t2, #);
+
+((l4G,l1G), ALL, t>=0, {d=d+tprime*min(((n-x1)^2)^0.5,((n-x2)^2)^0.5),tprime=0,n=E,in=1,test_abs=k_1*(E*S)+k_2*ES});
+
+((l4G,l2G), #, t>=t2, {d=d+tprime*min(((n-x1)^2)^0.5,((n-x2)^2)^0.5)});
+
+% From G to F automaton
+((l2G,l1F), #, t>=0, {n=P,test_abs=k_1*(E*S)+k_2*ES,dprime=9997999});
+
+((l1F,l2F), #, n>=x3 & n<=x4 & t>=t3 & t<=t4, {dprime=0});
+((l1F,l2F), #, t>=t4, {d=d+dprime});
+((l1F,l2F), #, test_abs=0 , {d=d+dprime});
+((l1F,l2F), #, dprime=0 & t>=t3, #);
+
+((l1F,l3F), #, n>=x3 & n<=x4, {dprime=0});
+((l1F,l3F), #, t<=t3 & n<=x3-1, {dprime=min(((t-t3)^2+(n-x4)^2)^0.5,((t-t3)^2+(n-x3)^2)^0.5)});
+((l1F,l3F), #, t<=t3 & n>=x4+1, {dprime=min(((t-t3)^2+(n-x4)^2)^0.5,((t-t3)^2+(n-x3)^2)^0.5)});
+((l1F,l3F), #, n<=x3-1 & t >= t3 & t<=t4, {dprime=min(dprime,min(((n-x3)^2)^0.5,((n-x4)^2)^0.5))});
+((l1F,l3F), #, n>=x4+1 & t >= t3 & t<=t4, {dprime=min(dprime,min( ((n-x3)^2)^0.5, ((n-x4)^2)^0.5 ) ) });
+
+((l3F,l1F), ALL, t>=0, {n=P,test_abs=k_1*(E*S)+k_2*ES});
+
+((l3F,l2F), #, t>=t4 ,#);
+};
+

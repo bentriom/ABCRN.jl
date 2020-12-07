@@ -29,8 +29,9 @@ using Test
     @test include("unit/macro_network_model.jl")
     @test include("unit/model_prior.jl")
     @test include("unit/models_exps_er_1d.jl")
+    @test include("unit/models_exps_er_2d.jl")
     @test include("unit/observe_all.jl")
-    
+    @test include("unit/prints.jl")
     
     @test include("unit/set_param.jl")
     @test include("unit/set_x0.jl")

@@ -36,8 +36,8 @@ function create_automaton_F(m::ContinuousTimeModel, x1::Float64, x2::Float64, t1
     cc_aut_F_l0l1_1(A::LHA, S::StateLHA) = true
     us_aut_F_l0l1_1!(A::LHA, S::StateLHA, x::Vector{Int}) = 
         (S.loc = "l1"; 
-         S["d"] = Inf; 
          S["n"] = get_value(A, x, str_obs);
+         S["d"] = Inf; 
          S["isabs"] = m.isabsorbing(m.p,x))
     edge1 = Edge([nothing], cc_aut_F_l0l1_1, us_aut_F_l0l1_1!)
     map_edges[tuple] = [edge1]

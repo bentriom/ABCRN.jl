@@ -55,7 +55,8 @@ for exp in l_exp
         l_dist_pkg[i] = distribute_mean_value_lha(sync_ER, "d", nb_sim)
         nb_accepts_pkg = distribute_prob_accept_lha(sync_ER, nb_sim)
         #@info "About accepts" nb_sim nb_accepted nb_accepts_pkg
-        test = isapprox(l_dist_cosmos[i], l_dist_pkg[i]; atol = width*1.01)
+        test = isapprox(l_dist_cosmos[i], l_dist_pkg[i]; atol = width*1.01) || 
+               (mat_dist_cosmos[i,j] == 9997999 && mat_dist_pkg[i,j] == Inf)
         test2 = nb_accepts_pkg == (nb_sim / nb_accepted)
         global test_all = test_all && test && test2
         if !test

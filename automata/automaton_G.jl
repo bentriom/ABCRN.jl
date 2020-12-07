@@ -120,7 +120,8 @@ function create_automaton_G(m::ContinuousTimeModel, x1::Float64, x2::Float64, t1
         S.time <= A.constants["t1"]
     us_aut_G_l1l2_3!(A::LHA, S::StateLHA, x::Vector{Int}) = 
         (S.loc = "l2"; 
-         S["d"] = S["d"] * (A.constants["t2"] - A.constants["t1"]))
+         S["d"] = (A.constants["t2"] - A.constants["t1"]) *
+                   min(abs(A.constants["x1"] - S["n"]), abs(A.constants["x1"] - S["n"])))
     edge3 = Edge([nothing], cc_aut_G_l1l2_3, us_aut_G_l1l2_3!)
     cc_aut_G_l1l2_4(A::LHA, S::StateLHA) = 
         istrue(S["isabs"]) && 

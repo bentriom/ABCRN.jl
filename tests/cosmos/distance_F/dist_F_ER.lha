@@ -24,7 +24,7 @@ Locations={
 };
 
 Edges={
-((l0,l1), #, t>=0, {n=P,test_abs=k_1*(E*S)+k_2*ES});
+((l0,l1), #, t>=0, {n=P,test_abs=k_1*(E*S)+k_2*ES,d=9997999});
 
 ((l1,l2),#, n>=x1 & n<=x2 & t>=t1 & t<=t2 ,{d=0});
 ((l1,l2),#, t>=t2  , #);
