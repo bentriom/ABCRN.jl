@@ -151,7 +151,7 @@ end
 
 function check_consistency(σ::AbstractTrajectory)
     test_length_var = true
-    for i = 1:get_proba_model(σ.m).dim_obs_state 
+    for i = 1:σ.m.dim_obs_state 
         test_length_i = (length(σ.values[1]) == length(σ.values[i]))
         test_length_var = test_length_var && test_length_i 
     end
@@ -159,20 +159,44 @@ function check_consistency(σ::AbstractTrajectory)
                   (length(σ.times) == length(σ.values[1])) &&
                   test_length_var
             end
-    @assert length_obs_var(σ) == get_proba_model(σ.m).dim_obs_state
+    @assert length_obs_var(σ) == σ.m.dim_obs_state
     return true
+end
+
+function Base.show(io::IO, σ::Trajectory)
+    print(io, "Trajectory\n")
+    print(io, "- Model name: $(σ.m.name) \n")
+    print(io, "- Variable trajectories:\n")
+    for obs_var in σ.m.g
+        print(io, "* $obs_var: $(σ[obs_var])\n")
+    end
+    print(io, "- times  = $(times(σ))\n")
+    print(io, "- transitions  = $(transitions(σ))")
+end
+function Base.show(io::IO, σ::SynchronizedTrajectory)
+    print(io, "SynchronizedTrajectory\n")
+    print(io, "End LHA state:\n")
+    print(io, σ.state_lha_end)
+    print(io, "\n")
+    print(io, "- Model name: $(σ.m.name) \n")
+    print(io, "- Variable trajectories:\n")
+    for obs_var in σ.m.g
+        print(io, "* $obs_var: $(σ[obs_var])\n")
+    end
+    print(io, "- times  = $(times(σ))\n")
+    print(io, "- transitions  = $(transitions(σ))")
 end
 
 # Properties of the trajectory
 length_states(σ::AbstractTrajectory) = length(σ.times)
 length_obs_var(σ::AbstractTrajectory) = length(σ.values)
-get_obs_var(σ::AbstractTrajectory) = get_proba_model(σ.m).g
+get_obs_var(σ::AbstractTrajectory) = σ.m.g
 isbounded(σ::AbstractTrajectory) = σ.transitions[end] == nothing && length_states(σ) >= 2
 isaccepted(σ::SynchronizedTrajectory) = isaccepted(σ.state_lha_end)
 issteadystate(σ::AbstractTrajectory) = @warn "Unimplemented"
 
 # Access to trajectory values
-get_var_values(σ::AbstractTrajectory, var::String) = σ.values[get_proba_model(σ.m)._map_obs_var_idx[var]]
+get_var_values(σ::AbstractTrajectory, var::String) = σ.values[σ.m._map_obs_var_idx[var]]
 get_state(σ::AbstractTrajectory, idx::Int) = [σ.values[i][idx] for i = 1:length(σ.values)] # /!\ Creates an array
 get_value(σ::AbstractTrajectory, var::String, idx::Int) = get_var_values(σ, var)[idx]
 # Operation σ@t
@@ -193,6 +217,13 @@ function get_state_from_time(σ::AbstractTrajectory, t::Float64)
         end
     end
     error("Unexpected behavior")
+end
+function getproperty(σ::SynchronizedTrajectory, sym::Symbol)
+    if sym == :m
+        return (σ.sm).m
+    else
+        return getfield(σ, sym)
+    end
 end
 
 states(σ::AbstractTrajectory) = σ.values

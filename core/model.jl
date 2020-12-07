@@ -364,22 +364,22 @@ function distribute_prob_accept_lha(sm::SynchronizedModel, nbr_sim::Int)
 end
 
 function Base.show(io::IO, m::ContinuousTimeModel)
-    print(io, "$(m.name) model\n")
+    print(io, "$(m.name) model (ContinuousTimeModel)\n")
     print(io, "- variables :\n")
     for (var, idx) in m.map_var_idx
-        print(io, "* $var (idx = $idx in state space)\n")
+        print(io, "* $var (index = $idx in state space)\n")
     end
     print(io, "- parameters :\n")
     for (param, idx) in m.map_param_idx
-        print(io, "* $param (idx = $idx in parameter space)\n")
+        print(io, "* $param (index = $idx in parameter space)\n")
     end
-    print(io, "- transitions : $(m.transitions)\n")
+    print(io, "- transitions : $(join(m.transitions,','))\n")
     print(io, "- observed variables :\n")
     for i in eachindex(m.g)
-        print(io, "* $(m.g[i]) (idx = $i in observed state space)\n")
+        print(io, "* $(m.g[i]) (index = $i in observed state space, index = $(m._g_idx[i]) in state space)\n")
     end
     print(io, "p = $(m.p)\n")
-    print(io, "x0 = $(m.x0) (in full state space)\n")
+    print(io, "x0 = $(m.x0)\n")
     print(io, "t0 = $(m.t0)\n")
     print(io, "time bound = $(m.time_bound)")
 end
@@ -424,7 +424,7 @@ function observe_all!(am::Model)
 end
 function set_param!(am::Model, new_p::Vector{Float64})
     m = get_proba_model(am)
-    @assert length(new_p) == m.dim_params
+    @assert length(new_p) == m.dim_params "New parameter vector hasn't the same dimension of parameter space"
     m.p = new_p
 end
 function set_param!(am::Model, name_p::String, p_i::Float64) 
@@ -433,14 +433,14 @@ function set_param!(am::Model, name_p::String, p_i::Float64)
 end
 function set_param!(am::Model, l_name_p::Vector{String}, p::Vector{Float64}) 
     m = get_proba_model(am)
-    @assert length(l_name_p) == length(p)
+    @assert length(l_name_p) == length(p) "Parameter names vector and parameter values haven't the same dimensions"
     for i = eachindex(l_name_p)
         set_param!(m, l_name_p[i], p[i])
     end
 end
 function set_x0!(am::Model, new_x0::Vector{Int})
     m = get_proba_model(am)
-    @assert length(new_x0) == m.dim_state
+    @assert length(new_x0) == m.dim_state "New x0 vector hasn't the dimension of state space"
     m.x0 = new_x0
 end
 set_time_bound!(am::Model, b::Float64) = (get_proba_model(am).time_bound = b)

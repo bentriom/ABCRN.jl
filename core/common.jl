@@ -69,7 +69,7 @@ end
 
 struct SynchronizedTrajectory <: AbstractTrajectory
     state_lha_end::StateLHA
-    m::SynchronizedModel
+    sm::SynchronizedModel
     values::Vector{Vector{Int}}
     times::Vector{Float64}
     transitions::Vector{Transition}
