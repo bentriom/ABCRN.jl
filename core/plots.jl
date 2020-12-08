@@ -11,7 +11,7 @@ whereas `plot(σ, "I", "R")` only plots the variables I and R of the trajectory 
 If `plot_transitions=true`, a marker that corresponds to a transition of the model will be plotted
 at each break of the trajectory.
 """
-function plot(σ::AbstractTrajectory, vars::String...; filename::String = "", plot_transitions = false)
+function plot(σ::AbstractTrajectory, vars::String...; plot_transitions::Bool = false, A::Union{Nothing,LHA} = nothing, filename::String = "")
     # Setup 
     palette_tr = palette(:default)
     l_tr = unique(transitions(σ))
@@ -22,7 +22,7 @@ function plot(σ::AbstractTrajectory, vars::String...; filename::String = "", pl
     end
     
     # Plots
-    p = plot(title = "Trajectory", palette = :lightrainbow, dpi = 480)
+    p = plot(title = "Trajectory of $(σ.m.name) model", palette = :lightrainbow, background_color_legend=:transparent, dpi = 480)
     for var in to_plot
         @assert var in get_obs_var(σ) 
         plot!(p, times(σ), σ[var], 
@@ -43,6 +43,9 @@ function plot(σ::AbstractTrajectory, vars::String...; filename::String = "", pl
             end
         end
     end
+    if A != nothing
+        plot!(A)
+    end
     if filename == ""
         display(p)
     else
@@ -51,8 +54,14 @@ function plot(σ::AbstractTrajectory, vars::String...; filename::String = "", pl
 end
 
 function plot!(A::LHA)
-    x1, x2, t1, t2 = A.constants["x1"], A.constants["x2"], A.constants["t1"], A.constants["t2"] 
-    plot!(Shape([(t1,x1), (t1,x2), (t2,x2), (t2,x1), (t1,x1)]), opacity = 0.5)
+    if haskey(A.constants, "x1") && haskey(A.constants, "x2") && haskey(A.constants, "t1") && haskey(A.constants, "t2") 
+        x1, x2, t1, t2 = A.constants["x1"], A.constants["x2"], A.constants["t1"], A.constants["t2"] 
+        plot!(Shape([(t1,x1), (t1,x2), (t2,x2), (t2,x1), (t1,x1)]), opacity = 0.5, label = "Region LHA")
+    end
+    if haskey(A.constants, "x3") && haskey(A.constants, "x4") && haskey(A.constants, "t3") && haskey(A.constants, "t4") 
+        x3, x4, t3, t4 = A.constants["x3"], A.constants["x4"], A.constants["t3"], A.constants["t4"] 
+        plot!(Shape([(t3,x3), (t3,x4), (t4,x4), (t4,x3), (t3,x3)]), opacity = 0.5, label = "Region LHA")
+    end
 end
 
 export plot, plot!
