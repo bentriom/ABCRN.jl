@@ -16,8 +16,8 @@ VariablesList = {t, tprime, d, dprime, n, in, test_abs};
 
 LocationsList = {l0G, l1G, l2G, l3G, l4G, l1F, l2F, l3F};
 
-AVG(Last(t));
 AVG(Last(d));
+AVG(Last(dprime));
 
 InitialLocations={l0G};
 FinalLocations={l2F};
@@ -65,10 +65,11 @@ Edges={
 % From G to F automaton
 ((l2G,l1F), #, t>=0, {n=P,test_abs=k_1*(E*S)+k_2*ES,dprime=9997999});
 
-((l1F,l2F), #, n>=x3 & n<=x4 & t>=t3 & t<=t4, {dprime=0});
-((l1F,l2F), #, t>=t4, {d=d+dprime});
-((l1F,l2F), #, test_abs=0 , {d=d+dprime});
-((l1F,l2F), #, dprime=0 & t>=t3, #);
+((l1F,l2F), #, t>=t3 & n>=x3 & n<=x4, {dprime=0});
+((l1F,l2F), #, t>=t3 & dprime=0, #);
+((l1F,l2F), #, t>=t4 & n<=x3-1, {dprime=min(((n-x3)^2)^0.5,((n-x4)^2)^0.5),d=d+dprime});
+((l1F,l2F), #, t>=t4 & n>=x4+1, {dprime=min(((n-x3)^2)^0.5,((n-x4)^2)^0.5),d=d+dprime});
+((l1F,l2F), #, test_abs=0 & t<=t4, {d=d+dprime});
 
 ((l1F,l3F), #, n>=x3 & n<=x4, {dprime=0});
 ((l1F,l3F), #, t<=t3 & n<=x3-1, {dprime=min(((t-t3)^2+(n-x4)^2)^0.5,((t-t3)^2+(n-x3)^2)^0.5)});

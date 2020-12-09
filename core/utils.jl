@@ -7,12 +7,15 @@ end
 
 function cosmos_get_values(name_file::String) 
     output_file = open(name_file)
-    dict_values = Dict{String}{Float64}()
+    dict_values = Dict{String}{Vector{Float64}}()
     while !eof(output_file)
         line = readline(output_file)
         splitted_line = split(line, ':')
-        if (length(splitted_line) > 1) && tryparse(Float64, splitted_line[2]) !== nothing 
-            dict_values[splitted_line[1]] = parse(Float64, splitted_line[2])
+        if (length(splitted_line) > 1) && tryparse(Float64, splitted_line[2]) !== nothing
+            if !haskey(dict_values, splitted_line[1])
+                dict_values[splitted_line[1]] = zeros(0)
+            end
+            push!(dict_values[splitted_line[1]], parse(Float64, splitted_line[2]))
         end
     end
     close(output_file)

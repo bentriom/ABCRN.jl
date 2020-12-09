@@ -51,7 +51,7 @@ struct LHA
     map_var_automaton_idx::Dict{VariableAutomaton,Int} # nvar keys : str_var => idx in values
     flow::Dict{Location,Vector{Float64}} # output of length nvar
     map_edges::Dict{Tuple{Location,Location},Vector{Edge}}
-    constants::Dict{String,Float64}
+    constants::NamedTuple
     map_var_model_idx::Dict{String,Int} # of dim d (of a model)
 end
 

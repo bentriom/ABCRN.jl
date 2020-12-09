@@ -25,7 +25,9 @@ test_all = true
 nb_k1 = length(l_k1)
 nb_k2 = length(l_k2)
 mat_dist_cosmos = zeros(nb_k1,nb_k2)
+mat_dist_prime_cosmos = zeros(nb_k1,nb_k2)
 mat_dist_pkg = zeros(nb_k1,nb_k2)
+mat_dist_prime_pkg = zeros(nb_k1,nb_k2)
 mat_full_k1 = zeros(nb_k1,nb_k2)
 mat_full_k2 = zeros(nb_k1,nb_k2)
 for i = 1:nb_k1
@@ -40,23 +42,24 @@ for i = 1:nb_k1
         --verbose 0` 
         run(pipeline(command, stderr=devnull))
         dict_values = cosmos_get_values("Result_dist_G_F_$(str_model).res")
-        mat_dist_cosmos[i,j] = dict_values["Estimated value"]
-        nb_sim = dict_values["Total paths"]
-        nb_accepted = dict_values["Accepted paths"]
+        mat_dist_cosmos[i,j] = dict_values["Estimated value"][1] 
+        mat_dist_prime_cosmos[i,j] = dict_values["Estimated value"][2]
+        nb_sim = dict_values["Total paths"][1]
+        nb_accepted = dict_values["Accepted paths"][1]
         nb_sim = convert(Int, nb_sim)
         # MarkovProcesses estimation
         set_param!(ER, "k1", convert(Float64, k1))
         set_param!(ER, "k2", convert(Float64, k2))
         sync_ER = ER*A_G_F
-        mat_dist_pkg[i,j] = distribute_mean_value_lha(sync_ER, "d", nb_sim)
+        mat_dist_pkg[i,j], mat_dist_prime_pkg[i,j] = distribute_mean_value_lha(sync_ER, ["d","dprime"], nb_sim)
         nb_accepts_pkg = distribute_prob_accept_lha(sync_ER, nb_sim)
-        #@info "Computed distances" mat_dist_pkg[i,j] mat_dist_cosmos[i,j]
+        #@info "Computed distances" mat_dist_pkg[i,j] mat_dist_prime_pkg[i,j] mat_dist_cosmos[i,j] mat_dist_prime_cosmos[i,j]
         #@info "About accepts" nb_sim nb_accepted nb_accepts_pkg
         test = (isapprox(mat_dist_cosmos[i,j], mat_dist_pkg[i,j]; atol = width*1.01)) || 
                 (mat_dist_cosmos[i,j] == 9997999 && mat_dist_pkg[i,j] == Inf)
         test2 = nb_accepts_pkg == (nb_sim / nb_accepted)
         if !test
-            @info "Distances too different" (k1,k2) mat_dist_pkg[i,j] mat_dist_cosmos[i,j]
+            @info "Distances too different" (k1,k2) mat_dist_pkg[i,j] mat_dist_prime_pkg[i,j] mat_dist_cosmos[i,j] mat_dist_prime_cosmos[i,j]
         end
         if !test2
             @info "Different proportion of accepted trajectories" nb_sim nb_accepted nb_accepts_pkg

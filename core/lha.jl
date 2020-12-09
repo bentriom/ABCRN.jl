@@ -5,6 +5,8 @@ get_value(A::LHA, x::Vector{Int}, var::String) = x[A.map_var_model_idx[var]]
 copy(S::StateLHA) = StateLHA(S.A, S.loc, S.values, S.time)
 # Not overring getproperty, setproperty to avoid a conversion Symbol => String for the dict key
 getindex(S::StateLHA, var::VariableAutomaton) = (S.values)[(S.A).map_var_automaton_idx[var]]
+getindex(S::StateLHA, l_var::Vector{VariableAutomaton}) = 
+        [S[var] for var in l_var]
 setindex!(S::StateLHA, val::Float64, var::VariableAutomaton) = (S.values)[(S.A).map_var_automaton_idx[var]] = val
 setindex!(S::StateLHA, val::Int, var::VariableAutomaton) = (S.values)[(S.A).map_var_automaton_idx[var]] = convert(Float64, val)
 setindex!(S::StateLHA, val::Bool, var::VariableAutomaton) = (S.values)[(S.A).map_var_automaton_idx[var]] = convert(Float64, val)
@@ -37,6 +39,9 @@ function Base.copyto!(Sdest::StateLHA, Ssrc::StateLHA)
     Sdest.time = Ssrc.time
 end
 
+# In future check_consistency(LHA), check if constant has the name
+# of one of the LHA fields
+
 isaccepted(S::StateLHA) = (S.loc in (S.A).locations_final)
 
 # Methods for synchronize / read the trajectory
@@ -59,7 +64,7 @@ function _find_edge_candidates!(edge_candidates::Vector{Edge}, current_loc::Loca
             for edge in A.map_edges[tuple_edges]
                 if edge.check_constraints(A, Snplus1)
                     if edge.transitions[1] == nothing
-                        pushfirst!(edge_candidates, edge)
+                        push!(edge_candidates, edge)
                     end
                     if !only_asynchronous && edge.transitions[1] != nothing
                         push!(edge_candidates, edge)
@@ -76,15 +81,16 @@ function _get_edge_index(edge_candidates::Vector{Edge},
     bool_event = detected_event
     for i in eachindex(edge_candidates)
         edge = edge_candidates[i]
-        # Asynchronous detection
-        if edge.transitions[1] == nothing
+        # Asynchronous edge detection: we fire it
+        if edge.transitions[1] == nothing 
             return (i, bool_event)
         end
         # Synchronous detection
         if !detected_event && tr_nplus1 != nothing
             if (length(edge.transitions) == 1 && edge.transitions[1] == "ALL") || 
                (tr_nplus1 in edge.transitions)
-                return (i, true)
+                ind_edge = i
+                bool_event = true
             end
         end
     end
@@ -92,8 +98,8 @@ function _get_edge_index(edge_candidates::Vector{Edge},
 end
 
 function next_state!(Snplus1::StateLHA, A::LHA, 
-                    xnplus1::Vector{Int}, tnplus1::Float64, tr_nplus1::Transition, 
-                    Sn::StateLHA; verbose::Bool = false)
+                     xnplus1::Vector{Int}, tnplus1::Float64, tr_nplus1::Transition, 
+                     Sn::StateLHA; verbose::Bool = false)
     # En fait d'apres observation de Cosmos, après qu'on ait lu la transition on devrait stop.
     edge_candidates = Edge[]
     first_round::Bool = true

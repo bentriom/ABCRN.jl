@@ -45,9 +45,9 @@ for exp in l_exp
         #run(command)
         run(pipeline(command, stderr=devnull))
         dict_values = cosmos_get_values("Result_dist_F_$(str_model).res")
-        l_dist_cosmos[i] = dict_values["Estimated value"]
-        nb_sim = dict_values["Total paths"]
-        nb_accepted = dict_values["Accepted paths"]
+        l_dist_cosmos[i] = dict_values["Estimated value"][1]
+        nb_sim = dict_values["Total paths"][1]
+        nb_accepted = dict_values["Accepted paths"][1]
         nb_sim = convert(Int, nb_sim)
         # MarkovProcesses estimation
         set_param!(ER, "k3", convert(Float64, k3))
@@ -56,7 +56,7 @@ for exp in l_exp
         nb_accepts_pkg = distribute_prob_accept_lha(sync_ER, nb_sim)
         #@info "About accepts" nb_sim nb_accepted nb_accepts_pkg
         test = isapprox(l_dist_cosmos[i], l_dist_pkg[i]; atol = width*1.01) || 
-               (mat_dist_cosmos[i,j] == 9997999 && mat_dist_pkg[i,j] == Inf)
+               (l_dist_cosmos[i] == 9997999 && l_dist_pkg[i] == Inf)
         test2 = nb_accepts_pkg == (nb_sim / nb_accepted)
         global test_all = test_all && test && test2
         if !test

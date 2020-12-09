@@ -39,9 +39,9 @@ for i = 1:nb_k1
         --verbose 0` 
         run(pipeline(command, stderr=devnull))
         dict_values = cosmos_get_values("Result_dist_G_$(str_model).res")
-        mat_dist_cosmos[i,j] = dict_values["Estimated value"]
-        nb_sim = dict_values["Total paths"]
-        nb_accepted = dict_values["Accepted paths"]
+        mat_dist_cosmos[i,j] = dict_values["Estimated value"][1]
+        nb_sim = dict_values["Total paths"][1]
+        nb_accepted = dict_values["Accepted paths"][1]
         nb_sim = convert(Int, nb_sim)
         # MarkovProcesses estimation
         set_param!(ER, "k1", convert(Float64, k1))
