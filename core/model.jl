@@ -336,7 +336,7 @@ function volatile_simulate(pm::ParametricModel, p_prior::AbstractVector{Float64}
     return volatile_simulate(pm.m; p = full_p) 
 end
 """
-    `distribute_mean_value_lha(sm::SynchronizedModel, str_var::String, nbr_stim::Int)`
+    `distribute_mean_value_lha(sm::SynchronizedModel, sym_var::Symbol, nbr_stim::Int)`
 
 Distribute over workers the computation of the mean value 
 of a LHA over `nbr_sim` simulations of the model.
@@ -398,13 +398,13 @@ function check_consistency(m::ContinuousTimeModel)
 end
 
 # Set and get Model fields
-function set_observed_var!(am::Model, g::Vector{String})
+function set_observed_var!(am::Model, g::Vector{VariableModel})
     m = get_proba_model(am)
     dim_obs_state = length(g)
-    _map_obs_var_idx = Dict{String}{Int}()
+    _map_obs_var_idx = Dict{VariableModel}{Int}()
     _g_idx = zeros(Int, dim_obs_state)
     for i = 1:dim_obs_state
-        _g_idx[i] = m.map_var_idx[g[i]] # = ( (g[i] = i-th obs var)::String => idx in state space )
+        _g_idx[i] = m.map_var_idx[g[i]] # = ( (g[i] = i-th obs var)::VariableModel => idx in state space )
         _map_obs_var_idx[g[i]] = i
     end
     m.g = g
@@ -413,7 +413,7 @@ function set_observed_var!(am::Model, g::Vector{String})
 end
 function observe_all!(am::Model)
     m = get_proba_model(am)
-    g = Vector{String}(undef, m.dim_state)
+    g = Vector{VariableModel}(undef, m.dim_state)
     _g_idx = collect(1:m.dim_state)
     for var in keys(m.map_var_idx)
         g[m.map_var_idx[var]] = var
@@ -427,11 +427,11 @@ function set_param!(am::Model, new_p::Vector{Float64})
     @assert length(new_p) == m.dim_params "New parameter vector hasn't the same dimension of parameter space"
     m.p = new_p
 end
-function set_param!(am::Model, name_p::String, p_i::Float64) 
+function set_param!(am::Model, name_p::ParameterModel, p_i::Float64) 
     m = get_proba_model(am)
     m.p[m.map_param_idx[name_p]] = p_i
 end
-function set_param!(am::Model, l_name_p::Vector{String}, p::Vector{Float64}) 
+function set_param!(am::Model, l_name_p::Vector{ParameterModel}, p::Vector{Float64}) 
     m = get_proba_model(am)
     @assert length(l_name_p) == length(p) "Parameter names vector and parameter values haven't the same dimensions"
     for i = eachindex(l_name_p)
@@ -447,7 +447,7 @@ set_time_bound!(am::Model, b::Float64) = (get_proba_model(am).time_bound = b)
 
 
 get_param(am::Model) = get_proba_model(am).p
-function getindex(am::Model, name_p::String)
+function getindex(am::Model, name_p::ParameterModel)
     m = get_proba_model(am)
     m.p[m.map_param_idx[name_p]]
 end

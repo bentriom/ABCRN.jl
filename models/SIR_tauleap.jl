@@ -4,13 +4,13 @@ import Distributions: Poisson, rand
 
 d=3
 k=3
-dict_var_SIR_tauleap = Dict("S" => 1, "I" => 2, "R" => 3)
-dict_p_SIR_tauleap = Dict("ki" => 1, "kr" => 2, "tau" => 3)
-l_tr_SIR_tauleap = ["U"]
+dict_var_SIR_tauleap = Dict(:S => 1, :I => 2, :R => 3)
+dict_p_SIR_tauleap = Dict(:ki => 1, :kr => 2, :tau => 3)
+l_tr_SIR_tauleap = [:U]
 p_SIR_tauleap = [0.0012, 0.05, 5.0]
 x0_SIR_tauleap = [95, 5, 0]
 t0_SIR_tauleap = 0.0
-function SIR_tauleap_f!(xnplus1::Vector{Int}, l_t::Vector{Float64}, l_tr::Vector{Union{Nothing,String}},
+function SIR_tauleap_f!(xnplus1::Vector{Int}, l_t::Vector{Float64}, l_tr::Vector{<:Transition},
                 xn::Vector{Int}, tn::Float64, p::Vector{Float64})
     tau = p[3]
     a1 = p[1] * xn[1] * xn[2]
@@ -30,10 +30,10 @@ function SIR_tauleap_f!(xnplus1::Vector{Int}, l_t::Vector{Float64}, l_tr::Vector
         xnplus1[i] = xn[i]+ nbr_R1*nu_1[i] + nbr_R2*nu_2[i]
     end
     l_t[1] = tn + tau
-    l_tr[1] = "U"
+    l_tr[1] = :U
 end
 isabsorbing_SIR_tauleap(p::Vector{Float64}, xn::Vector{Int}) = (p[1]*xn[1]*xn[2] + p[2]*xn[2]) === 0.0
-g_SIR_tauleap = ["I"]
+g_SIR_tauleap = [:I]
 
 SIR_tauleap = ContinuousTimeModel(d,k,dict_var_SIR_tauleap,dict_p_SIR_tauleap,l_tr_SIR_tauleap,
                                   p_SIR_tauleap,x0_SIR_tauleap,t0_SIR_tauleap,

@@ -4,21 +4,20 @@ using MacroTools
 function get_multiplicand_and_species(expr::Expr)
     @assert expr.args[1] == :*
     multiplicand = reduce(*, expr.args[2:(end-1)])
-    str_species = String(expr.args[end])
-    return (multiplicand, str_species)
+    sym_species = expr.args[end]
+    return (multiplicand, sym_species)
 end
-get_multiplicand_and_species(sym::Symbol) = (1, String(sym))
+get_multiplicand_and_species(sym::Symbol) = (1, sym)
 
 function get_str_propensity(propensity::Expr, dict_species::Dict, dict_params::Dict)
     str_propensity = ""
     for op in propensity.args[2:end]
-        str_op = String(op)
-        if haskey(dict_species, str_op)
-            str_propensity *= "xn[$(dict_species[str_op])] * "
-        elseif haskey(dict_params, str_op)
-            str_propensity *= "p[$(dict_params[str_op])] * "
+        if haskey(dict_species, op)
+            str_propensity *= "xn[$(dict_species[op])] * "
+        elseif haskey(dict_params, op)
+            str_propensity *= "p[$(dict_params[op])] * "
         else
-            str_propensity *= "$(str_op) * "
+            str_propensity *= "$(op) * "
         end
     end
     return str_propensity[1:(end-2)]
@@ -37,9 +36,9 @@ end
 
 macro network_model(expr_network,expr_name...)
     model_name = isempty(expr_name) ? "Unnamed macro generated" : expr_name[1]
-    transitions = String[]
-    dict_species = Dict{String,Int}()
-    dict_params = Dict{String,Int}()
+    transitions = Transition[]
+    dict_species = Dict{VariableModel,Int}()
+    dict_params = Dict{ParameterModel,Int}()
     dim_state = 0
     dim_params = 0
     list_expr_reactions = Any[]
@@ -48,23 +47,23 @@ macro network_model(expr_network,expr_name...)
         local isreaction = @capture(expr_reaction, TR_: (reactants_ => products_, propensity_))
         if isreaction
             push!(list_expr_reactions, expr_reaction)
-            push!(transitions, String(TR))
+            push!(transitions, TR)
             # Parsing reactants, products
             for reaction_part in [reactants, products]
                 # If there's several species interacting / produced
                 if typeof(reaction_part) <: Expr && reaction_part.args[1] == :+ 
                     for operand in reaction_part.args[2:end]
-                        mult, str_species = get_multiplicand_and_species(operand)
-                        if !haskey(dict_species, str_species)
+                        mult, sym_species = get_multiplicand_and_species(operand)
+                        if !haskey(dict_species, sym_species)
                             dim_state += 1
-                            dict_species[str_species] = dim_state
+                            dict_species[sym_species] = dim_state
                         end
                     end
                 else
-                    mult, str_species = get_multiplicand_and_species(reaction_part)
-                    if !haskey(dict_species, str_species)
+                    mult, sym_species = get_multiplicand_and_species(reaction_part)
+                    if !haskey(dict_species, sym_species)
                         dim_state += 1
-                        dict_species[str_species] = dim_state
+                        dict_species[sym_species] = dim_state
                     end
                 end
             end
@@ -82,19 +81,17 @@ macro network_model(expr_network,expr_name...)
             @assert propensity.args[1] == :* "Only product of species/params/constants are allowed in propensity"
             for operand in propensity.args[2:end]
                 if typeof(operand) <: Symbol
-                    str_op = String(operand)
                     # If it's not a species, it's a parameter
-                    if !(str_op in list_species) && !haskey(dict_params, str_op)
+                    if !(operand in list_species) && !haskey(dict_params, operand)
                         dim_params += 1
-                        dict_params[str_op] = dim_params
+                        dict_params[operand] = dim_params
                     end
                 end
             end
         elseif typeof(propensity) <: Symbol
-            str_op = String(propensity)
-            if !(str_op in list_species) && !haskey(dict_params, str_op)
+            if !(propensity in list_species) && !haskey(dict_params, propensity)
                 dim_params += 1
-                dict_params[str_op] = dim_params
+                dict_params[propensity] = dim_params
             end
         end
         if !isreaction && !(typeof(expr_reaction) <: LineNumberNode)
@@ -121,21 +118,21 @@ macro network_model(expr_network,expr_name...)
         nu = l_nu[i]
         if typeof(reactants) <: Expr && reactants.args[1] == :+ 
             for operand in reactants.args[2:end]
-                mult, str_species = get_multiplicand_and_species(operand)
-                nu[dict_species[str_species]] -= mult
+                mult, sym_species = get_multiplicand_and_species(operand)
+                nu[dict_species[sym_species]] -= mult
             end
         else
-            mult, str_species = get_multiplicand_and_species(reactants)
-            nu[dict_species[str_species]] -= mult
+            mult, sym_species = get_multiplicand_and_species(reactants)
+            nu[dict_species[sym_species]] -= mult
         end
         if typeof(products) <: Expr && products.args[1] == :+ 
             for operand in products.args[2:end]
-                mult, str_species = get_multiplicand_and_species(operand)
-                nu[dict_species[str_species]] += mult
+                mult, sym_species = get_multiplicand_and_species(operand)
+                nu[dict_species[sym_species]] += mult
             end
         else
-            mult, str_species = get_multiplicand_and_species(products)
-            nu[dict_species[str_species]] += mult
+            mult, sym_species = get_multiplicand_and_species(products)
+            nu[dict_species[sym_species]] += mult
         end
         expr_model_f! *= "nu_$i = $(Tuple(nu))\n\t"
         # Anticipating the line l_a = (..)
@@ -151,7 +148,7 @@ macro network_model(expr_network,expr_name...)
     expr_model_f! *= "end\n\t"
     # Computation of array of transitions
     expr_model_f! *= "l_nu = (" * reduce(*, ["nu_$i, " for i = 1:nbr_reactions])[1:(end-2)] * ")\n\t"
-    expr_model_f! *= "l_str_R = $(Tuple(transitions))\n\t"
+    expr_model_f! *= "l_sym_R = $(Tuple(transitions))\n\t"
     # Simulation of the reaction
     expr_model_f! *= "u1 = rand()\n\t"
     expr_model_f! *= "u2 = rand()\n\t"
@@ -172,7 +169,7 @@ macro network_model(expr_network,expr_name...)
     expr_model_f! *= "@inbounds xnplus1[i] = xn[i]+nu[i]\n\t"
     expr_model_f! *= "end\n\t"
     expr_model_f! *= "@inbounds l_t[1] = tn + tau\n\t"
-    expr_model_f! *= "@inbounds l_tr[1] = l_str_R[reaction]\n"
+    expr_model_f! *= "@inbounds l_tr[1] = l_sym_R[reaction]\n"
     expr_model_f! *= "end\n"
     expr_model_isabsorbing = "isabsorbing_$(basename_func)(p::Vector{Float64},xn::Vector{Int}) = $(str_test_isabsorbing) === 0.0"
     model_f! = eval(Meta.parse(expr_model_f!))

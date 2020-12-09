@@ -1,6 +1,6 @@
 
-function create_automaton_F(m::ContinuousTimeModel, x1::Float64, x2::Float64, t1::Float64, t2::Float64, str_obs::String)
-    @assert str_obs in m.g
+function create_automaton_F(m::ContinuousTimeModel, x1::Float64, x2::Float64, t1::Float64, t2::Float64, sym_obs::VariableModel)
+    @assert sym_obs in m.g "$(sym_obs) is not observed."
     # Locations
     locations = [:l0, :l1, :l2, :l3]
 
@@ -14,8 +14,8 @@ function create_automaton_F(m::ContinuousTimeModel, x1::Float64, x2::Float64, t1
     locations_final = [:l2]
 
     #S.n <=> S.values[A.map_var_automaton_idx[:n]] 
-    #P <=> xn[map_var_model_idx[constants[str_O]] with str_O = "P". On stock str_O dans constants
-    # P = get_value(A, x, str_obs) 
+    #P <=> xn[map_var_model_idx[constants[str_O]] with str_O = :P. On stock str_O dans constants
+    # P = get_value(A, x, sym_obs) 
     ## Map of automaton variables
     map_var_automaton_idx = Dict{VariableAutomaton,Int}(:n => 1, :d => 2, :isabs => 3)
 
@@ -38,7 +38,7 @@ function create_automaton_F(m::ContinuousTimeModel, x1::Float64, x2::Float64, t1
     cc_aut_F_l0l1_1(A::LHA, S::StateLHA) = true
     us_aut_F_l0l1_1!(A::LHA, S::StateLHA, x::Vector{Int}) = 
         (S.loc = :l1; 
-         S[:n] = get_value(A, x, str_obs);
+         S[:n] = get_value(A, x, sym_obs);
          S[:d] = Inf; 
          S[:isabs] = m.isabsorbing(m.p,x))
     edge1 = Edge([nothing], cc_aut_F_l0l1_1, us_aut_F_l0l1_1!)
@@ -108,9 +108,9 @@ function create_automaton_F(m::ContinuousTimeModel, x1::Float64, x2::Float64, t1
     cc_aut_F_l3l1_1(A::LHA, S::StateLHA) = true
     us_aut_F_l3l1_1!(A::LHA, S::StateLHA, x::Vector{Int}) = 
         (S.loc = :l1;
-         S[:n] = get_value(A, x, str_obs);
+         S[:n] = get_value(A, x, sym_obs);
          S[:isabs] = m.isabsorbing(m.p,x))
-    edge1 = Edge(["ALL"], cc_aut_F_l3l1_1, us_aut_F_l3l1_1!)
+    edge1 = Edge([:ALL], cc_aut_F_l3l1_1, us_aut_F_l3l1_1!)
     map_edges[:l3][:l1] = [edge1]
     
     

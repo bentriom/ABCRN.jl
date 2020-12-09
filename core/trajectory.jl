@@ -51,11 +51,11 @@ Requires `get_obs_var(σ1) == get_obs_var(σ2)`, it is verified if they are simu
 ...
 # Arguments
 - `σ1::AbstractTrajectory` is the first trajectory. σ2 is the second.
-- `var::String` is an observed variable. Have to be contained in `get_obs_var(σ1)` and `get_obs_var(σ2)`.
+- `var::Symbol` is an observed variable. Have to be contained in `get_obs_var(σ1)` and `get_obs_var(σ2)`.
 - `verbose::Bool` If `true`, launch a verbose execution of the computation. 
 ...
 """
-function dist_lp(σ1::AbstractTrajectory, σ2::AbstractTrajectory, var::String; 
+function dist_lp(σ1::AbstractTrajectory, σ2::AbstractTrajectory, var::VariableModel; 
                  verbose::Bool = false, p::Int = 1)
     if !isbounded(σ1) || !isbounded(σ2)
         @warn "Lp distance computed on unbounded trajectories. Result should be wrong"
@@ -196,9 +196,9 @@ isaccepted(σ::SynchronizedTrajectory) = isaccepted(σ.state_lha_end)
 issteadystate(σ::AbstractTrajectory) = @warn "Unimplemented"
 
 # Access to trajectory values
-get_var_values(σ::AbstractTrajectory, var::String) = σ.values[σ.m._map_obs_var_idx[var]]
+get_var_values(σ::AbstractTrajectory, var::VariableModel) = σ.values[σ.m._map_obs_var_idx[var]]
 get_state(σ::AbstractTrajectory, idx::Int) = [σ.values[i][idx] for i = 1:length(σ.values)] # /!\ Creates an array
-get_value(σ::AbstractTrajectory, var::String, idx::Int) = get_var_values(σ, var)[idx]
+get_value(σ::AbstractTrajectory, var::VariableModel, idx::Int) = get_var_values(σ, var)[idx]
 # Operation σ@t
 function get_state_from_time(σ::AbstractTrajectory, t::Float64)
     @assert t >= 0.0
@@ -232,10 +232,10 @@ transitions(σ::AbstractTrajectory) = σ.transitions
 
 # Get i-th state [i]
 getindex(σ::AbstractTrajectory, idx::Int) = get_state(σ, idx)
-# Get i-th value of var ["I", idx]
-getindex(σ::AbstractTrajectory, var::String, idx::Int) = get_value(σ, var, idx)
-# Get the path of a variable ["I"]
-getindex(σ::AbstractTrajectory, var::String) = get_var_values(σ, var)
+# Get i-th value of var [:I, idx]
+getindex(σ::AbstractTrajectory, var::VariableModel, idx::Int) = get_value(σ, var, idx)
+# Get the path of a variable [:I]
+getindex(σ::AbstractTrajectory, var::VariableModel) = get_var_values(σ, var)
 lastindex(σ::AbstractTrajectory) = length_states(σ)
 
 # Operations

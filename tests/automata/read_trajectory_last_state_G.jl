@@ -7,7 +7,7 @@ observe_all!(ER)
 ER.time_bound = 2.0
 x1, x2, t1, t2 = 0.0, Inf, 0.0, 2.0
 
-A_G = create_automaton_G(ER, x1, x2, t1, t2, "P") # <: LHA
+A_G = create_automaton_G(ER, x1, x2, t1, t2, :P) # <: LHA
 
 function test_last_state(A::LHA, m::ContinuousTimeModel)
     σ = simulate(m)

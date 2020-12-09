@@ -47,9 +47,9 @@ for i = 1:nb_sim
 end
 
 new_SIR = deepcopy(SIR)
-sync_SIR = new_SIR * create_automaton_F(new_SIR, 0.0, Inf, 100.0, 110.0, "I")
+sync_SIR = new_SIR * create_automaton_F(new_SIR, 0.0, Inf, 100.0, 110.0, :I)
 new_ER = deepcopy(ER)
-sync_ER = new_ER * create_automaton_F(new_ER, 0.0, 100.0, 4.0, 5.0, "P")
+sync_ER = new_ER * create_automaton_F(new_ER, 0.0, 100.0, 4.0, 5.0, :P)
 for i = 1:nb_sim
     local σ = simulate(sync_SIR)
     local σ2 = simulate(sync_ER)

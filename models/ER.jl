@@ -3,13 +3,13 @@ import StaticArrays: SVector, SMatrix, @SVector, @SMatrix
 
 d=4
 k=3
-dict_var_ER = Dict("E" => 1, "S" => 2, "ES" => 3, "P" => 4)
-dict_p_ER = Dict("k1" => 1, "k2" => 2, "k3" => 3)
-l_tr_ER = ["R1","R2","R3"]
+dict_var_ER = Dict(:E => 1, :S => 2, :ES => 3, :P => 4)
+dict_p_ER = Dict(:k1 => 1, :k2 => 2, :k3 => 3)
+l_tr_ER = [:R1,:R2,:R3]
 p_ER = [1.0, 1.0, 1.0]
 x0_ER = [100, 100, 0, 0]
 t0_ER = 0.0
-function ER_f!(xnplus1::Vector{Int}, l_t::Vector{Float64}, l_tr::Vector{Union{Nothing,String}},
+function ER_f!(xnplus1::Vector{Int}, l_t::Vector{Float64}, l_tr::Vector{<:Transition},
                xn::Vector{Int}, tn::Float64, p::Vector{Float64})
     @inbounds a1 = p[1] * xn[1] * xn[2]
     @inbounds a2 = p[2] * xn[3]
@@ -24,7 +24,7 @@ function ER_f!(xnplus1::Vector{Int}, l_t::Vector{Float64}, l_tr::Vector{Union{No
     nu_2 = (1, 1, -1, 0)
     nu_3 = (1, 0, -1, 1) 
     l_nu = (nu_1, nu_2, nu_3)
-    l_str_R = ("R1", "R2", "R3")
+    l_str_R = (:R1, :R2, :R3)
 
     u1 = rand()
     u2 = rand()
@@ -50,7 +50,7 @@ function ER_f!(xnplus1::Vector{Int}, l_t::Vector{Float64}, l_tr::Vector{Union{No
 end
 isabsorbing_ER(p::Vector{Float64},xn::Vector{Int}) = 
     @inbounds(p[1]*xn[1]*xn[2] + (p[2]+p[3])*xn[3] === 0.0)
-g_ER = ["P"]
+g_ER = [:P]
 
 ER = ContinuousTimeModel(d,k,dict_var_ER,dict_p_ER,l_tr_ER,p_ER,x0_ER,t0_ER,ER_f!,isabsorbing_ER; g=g_ER,name="ER pkg")
 

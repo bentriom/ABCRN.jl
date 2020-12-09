@@ -7,11 +7,11 @@ import Plots: current, palette, display, png, close
 
 Plot a simulated trajectory σ. var... is a tuple of stirng variables.
 `plot(σ)` will plot all the variables simulated in σ 
-whereas `plot(σ, "I", "R")` only plots the variables I and R of the trajectory (if it exists).
+whereas `plot(σ, :I, :R)` only plots the variables I and R of the trajectory (if it exists).
 If `plot_transitions=true`, a marker that corresponds to a transition of the model will be plotted
 at each break of the trajectory.
 """
-function plot(σ::AbstractTrajectory, vars::String...; plot_transitions::Bool = false, A::Union{Nothing,LHA} = nothing, filename::String = "")
+function plot(σ::AbstractTrajectory, vars::VariableModel...; plot_transitions::Bool = false, A::Union{Nothing,LHA} = nothing, filename::String = "")
     # Setup 
     palette_tr = palette(:default)
     l_tr = unique(transitions(σ))

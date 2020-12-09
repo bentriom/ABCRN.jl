@@ -3,13 +3,13 @@ import StaticArrays: SVector, SMatrix, @SMatrix
 
 d=4
 k=3
-dict_var = Dict("E" => 1, "S" => 2, "ES" => 3, "P" => 4)
-dict_p = Dict("k1" => 1, "k2" => 2, "k3" => 3)
-l_tr = ["R1","R2","R3"]
+dict_var = Dict(:E => 1, :S => 2, :ES => 3, :P => 4)
+dict_p = Dict(:k1 => 1, :k2 => 2, :k3 => 3)
+l_tr = [:R1,:R2,:R3]
 p = [1.0, 1.0, 1.0]
 x0 = [100, 100, 0, 0]
 t0 = 0.0
-function ER_col_buffer_f!(mat_x::Matrix{Int}, l_t::Vector{Float64}, l_tr::Vector{Union{Nothing,String}}, idx::Int,
+function ER_col_buffer_f!(mat_x::Matrix{Int}, l_t::Vector{Float64}, l_tr::Vector{<:Transition}, idx::Int,
            xn::AbstractVector{Int}, tn::Float64, p::Vector{Float64})
     a1 = p[1] * xn[1] * xn[2]
     a2 = p[2] * xn[3]
@@ -39,11 +39,11 @@ function ER_col_buffer_f!(mat_x::Matrix{Int}, l_t::Vector{Float64}, l_tr::Vector
         mat_x[i,idx] = xn[i]+nu[i]
     end
     l_t[idx] = tn + tau
-    l_tr[idx] = "R$(reaction)"
+    l_tr[idx] = Symbol("R$(reaction)")
 end
 isabsorbing_ER_col_buffer(p::Vector{Float64},xn::AbstractVector{Int}) = 
     (p[1]*xn[1]*xn[2] + (p[2]+p[3])*xn[3]) === 0.0
-g = ["P"]
+g = [:P]
 
 ER_col_buffer = ContinuousTimeModel(d,k,dict_var,dict_p,l_tr,p,x0,t0,ER_col_buffer_f!,isabsorbing_ER_col_buffer; g=g)
 export ER_col_buffer

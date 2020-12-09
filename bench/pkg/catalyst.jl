@@ -5,8 +5,8 @@ using Catalyst
 using DiffEqJump
 
 load_model("ER")
-set_param!(ER, "k1", 0.2)
-set_param!(ER, "k2", 40.0)
+set_param!(ER, :k1, 0.2)
+set_param!(ER, :k2, 40.0)
 ER.buffer_size = 100
 ER.estim_min_states = 8000
 

@@ -7,7 +7,7 @@ include(get_module_path() * "/core/_tests_simulate.jl")
 BenchmarkTools.DEFAULT_PARAMETERS.samples = 20000
 if ARGS[1] == "SIR"
     bound_time = 200.0
-    l_var = ["S", "I", "R"]
+    l_var = [:S, :I, :R]
 
     load_model("_bench_perf_test/SIR_col_buffer")
     SIR_col_buffer.time_bound = bound_time
@@ -19,7 +19,7 @@ if ARGS[1] == "SIR"
     model_col_buffer = SIR_col_buffer
     model_row_buffer = SIR_row_buffer
 elseif ARGS[1] == "ER"
-    l_var = ["E","S","ES","P"]
+    l_var = [:E,:S,:ES,:P]
     bound_time = 20.0
 
     load_model("_bench_perf_test/ER_col_buffer")
@@ -42,7 +42,7 @@ function access_trajectory_col(m::Model)
     n_sim = 100
     for k = 1:n_sim
         σ = _simulate_col_buffer(m)
-        t = _get_values_col(σ, "I")
+        t = _get_values_col(σ, :I)
         res += t[end-1]
     end
     return res
@@ -59,7 +59,7 @@ function access_trajectory_row(m::Model)
     n_sim = 100
     for k = 1:n_sim
         σ = _simulate_row_buffer(m)
-        t = _get_values_row(σ, "I")
+        t = _get_values_row(σ, :I)
         res += t[end-1]
     end
     return res

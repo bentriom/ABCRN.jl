@@ -6,7 +6,7 @@ load_automaton("automaton_G")
 ER.time_bound = 2.0
 x1, x2, t1, t2 = 0.0, Inf, 0.0, 2.0 
 
-A_G = create_automaton_G(ER, x1, x2, t1, t2, "P") # <: LHA
+A_G = create_automaton_G(ER, x1, x2, t1, t2, :P) # <: LHA
 sync_ER = A_G * ER
 
 function test_last_state(A::LHA, m::SynchronizedModel)

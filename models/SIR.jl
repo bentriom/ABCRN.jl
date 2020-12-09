@@ -3,13 +3,13 @@ import StaticArrays: SVector, SMatrix, @SVector, @SMatrix
 
 d=3
 k=2
-dict_var = Dict("S" => 1, "I" => 2, "R" => 3)
-dict_p = Dict("ki" => 1, "kr" => 2)
-l_tr_SIR = ["R1","R2"]
+dict_var = Dict(:S => 1, :I => 2, :R => 3)
+dict_p = Dict(:ki => 1, :kr => 2)
+l_tr_SIR = [:R1,:R2]
 p_SIR = [0.0012, 0.05]
 x0_SIR = [95, 5, 0]
 t0_SIR = 0.0
-function SIR_f!(xnplus1::Vector{Int}, l_t::Vector{Float64}, l_tr::Vector{Union{Nothing,String}},
+function SIR_f!(xnplus1::Vector{Int}, l_t::Vector{Float64}, l_tr::Vector{<:Transition},
                 xn::Vector{Int}, tn::Float64, p::Vector{Float64})
     @inbounds a1 = p[1] * xn[1] * xn[2]
     @inbounds a2 = p[2] * xn[2]
@@ -23,7 +23,7 @@ function SIR_f!(xnplus1::Vector{Int}, l_t::Vector{Float64}, l_tr::Vector{Union{N
     nu_1 = (-1, 1, 0)
     nu_2 = (0, -1, 1)
     l_nu = (nu_1, nu_2)
-    l_str_R = ("R1","R2")
+    l_str_R = (:R1,:R2)
 
     u1 = rand()
     u2 = rand()
@@ -48,7 +48,7 @@ function SIR_f!(xnplus1::Vector{Int}, l_t::Vector{Float64}, l_tr::Vector{Union{N
     @inbounds l_tr[1] = l_str_R[reaction]
 end
 isabsorbing_SIR(p::Vector{Float64}, xn::Vector{Int}) = (p[1]*xn[1]*xn[2] + p[2]*xn[2]) === 0.0
-g_SIR = ["I"]
+g_SIR = [:I]
 
 SIR = ContinuousTimeModel(d,k,dict_var,dict_p,l_tr_SIR,p_SIR,x0_SIR,t0_SIR,SIR_f!,isabsorbing_SIR; g=g_SIR, name="SIR pkg")
 

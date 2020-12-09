@@ -15,8 +15,8 @@
     level = 0.95
     x1, x2, t1, t2 = 50.0, 100.0, 0.0, 0.8
     x3, x4, t3, t4 = 30.0, 100.0, 0.8, 0.9
-    A_G_F = create_automaton_G_and_F(model, x1, x2, t1, t2, "E",
-                                     x3, x4, t3, t4, "P")  
+    A_G_F = create_automaton_G_and_F(model, x1, x2, t1, t2, :E,
+                                     x3, x4, t3, t4, :P)  
     l_k1 = 0.0:0.5:1.5
     l_k2 = 0:40:100
 end
@@ -48,8 +48,8 @@ for i = 1:nb_k1
         nb_accepted = dict_values["Accepted paths"][1]
         nb_sim = convert(Int, nb_sim)
         # MarkovProcesses estimation
-        set_param!(ER, "k1", convert(Float64, k1))
-        set_param!(ER, "k2", convert(Float64, k2))
+        set_param!(ER, :k1, convert(Float64, k1))
+        set_param!(ER, :k2, convert(Float64, k2))
         sync_ER = ER*A_G_F
         mat_dist_pkg[i,j], mat_dist_prime_pkg[i,j] = distribute_mean_value_lha(sync_ER, [:d,:dprime], nb_sim)
         nb_accepts_pkg = distribute_prob_accept_lha(sync_ER, nb_sim)

@@ -3,16 +3,16 @@ struct OldTrajectory <: AbstractTrajectory
     m::ContinuousTimeModel
     values::Matrix{Int}
     times::Vector{Float64}
-    transitions::Vector{Union{String,Nothing}}
+    transitions::Vector{Union{Symbol,Nothing}}
 end 
 
 # File for benchmarking simulation and memory access of the package.
 
 # Trajectories
 
-_get_values_col(σ::OldTrajectory, var::String) = 
+_get_values_col(σ::OldTrajectory, var::Symbol) = 
 @view σ.values[(σ.m)._map_obs_var_idx[var],:] 
-_get_values_row(σ::OldTrajectory, var::String) = 
+_get_values_row(σ::OldTrajectory, var::Symbol) = 
 @view σ.values[:,(σ.m)._map_obs_var_idx[var]] 
 
 _get_state_col(σ::OldTrajectory, idx::Int) = 
@@ -20,9 +20,9 @@ _get_state_col(σ::OldTrajectory, idx::Int) =
 _get_state_row(σ::OldTrajectory, idx::Int) = 
 @view σ.values[idx,:]
 
-_get_value_col(σ::OldTrajectory, var::String, idx::Int) = 
+_get_value_col(σ::OldTrajectory, var::Symbol, idx::Int) = 
 σ.values[(σ.m)._map_obs_var_idx[var],idx] 
-_get_value_row(σ::OldTrajectory, var::String, idx::Int) = 
+_get_value_row(σ::OldTrajectory, var::Symbol, idx::Int) = 
 σ.values[idx,(σ.m)._map_obs_var_idx[var]] 
 
 # Model
@@ -31,7 +31,7 @@ function _simulate_col(m::ContinuousTimeModel)
     # trajectory fields
     full_values = zeros(m.dim_state, 0)
     times = zeros(0)
-    transitions = Vector{Union{String,Nothing}}(undef,0)
+    transitions = Vector{Union{Symbol,Nothing}}(undef,0)
     # values at time n
     n = 0
     xn = @view m.x0[:]
@@ -65,7 +65,7 @@ function _simulate_row(m::ContinuousTimeModel)
     # trajectory fields
     full_values = zeros(m.dim_state, 0)
     times = zeros(0)
-    transitions = Vector{Union{String,Nothing}}(undef,0)
+    transitions = Vector{Union{Symbol,Nothing}}(undef,0)
     # values at time n
     n = 0
     xn = @view m.x0[:]
@@ -100,7 +100,7 @@ function _simulate_col_buffer(m::ContinuousTimeModel; buffer_size::Int = 5)
     # trajectory fields
     full_values = zeros(m.dim_state, 0)
     times = zeros(0)
-    transitions = Vector{Union{String,Nothing}}(undef,0)
+    transitions = Vector{Union{Symbol,Nothing}}(undef,0)
     # values at time n
     n = 0
     xn = @view m.x0[:]
@@ -108,7 +108,7 @@ function _simulate_col_buffer(m::ContinuousTimeModel; buffer_size::Int = 5)
     # at time n+1
     mat_x = zeros(Int, m.dim_state, buffer_size)
     l_t = zeros(Float64, buffer_size)
-    l_tr = Vector{Union{String,Nothing}}(undef, buffer_size)
+    l_tr = Vector{Union{Symbol,Nothing}}(undef, buffer_size)
     isabsorbing = m.isabsorbing(m.p,xn)::Bool
     while !isabsorbing && (tn <= m.time_bound)
         i = 0
@@ -140,7 +140,7 @@ function _simulate_row_buffer(m::ContinuousTimeModel; buffer_size::Int = 5)
     # trajectory fields
     full_values = zeros(0, m.dim_state)
     times = zeros(0)
-    transitions = Vector{Union{String,Nothing}}(undef,0)
+    transitions = Vector{Union{Symbol,Nothing}}(undef,0)
     # values at time n
     n = 0
     xn = @view m.x0[:]
@@ -148,7 +148,7 @@ function _simulate_row_buffer(m::ContinuousTimeModel; buffer_size::Int = 5)
     # at time n+1
     mat_x = zeros(Int, buffer_size, m.dim_state)
     l_t = zeros(Float64, buffer_size)
-    l_tr = Vector{Union{String,Nothing}}(undef, buffer_size)
+    l_tr = Vector{Union{Symbol,Nothing}}(undef, buffer_size)
     isabsorbing = m.isabsorbing(m.p,xn)::Bool
     while !isabsorbing && (tn <= m.time_bound)
         i = 0
@@ -181,7 +181,7 @@ function _simulate_without_view(m::ContinuousTimeModel)
     full_values = Matrix{Int}(undef, 1, m.dim_state)
     full_values[1,:] = m.x0
     times = Float64[m.t0]
-    transitions = Union{String,Nothing}[nothing]
+    transitions = Union{Symbol,Nothing}[nothing]
     # values at time n
     n = 0
     xn = @view m.x0[:]
@@ -189,7 +189,7 @@ function _simulate_without_view(m::ContinuousTimeModel)
     # at time n+1
     mat_x = zeros(Int, m.buffer_size, m.dim_state)
     l_t = zeros(Float64, m.buffer_size)
-    l_tr = Vector{Union{String,Nothing}}(undef, m.buffer_size)
+    l_tr = Vector{Union{Symbol,Nothing}}(undef, m.buffer_size)
     isabsorbing = m.isabsorbing(m.p,xn)::Bool
     while !isabsorbing && (tn <= m.time_bound)
         i = 0
@@ -227,7 +227,7 @@ function _simulate_27d56(m::ContinuousTimeModel)
     full_values = Matrix{Int}(undef, 1, m.dim_state)
     full_values[1,:] = m.x0
     times = Float64[m.t0]
-    transitions = Union{String,Nothing}[nothing]
+    transitions = Union{Symbol,Nothing}[nothing]
     # values at time n
     n = 0
     xn = view(reshape(m.x0, 1, m.dim_state), 1, :) # View for type stability
@@ -235,7 +235,7 @@ function _simulate_27d56(m::ContinuousTimeModel)
     # at time n+1
     mat_x = zeros(Int, m.buffer_size, m.dim_state)
     l_t = zeros(Float64, m.buffer_size)
-    l_tr = Vector{Union{String,Nothing}}(undef, m.buffer_size)
+    l_tr = Vector{Union{Symbol,Nothing}}(undef, m.buffer_size)
     isabsorbing::Bool = m.isabsorbing(m.p,xn)
     # use sizehint! ?
     while !isabsorbing && tn <= m.time_bound
@@ -288,7 +288,7 @@ function _simulate_d7458(m::ContinuousTimeModel)
     # at time n+1
     mat_x = zeros(Int, m.buffer_size, m.dim_state)
     l_t = zeros(Float64, m.buffer_size)
-    l_tr = Vector{Union{String,Nothing}}(undef, m.buffer_size)
+    l_tr = Vector{Union{Symbol,Nothing}}(undef, m.buffer_size)
     isabsorbing::Bool = m.isabsorbing(m.p,xn)
     end_idx = -1
     # use sizehint! ?

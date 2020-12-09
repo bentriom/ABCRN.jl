@@ -29,8 +29,8 @@ println("MarkovProcesses:")
 using MarkovProcesses
 MarkovProcesses.load_model("ER")
 ER.time_bound = 20.0
-set_param!(ER, "k1", 0.2)
-set_param!(ER, "k2", 40.0)
+set_param!(ER, :k1, 0.2)
+set_param!(ER, :k2, 40.0)
 @timev MarkovProcesses.simulate(ER)
 
 println("Default buffer size=10")

@@ -6,7 +6,7 @@ using MarkovProcesses
 include(get_module_path() * "/core/_tests_simulate.jl")
 
 if ARGS[1] == "SIR"
-    l_var = ["S", "I", "R"]
+    l_var = [:S, :I, :R]
     bound_time = 200.0
 
     load_model("_bench_perf_test/SIR_col")
@@ -23,7 +23,7 @@ if ARGS[1] == "SIR"
     model_col_buffer = SIR_col_buffer
     model_row_buffer = SIR_row_buffer
 elseif ARGS[1] == "ER"
-    l_var = ["E","S","ES","P"]
+    l_var = [:E,:S,:ES,:P]
     bound_time = 20.0
     nbr_sim = 10000
 

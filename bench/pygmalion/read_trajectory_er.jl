@@ -26,7 +26,7 @@ function read_trajectory_pyg_v1(so::SystemObservation)
     return res
 end
 function read_trajectory_pyg_v2(so::SystemObservation)
-    idx_P = om_findfirst("P", so.oml)
+    idx_P = om_findfirst(:P, so.oml)
     n_states = length(so.otll[idx_P]) 
     res = 0.0
     for i = 1:n_states
@@ -51,13 +51,13 @@ function read_trajectory_v1(σ::AbstractTrajectory)
     n_states = length_states(σ)
     res = 0
     for i = 1:n_states
-        res += σ["P",i]
+        res += σ[:P,i]
     end
     return res
 end
 function read_trajectory_v2(σ::AbstractTrajectory)
     n_states = length_states(σ)
-    vals = σ["P"]
+    vals = σ[:P]
     res = 0
     for i = 1:n_states
         res += vals[i]

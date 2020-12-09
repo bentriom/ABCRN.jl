@@ -3,9 +3,9 @@ using MarkovProcesses
 
 load_model("ER")
 load_automaton("automaton_F")
-A_F_R1 = create_automaton_F(ER, 50.0, 75.0, 0.025, 0.05, "P")
+A_F_R1 = create_automaton_F(ER, 50.0, 75.0, 0.025, 0.05, :P)
 sync_ER = A_F_R1*ER 
-pm_sync_ER = ParametricModel(sync_ER, ("k3", Uniform(0.0, 100.0)))
+pm_sync_ER = ParametricModel(sync_ER, (:k3, Uniform(0.0, 100.0)))
 nbr_pa = 502
 
 r = automaton_abc(pm_sync_ER; nbr_particles = nbr_pa)

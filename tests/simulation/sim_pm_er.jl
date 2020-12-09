@@ -4,7 +4,7 @@ using MarkovProcesses
 load_plots()
 load_model("ER")
 
-pm_ER = ParametricModel(ER, ("k1", Uniform(0.0,100.0)), ("k2", Uniform(0.0,100.0)))
+pm_ER = ParametricModel(ER, (:k1, Uniform(0.0,100.0)), (:k2, Uniform(0.0,100.0)))
 
 prior_p = [0.2, 40.0]
 

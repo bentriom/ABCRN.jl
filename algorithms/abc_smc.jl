@@ -28,7 +28,7 @@ end
 
 function automaton_abc(pm::ParametricModel; nbr_particles::Int = 100, alpha::Float64 = 0.75, kernel_type = "mvnormal", 
                        NT::Float64 = nbr_particles/2, duration_time::Float64 = Inf, 
-                       bound_sim::Int = typemax(Int), str_var_aut::String = "d", verbose::Int = 0) 
+                       bound_sim::Int = typemax(Int), sym_var_aut::VariableAutomaton = :d, verbose::Int = 0) 
     @assert typeof(pm.m) <: SynchronizedModel
     @assert 0 < nbr_particles
     @assert 0.0 < alpha < 1.0
@@ -41,14 +41,14 @@ function automaton_abc(pm::ParametricModel; nbr_particles::Int = 100, alpha::Flo
 	write(file_cfg, "kernel type : $(kernel_type) \n")
     close(file_cfg)
     if nprocs() == 1
-        return _abc_smc(pm, nbr_particles, alpha, kernel_type, NT, duration_time, bound_sim, dir_res, str_var_aut)
+        return _abc_smc(pm, nbr_particles, alpha, kernel_type, NT, duration_time, bound_sim, dir_res, sym_var_aut)
     end
-    return _distributed_abc_smc(pm, nbr_particles, alpha, kernel_type, NT, duration_time, bound_sim, dir_res, str_var_aut)
+    return _distributed_abc_smc(pm, nbr_particles, alpha, kernel_type, NT, duration_time, bound_sim, dir_res, sym_var_aut)
 end
 
 """
     `abc_smc(pm::ParametricModel, l_obs, func_dist; nbr_particles, alpha, kernel_type, NT
-                                               duration_tiùe, bound_sim, str_var_aut, verbose)`
+                                               duration_tiùe, bound_sim, sym_var_aut, verbose)`
 
 Run the ABC-SMC algorithm with the pm parametric model. 
 `func_dist(l_sim, l_obs)` is the distance function between simulations and observation, 
@@ -66,7 +66,7 @@ If pm is defined on a ContinuousTimeModel, then `T1` should verify `T1 <: Trajec
 function abc_smc(pm::ParametricModel, l_obs::AbstractVector, func_dist::Function; 
                  nbr_particles::Int = 100, alpha::Float64 = 0.75, kernel_type = "mvnormal", 
                  NT::Float64 = nbr_particles/2, duration_time::Float64 = Inf, 
-                 bound_sim::Int = typemax(Int), str_var_aut::String = "d", verbose::Int = 0) 
+                 bound_sim::Int = typemax(Int), sym_var_aut::VariableAutomaton = :d, verbose::Int = 0) 
     @assert 0 < nbr_particles
     @assert 0.0 < alpha < 1.0
     @assert kernel_type in ["mvnormal", "knn_mvnormal"]
@@ -78,9 +78,9 @@ function abc_smc(pm::ParametricModel, l_obs::AbstractVector, func_dist::Function
 	write(file_cfg, "kernel type : $(kernel_type) \n")
     close(file_cfg)
     if nprocs() == 1
-        return _abc_smc(pm, nbr_particles, alpha, kernel_type, NT, duration_time, bound_sim, dir_res, str_var_aut; l_obs = l_obs, func_dist = func_dist)
+        return _abc_smc(pm, nbr_particles, alpha, kernel_type, NT, duration_time, bound_sim, dir_res, sym_var_aut; l_obs = l_obs, func_dist = func_dist)
     end
-    return _distributed_abc_smc(pm, l_obs, dist, nbr_particles, alpha, kernel_type, NT, duration_time, bound_sim, dir_res, str_var_aut; l_obs = l_obs, func_dist = func_dist)
+    return _distributed_abc_smc(pm, l_obs, dist, nbr_particles, alpha, kernel_type, NT, duration_time, bound_sim, dir_res, sym_var_aut; l_obs = l_obs, func_dist = func_dist)
 end
 
 
@@ -89,7 +89,7 @@ end
 
 function _abc_smc(pm::ParametricModel, nbr_particles::Int, alpha::Float64, 
                   kernel_type::String, NT::Float64, duration_time::Float64, 
-                  bound_sim::Int, dir_res::String, str_var_aut::String; 
+                  bound_sim::Int, dir_res::String, sym_var_aut::VariableAutomaton; 
                   l_obs::Union{Nothing,AbstractVector} = nothing, func_dist::Union{Nothing,Function} = nothing)
     @info "ABC PMC with $(nworkers()) processus and $(Threads.nthreads()) threads"
     begin_time = time()
@@ -102,7 +102,7 @@ function _abc_smc(pm::ParametricModel, nbr_particles::Int, alpha::Float64,
     vec_dist = zeros(nbr_particles)
     wl_old = zeros(nbr_particles)
     @info "Step 1 : Init"
-    _init_abc_automaton!(mat_p_old, vec_dist, pm, str_var_aut; l_obs = l_obs, func_dist = func_dist)
+    _init_abc_automaton!(mat_p_old, vec_dist, pm, sym_var_aut; l_obs = l_obs, func_dist = func_dist)
     prior_pdf!(wl_old, pm, mat_p_old)
     normalize!(wl_old, 1)
     ess = effective_sample_size(wl_old)
@@ -141,7 +141,7 @@ function _abc_smc(pm::ParametricModel, nbr_particles::Int, alpha::Float64,
         end
         Threads.@threads for i = eachindex(vec_dist)
             _update_param!(mat_p, vec_dist, l_nbr_sim, wl_current, i, pm, epsilon,
-                           wl_old, mat_p_old, mat_cov, tree_mat_p, kernel_type, str_var_aut;
+                           wl_old, mat_p_old, mat_cov, tree_mat_p, kernel_type, sym_var_aut;
                            l_obs = l_obs, func_dist = func_dist)
         end
         normalize!(wl_current, 1)
@@ -182,7 +182,7 @@ end
 
 function _distributed_abc_smc(pm::ParametricModel, nbr_particles::Int, alpha::Float64, 
                               kernel_type::String, NT::Float64, duration_time::Float64, bound_sim::Int, 
-                              dir_res::String, str_var_aut::String;
+                              dir_res::String, sym_var_aut::VariableAutomaton;
                               l_obs::Union{Nothing,AbstractVector} = nothing, func_dist::Union{Nothing,Function} = nothing)
     @info "Distributed ABC PMC with $(nworkers()) processus and $(Threads.nthreads()) threads"
     begin_time = time()
@@ -195,7 +195,7 @@ function _distributed_abc_smc(pm::ParametricModel, nbr_particles::Int, alpha::Fl
     vec_dist = zeros(nbr_particles)
     wl_old = zeros(nbr_particles)
     @info "Step 1 : Init"
-    _init_abc_automaton!(mat_p_old, vec_dist, pm, str_var_aut; l_obs = l_obs, func_dist = func_dist)
+    _init_abc_automaton!(mat_p_old, vec_dist, pm, sym_var_aut; l_obs = l_obs, func_dist = func_dist)
     prior_pdf!(wl_old, pm, mat_p_old)
     normalize!(wl_old, 1)
     ess = effective_sample_size(wl_old)
@@ -240,7 +240,7 @@ function _distributed_abc_smc(pm::ParametricModel, nbr_particles::Int, alpha::Fl
             @async l_nbr_sim[t_id_w] = 
                 remotecall_fetch(() -> _task_worker!(d_mat_p, d_vec_dist, d_wl_current, 
                                                      pm, epsilon, wl_old, mat_p_old, mat_cov, tree_mat_p, 
-                                                     kernel_type, str_var_aut;
+                                                     kernel_type, sym_var_aut;
                                                      l_obs = l_obs, func_dist = func_dist), id_w)
         end
         wl_current = convert(Array, d_wl_current)

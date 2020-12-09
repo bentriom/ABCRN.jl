@@ -5,9 +5,9 @@
     absolute_path = get_module_path() * "/tests/cosmos/"
     # Values x1, x2  t1, t2
     dict_exp = Dict(
-                    "R1" => [50, 75, 0.025, 0.05],
-                    "R2" => [50, 75, 0.05, 0.075],
-                    "R3" => [25, 50, 0.05, 0.075]
+                    :R1 => [50, 75, 0.025, 0.05],
+                    :R2 => [50, 75, 0.05, 0.075],
+                    :R3 => [25, 50, 0.05, 0.075]
                    )
     str_model = "ER"
     if str_model == "ER"
@@ -19,9 +19,9 @@
     test_all = true
     width = 0.2
     level = 0.95
-    l_exp = ["R1", "R2", "R3"]
+    l_exp = [:R1, :R2, :R3]
 end
-#l_exp = ["R2"]
+#l_exp = [:R2]
 for exp in l_exp
     if !(exp in keys(dict_exp))
         println("Unrecognized experiment: <<$exp>>")
@@ -29,7 +29,7 @@ for exp in l_exp
     end
     val_exp = dict_exp[exp]
     x1, x2, t1, t2 = val_exp[1], val_exp[2], val_exp[3], val_exp[4]
-    A_F = create_automaton_F(model, x1, x2, t1, t2, "P")  
+    A_F = create_automaton_F(model, x1, x2, t1, t2, :P)  
     l_k3 = 0:10:100
     nb_param = length(l_k3)
     l_dist_cosmos = zeros(nb_param)
@@ -50,7 +50,7 @@ for exp in l_exp
         nb_accepted = dict_values["Accepted paths"][1]
         nb_sim = convert(Int, nb_sim)
         # MarkovProcesses estimation
-        set_param!(ER, "k3", convert(Float64, k3))
+        set_param!(ER, :k3, convert(Float64, k3))
         sync_ER = ER*A_F
         l_dist_pkg[i] = distribute_mean_value_lha(sync_ER, :d, nb_sim)
         nb_accepts_pkg = distribute_prob_accept_lha(sync_ER, nb_sim)

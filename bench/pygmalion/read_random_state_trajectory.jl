@@ -8,7 +8,7 @@ println("Pygmalion:")
 str_m = "enzymatic_reaction"
 str_d = "abc_er"
 pygmalion.load_model(str_m)
-l_var = ["E", "S", "ES", "P"]
+l_var = [:E, :S, :ES, :P]
 str_oml = "E,S,ES,P,R,time"
 ll_om = split(str_oml, ",")
 x0 = State(95.0, 95.0, 0.0, 0.0, 0.0, 0.0)
@@ -18,11 +18,11 @@ tml = 1:400
 g_all = create_observation_function([ObserverModel(str_oml, tml)]) 
 so = pygmalion.simulate(f, g_all, x0, u, p_true; on = nothing, full_timeline = true)
 function random_trajectory_value_pyg(so::SystemObservation)
-    n_states = get_number_of_observations(so, "P")
+    n_states = get_number_of_observations(so, :P)
     return to_vec(so, "P", rand(1:n_states))
 end
 function random_trajectory_state_pyg(so::SystemObservation)
-    n_states = get_number_of_observations(so, "P")
+    n_states = get_number_of_observations(so, :P)
     return to_vec(so, so.oml, rand(1:n_states))
 end
 # Bench
@@ -37,7 +37,7 @@ ER.time_bound = 10.0
 σ = MarkovProcesses.simulate(ER)
 function random_trajectory_value(σ::AbstractTrajectory)
     n_states = length_states(σ)
-    return σ["P"][rand(1:n_states)]
+    return σ[:P][rand(1:n_states)]
 end
 # Bench
 @timev random_trajectory_value(σ) 

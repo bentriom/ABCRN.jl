@@ -1,6 +1,6 @@
 
 length_var(A::LHA) = length(A.map_var_automaton_idx)
-get_value(A::LHA, x::Vector{Int}, var::String) = x[A.map_var_model_idx[var]]
+get_value(A::LHA, x::Vector{Int}, var::VariableModel) = x[A.map_var_model_idx[var]]
 
 copy(S::StateLHA) = StateLHA(S.A, S.loc, S.values, S.time)
 # Not overring getproperty, setproperty to avoid a conversion Symbol => String for the dict key
@@ -100,7 +100,7 @@ function _get_edge_index(edge_candidates::Vector{Edge}, nbr_candidates::Int,
         end
         # Synchronous detection
         if !detected_event && tr_nplus1 != nothing
-            if (edge.transitions[1] == "ALL") || 
+            if (edge.transitions[1] == :ALL) || 
                (tr_nplus1 in edge.transitions)
                 ind_edge = i
                 bool_event = true

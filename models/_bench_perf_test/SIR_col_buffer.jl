@@ -3,13 +3,13 @@ import StaticArrays: SVector, SMatrix, @SMatrix
 
 d=3
 k=2
-dict_var = Dict("S" => 1, "I" => 2, "R" => 3)
-dict_p = Dict("ki" => 1, "kr" => 2)
-l_tr = ["R1","R2"]
+dict_var = Dict(:S => 1, :I => 2, :R => 3)
+dict_p = Dict(:ki => 1, :kr => 2)
+l_tr = [:R1,:R2]
 p = [0.0012, 0.05]
 x0 = [95, 5, 0]
 t0 = 0.0
-function SIR_col_buffer_f!(mat_x::Matrix{Int}, l_t::Vector{Float64}, l_tr::Vector{Union{Nothing,String}}, idx::Int,
+function SIR_col_buffer_f!(mat_x::Matrix{Int}, l_t::Vector{Float64}, l_tr::Vector{<:Transition}, idx::Int,
            xn::AbstractVector{Int}, tn::Float64, p::Vector{Float64})
     a1 = p[1] * xn[1] * xn[2]
     a2 = p[2] * xn[2]
@@ -39,10 +39,10 @@ function SIR_col_buffer_f!(mat_x::Matrix{Int}, l_t::Vector{Float64}, l_tr::Vecto
         mat_x[i,idx] = xn[i]+nu[i]
     end
     l_t[idx] = tn + tau
-    l_tr[idx] = "R$(reaction)"
+    l_tr[idx] = Symbol("R$(reaction)")
 end
 isabsorbing_SIR_col_buffer(p::Vector{Float64}, xn::AbstractVector{Int}) = (p[1]*xn[1]*xn[2] + p[2]*xn[2]) === 0.0
-g = ["I"]
+g = [:I]
 
 SIR_col_buffer = ContinuousTimeModel(d,k,dict_var,dict_p,l_tr,p,x0,t0,SIR_col_buffer_f!,isabsorbing_SIR_col_buffer; g=g)
 export SIR_col_buffer

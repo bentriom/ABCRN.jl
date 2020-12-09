@@ -1,9 +1,9 @@
 
-function create_automaton_G_and_F(m::ContinuousTimeModel, x1::Float64, x2::Float64, t1::Float64, t2::Float64, str_obs_G::String,
-                                  x3::Float64, x4::Float64, t3::Float64, t4::Float64, str_obs_F::String)
+function create_automaton_G_and_F(m::ContinuousTimeModel, x1::Float64, x2::Float64, t1::Float64, t2::Float64, sym_obs_G::VariableModel,
+                                  x3::Float64, x4::Float64, t3::Float64, t4::Float64, sym_obs_F::VariableModel)
 
-    @assert str_obs_G in m.g
-    @assert str_obs_F in m.g
+    @assert sym_obs_G in m.g
+    @assert sym_obs_F in m.g
     # Locations
     locations = [:l0G, :l1G, :l2G, :l3G, :l4G,
                  :l1F, :l2F, :l3F]
@@ -49,7 +49,7 @@ function create_automaton_G_and_F(m::ContinuousTimeModel, x1::Float64, x2::Float
     us_aut_G_l0Gl1G_1!(A::LHA, S::StateLHA, x::Vector{Int}) = 
         (S.loc = :l1G; 
          S[:d] = 0; 
-         S[:n] = get_value(A, x, str_obs_G); 
+         S[:n] = get_value(A, x, sym_obs_G); 
          S[:in] = true; 
          S[:isabs] = m.isabsorbing(m.p,x))
     edge1 = Edge([nothing], cc_aut_G_l0Gl1G_1, us_aut_G_l0Gl1G_1!)
@@ -154,9 +154,9 @@ function create_automaton_G_and_F(m::ContinuousTimeModel, x1::Float64, x2::Float
     cc_aut_G_l3Gl1G_1(A::LHA, S::StateLHA) = true
     us_aut_G_l3Gl1G_1!(A::LHA, S::StateLHA, x::Vector{Int}) = 
         (S.loc = :l1G; 
-         S[:n] = get_value(A, x, str_obs_G); 
+         S[:n] = get_value(A, x, sym_obs_G); 
          S[:isabs] = m.isabsorbing(m.p,x))
-    edge1 = Edge(["ALL"], cc_aut_G_l3Gl1G_1, us_aut_G_l3Gl1G_1!)
+    edge1 = Edge([:ALL], cc_aut_G_l3Gl1G_1, us_aut_G_l3Gl1G_1!)
     map_edges[:l3G][:l1G] = [edge1]
 
     tuple = (:l3G, :l2G)
@@ -184,10 +184,10 @@ function create_automaton_G_and_F(m::ContinuousTimeModel, x1::Float64, x2::Float
         (S.loc = :l1G; 
          S[:d] += S[:tprime] * min(abs(A.constants[:x1] - S[:n]), abs(A.constants[:x2] - S[:n])); 
          S[:tprime] = 0.0; 
-         S[:n] = get_value(A, x, str_obs_G); 
+         S[:n] = get_value(A, x, sym_obs_G); 
          S[:in] = true; 
          S[:isabs] = m.isabsorbing(m.p,x))
-    edge1 = Edge(["ALL"], cc_aut_G_l4Gl1G_1, us_aut_G_l4Gl1G_1!)
+    edge1 = Edge([:ALL], cc_aut_G_l4Gl1G_1, us_aut_G_l4Gl1G_1!)
     
     map_edges[:l4G][:l1G] = [edge1]
 
@@ -207,7 +207,7 @@ function create_automaton_G_and_F(m::ContinuousTimeModel, x1::Float64, x2::Float
     cc_aut_F_l2Gl1F_1(A::LHA, S::StateLHA) = true
     us_aut_F_l2Gl1F_1!(A::LHA, S::StateLHA, x::Vector{Int}) = 
         (S.loc = :l1F; 
-         S[:n] = get_value(A, x, str_obs_F);
+         S[:n] = get_value(A, x, sym_obs_F);
          S[:dprime] = Inf; 
          S[:isabs] = m.isabsorbing(m.p,x))
     edge1 = Edge([nothing], cc_aut_F_l2Gl1F_1, us_aut_F_l2Gl1F_1!)
@@ -280,9 +280,9 @@ function create_automaton_G_and_F(m::ContinuousTimeModel, x1::Float64, x2::Float
     cc_aut_F_l3Fl1F_1(A::LHA, S::StateLHA) = true
     us_aut_F_l3Fl1F_1!(A::LHA, S::StateLHA, x::Vector{Int}) = 
         (S.loc = :l1F;
-         S[:n] = get_value(A, x, str_obs_F);
+         S[:n] = get_value(A, x, sym_obs_F);
          S[:isabs] = m.isabsorbing(m.p,x))
-    edge1 = Edge(["ALL"], cc_aut_F_l3Fl1F_1, us_aut_F_l3Fl1F_1!)
+    edge1 = Edge([:ALL], cc_aut_F_l3Fl1F_1, us_aut_F_l3Fl1F_1!)
     
     map_edges[:l3F][:l1F] = [edge1]
     

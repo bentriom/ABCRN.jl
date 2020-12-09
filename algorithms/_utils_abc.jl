@@ -1,6 +1,6 @@
 
 function _init_abc_automaton!(mat_p_old::Matrix{Float64}, vec_dist::Vector{Float64}, 
-                              pm::ParametricModel, str_var_aut::String;
+                              pm::ParametricModel, sym_var_aut::VariableAutomaton;
                               l_obs::Union{Nothing,AbstractVector} = nothing, 
                               func_dist::Union{Nothing,Function} = nothing)
     vec_p = zeros(pm.df)
@@ -9,7 +9,7 @@ function _init_abc_automaton!(mat_p_old::Matrix{Float64}, vec_dist::Vector{Float
         mat_p_old[:,i] = vec_p
         if l_obs == nothing
             S = volatile_simulate(pm, vec_p)
-            vec_dist[i] = S[str_var_aut]
+            vec_dist[i] = S[sym_var_aut]
         else
             σ = simulate(pm, vec_p)
             vec_dist[i] = func_dist(σ, l_obs)
@@ -45,7 +45,7 @@ function _task_worker!(d_mat_p::DArray{Float64,2}, d_vec_dist::DArray{Float64,1}
                        pm::ParametricModel, epsilon::Float64,
                        wl_old::Vector{Float64}, mat_p_old::Matrix{Float64},
                        mat_cov::Matrix{Float64}, tree_mat_p::Union{Nothing,KDTree}, 
-                       kernel_type::String, str_var_aut::String;
+                       kernel_type::String, sym_var_aut::VariableAutomaton;
                        l_obs::Union{Nothing,AbstractVector} = nothing, 
                        func_dist::Union{Nothing,Function} = nothing)
     mat_p = localpart(d_mat_p)
@@ -54,7 +54,7 @@ function _task_worker!(d_mat_p::DArray{Float64,2}, d_vec_dist::DArray{Float64,1}
     l_nbr_sim = zeros(Int, length(vec_dist))
     Threads.@threads for i = eachindex(vec_dist)
         _update_param!(mat_p, vec_dist, l_nbr_sim, wl_current, i, pm, epsilon,
-                       wl_old, mat_p_old, mat_cov, tree_mat_p, kernel_type, str_var_aut;
+                       wl_old, mat_p_old, mat_cov, tree_mat_p, kernel_type, sym_var_aut;
                        l_obs = l_obs, func_dist = func_dist)
     end
     return sum(l_nbr_sim)
@@ -86,7 +86,7 @@ function _update_param!(mat_p::Matrix{Float64}, vec_dist::Vector{Float64},
                         pm::ParametricModel, epsilon::Float64,
                         wl_old::Vector{Float64}, mat_p_old::Matrix{Float64},
                         mat_cov::Matrix{Float64}, tree_mat_p::Union{Nothing,KDTree}, 
-                        kernel_type::String, str_var_aut::String;
+                        kernel_type::String, sym_var_aut::VariableAutomaton;
                         l_obs::Union{Nothing,AbstractVector} = nothing, 
                         func_dist::Union{Nothing,Function} = nothing)
     d_weights = Categorical(wl_old)
@@ -102,7 +102,7 @@ function _update_param!(mat_p::Matrix{Float64}, vec_dist::Vector{Float64},
         end
         if l_obs == nothing
             S = volatile_simulate(pm, vec_p_prime)
-            dist_sim = S[str_var_aut]
+            dist_sim = S[sym_var_aut]
         else
             σ = simulate(pm, vec_p)
             dist_sim = func_dist(σ, l_obs)

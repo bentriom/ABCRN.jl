@@ -5,11 +5,11 @@ import Distributions: Distribution, Univariate, Continuous, UnivariateDistributi
 abstract type Model end 
 abstract type AbstractTrajectory end
 
-const Transition = Union{String,Nothing}
+const Transition = Union{Symbol,Nothing}
 const Location = Symbol
 const VariableAutomaton = Symbol
-const VariableModel = String
-const ParameterModel = String
+const VariableModel = Symbol
+const ParameterModel = Symbol
 
 mutable struct ContinuousTimeModel <: Model
     name::String
@@ -85,16 +85,17 @@ struct ParametricModel
 end
 
 # Constructors
-function ContinuousTimeModel(dim_state::Int, dim_params::Int, map_var_idx::Dict, map_param_idx::Dict, transitions::Vector{<:Transition}, 
-              p::Vector{Float64}, x0::Vector{Int}, t0::Float64, 
-              f!::Function, isabsorbing::Function; 
-              g::Vector{VariableModel} = keys(map_var_idx), time_bound::Float64 = Inf, 
-              buffer_size::Int = 10, estim_min_states::Int = 50, name::String = "Unnamed")
+function ContinuousTimeModel(dim_state::Int, dim_params::Int, map_var_idx::Dict{VariableModel,Int}, 
+                             map_param_idx::Dict{ParameterModel,Int}, transitions::Vector{<:Transition}, 
+                             p::Vector{Float64}, x0::Vector{Int}, t0::Float64, 
+                             f!::Function, isabsorbing::Function; 
+                             g::Vector{VariableModel} = keys(map_var_idx), time_bound::Float64 = Inf, 
+                             buffer_size::Int = 10, estim_min_states::Int = 50, name::String = "Unnamed")
     dim_obs_state = length(g)
     _map_obs_var_idx = Dict()
     _g_idx = Vector{Int}(undef, dim_obs_state)
     for i = 1:dim_obs_state
-        _g_idx[i] = map_var_idx[g[i]] # = ( (g[i] = i-th obs var)::String => idx in state space )
+        _g_idx[i] = map_var_idx[g[i]] # = ( (g[i] = i-th obs var)::VariableModel => idx in state space )
         _map_obs_var_idx[g[i]] = i
     end
   
@@ -111,8 +112,8 @@ function ContinuousTimeModel(dim_state::Int, dim_params::Int, map_var_idx::Dict,
 end
 
 LHA(A::LHA, map_var::Dict{VariableModel,Int}) = LHA(A.transitions, A.locations, A.Λ, 
-                                             A.locations_init, A.locations_final, A.map_var_automaton_idx, A.flow,
-                                             A.map_edges, A.constants, map_var)
+                                                    A.locations_init, A.locations_final, A.map_var_automaton_idx, A.flow,
+                                                    A.map_edges, A.constants, map_var)
 Base.:*(m::ContinuousTimeModel, A::LHA) = SynchronizedModel(m, A)
 Base.:*(A::LHA, m::ContinuousTimeModel) = SynchronizedModel(m, A)
 

@@ -8,10 +8,10 @@ load_automaton("automaton_G")
 load_automaton("automaton_G_and_F")
 
 x1, x2, t1, t2 = 50.0, 100.0, 0.0, 0.8
-A_G_R5 = create_automaton_G(ER, x1, x2, t1, t2, "E") 
+A_G_R5 = create_automaton_G(ER, x1, x2, t1, t2, :E) 
 x3, x4, t3, t4 = 30.0, 100.0, 0.8, 0.9
-A_G_F_R6 = create_automaton_G_and_F(ER, x1, x2, t1, t2, "E",
-                                    x3, x4, t3, t4, "P")  
+A_G_F_R6 = create_automaton_G_and_F(ER, x1, x2, t1, t2, :E,
+                                    x3, x4, t3, t4, :P)  
 
 return true
 

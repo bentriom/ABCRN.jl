@@ -10,9 +10,9 @@ load_automaton("automaton_G")
 width = 0.5
 level = 0.95
 x1, x2, t1, t2 = 50.0, 100.0, 0.0, 0.8
-A_G = create_automaton_G(model, x1, x2, t1, t2, "P")  
-set_param!(ER, "k1", 0.2)
-set_param!(ER, "k2", 40.0)
+A_G = create_automaton_G(model, x1, x2, t1, t2, :P)  
+set_param!(ER, :k1, 0.2)
+set_param!(ER, :k2, 40.0)
 
 test_all = true
 sync_ER = ER*A_G

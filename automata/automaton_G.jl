@@ -1,6 +1,6 @@
 
-function create_automaton_G(m::ContinuousTimeModel, x1::Float64, x2::Float64, t1::Float64, t2::Float64, str_obs::String)
-    @assert str_obs in m.g
+function create_automaton_G(m::ContinuousTimeModel, x1::Float64, x2::Float64, t1::Float64, t2::Float64, sym_obs::VariableModel)
+    @assert sym_obs in m.g
     # Locations
     locations = [:l0, :l1, :l2, :l3, :l4]
 
@@ -38,7 +38,7 @@ function create_automaton_G(m::ContinuousTimeModel, x1::Float64, x2::Float64, t1
     us_aut_G_l0l1_1!(A::LHA, S::StateLHA, x::Vector{Int}) = 
         (S.loc = :l1; 
          S[:d] = 0; 
-         S[:n] = get_value(A, x, str_obs); 
+         S[:n] = get_value(A, x, sym_obs); 
          S[:in] = true; 
          S[:isabs] = m.isabsorbing(m.p,x))
     edge1 = Edge([nothing], cc_aut_G_l0l1_1, us_aut_G_l0l1_1!)
@@ -142,9 +142,9 @@ function create_automaton_G(m::ContinuousTimeModel, x1::Float64, x2::Float64, t1
     cc_aut_G_l3l1_1(A::LHA, S::StateLHA) = true
     us_aut_G_l3l1_1!(A::LHA, S::StateLHA, x::Vector{Int}) = 
         (S.loc = :l1; 
-         S[:n] = get_value(A, x, str_obs); 
+         S[:n] = get_value(A, x, sym_obs); 
          S[:isabs] = m.isabsorbing(m.p,x))
-    edge1 = Edge(["ALL"], cc_aut_G_l3l1_1, us_aut_G_l3l1_1!)
+    edge1 = Edge([:ALL], cc_aut_G_l3l1_1, us_aut_G_l3l1_1!)
     
     map_edges[:l3][:l1] = [edge1]
 
@@ -172,10 +172,10 @@ function create_automaton_G(m::ContinuousTimeModel, x1::Float64, x2::Float64, t1
         (S.loc = :l1; 
          S[:d] += S[:tprime] * min(abs(A.constants[:x1] - S[:n]), abs(A.constants[:x2] - S[:n])); 
          S[:tprime] = 0.0; 
-         S[:n] = get_value(A, x, str_obs); 
+         S[:n] = get_value(A, x, sym_obs); 
          S[:in] = true; 
          S[:isabs] = m.isabsorbing(m.p,x))
-    edge1 = Edge(["ALL"], cc_aut_G_l4l1_1, us_aut_G_l4l1_1!)
+    edge1 = Edge([:ALL], cc_aut_G_l4l1_1, us_aut_G_l4l1_1!)
     
     map_edges[:l4][:l1] = [edge1]
 
