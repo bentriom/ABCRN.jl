@@ -4,7 +4,9 @@ get_value(A::LHA, x::Vector{Int}, var::String) = x[A.map_var_model_idx[var]]
 
 copy(S::StateLHA) = StateLHA(S.A, S.loc, S.values, S.time)
 # Not overring getproperty, setproperty to avoid a conversion Symbol => String for the dict key
-getindex(S::StateLHA, var::VariableAutomaton) = (S.values)[(S.A).map_var_automaton_idx[var]]
+function getindex(S::StateLHA, var::VariableAutomaton)
+    return (S.values)[(S.A).map_var_automaton_idx[var]]
+end
 getindex(S::StateLHA, l_var::Vector{VariableAutomaton}) = 
         [S[var] for var in l_var]
 setindex!(S::StateLHA, val::Float64, var::VariableAutomaton) = (S.values)[(S.A).map_var_automaton_idx[var]] = val
@@ -46,7 +48,7 @@ isaccepted(S::StateLHA) = (S.loc in (S.A).locations_final)
 
 # Methods for synchronize / read the trajectory
 function init_state(A::LHA, x0::Vector{Int}, t0::Float64)
-    S0 = StateLHA(A, "", zeros(length_var(A)), t0)
+    S0 = StateLHA(A, :init, zeros(length_var(A)), t0)
     for loc in A.locations_init
         if A.Λ[loc](A,S0) 
             S0.loc = loc
@@ -56,30 +58,41 @@ function init_state(A::LHA, x0::Vector{Int}, t0::Float64)
     return S0
 end
 
+function _push_edge!(edge_candidates::Vector{Edge}, edge::Edge, nbr_candidates::Int)
+    if nbr_candidates < 2
+        edge_candidates[nbr_candidates+1] = edge
+    else
+        push!(edge_candidates, edge)
+    end
+end
+
 function _find_edge_candidates!(edge_candidates::Vector{Edge}, current_loc::Location, 
                                 A::LHA, Snplus1::StateLHA, only_asynchronous::Bool)
-    for loc in A.locations
-        tuple_edges = (current_loc, loc)
-        if haskey(A.map_edges, tuple_edges)
-            for edge in A.map_edges[tuple_edges]
-                if edge.check_constraints(A, Snplus1)
-                    if edge.transitions[1] == nothing
-                        push!(edge_candidates, edge)
-                    end
-                    if !only_asynchronous && edge.transitions[1] != nothing
-                        push!(edge_candidates, edge)
-                    end
+    nbr_candidates = 0
+    edges_from_current_loc = A.map_edges[current_loc]
+    for target_loc in keys(edges_from_current_loc)
+        for edge in edges_from_current_loc[target_loc]
+            if edge.check_constraints(A, Snplus1)
+                if edge.transitions[1] == nothing
+                    _push_edge!(edge_candidates, edge, nbr_candidates)
+                    nbr_candidates += 1
+                    return nbr_candidates
+                end
+                if !only_asynchronous && edge.transitions[1] != nothing
+                    _push_edge!(edge_candidates, edge, nbr_candidates)
+                    nbr_candidates += 1
                 end
             end
         end
     end
+    return nbr_candidates
 end
 
-function _get_edge_index(edge_candidates::Vector{Edge},
+function _get_edge_index(edge_candidates::Vector{Edge}, nbr_candidates::Int,
                          detected_event::Bool, tr_nplus1::Transition)
     ind_edge = 0
     bool_event = detected_event
-    for i in eachindex(edge_candidates)
+    for i = 1:nbr_candidates
         edge = edge_candidates[i]
         # Asynchronous edge detection: we fire it
         if edge.transitions[1] == nothing 
@@ -87,7 +100,7 @@ function _get_edge_index(edge_candidates::Vector{Edge},
         end
         # Synchronous detection
         if !detected_event && tr_nplus1 != nothing
-            if (length(edge.transitions) == 1 && edge.transitions[1] == "ALL") || 
+            if (edge.transitions[1] == "ALL") || 
                (tr_nplus1 in edge.transitions)
                 ind_edge = i
                 bool_event = true
@@ -101,7 +114,7 @@ function next_state!(Snplus1::StateLHA, A::LHA,
                      xnplus1::Vector{Int}, tnplus1::Float64, tr_nplus1::Transition, 
                      Sn::StateLHA; verbose::Bool = false)
     # En fait d'apres observation de Cosmos, après qu'on ait lu la transition on devrait stop.
-    edge_candidates = Edge[]
+    edge_candidates = Vector{Edge}(undef, 2)
     first_round::Bool = true
     detected_event::Bool = false
     turns = 0
@@ -117,14 +130,15 @@ function next_state!(Snplus1::StateLHA, A::LHA,
     # First, we check the asynchronous transitions
     while first_round || length(edge_candidates) > 0
         turns += 1
-        edge_candidates = empty!(edge_candidates)
+        #edge_candidates = empty!(edge_candidates)
         current_loc = Snplus1.loc
         # Save all edges that satisfies transition predicate (asynchronous ones)
-        _find_edge_candidates!(edge_candidates, current_loc, A, Snplus1, true)
+        nbr_candidates = _find_edge_candidates!(edge_candidates, current_loc, A, Snplus1, true)
         # Search the one we must chose, here the event is nothing because 
         # we're not processing yet the next event
-        ind_edge, detected_event = _get_edge_index(edge_candidates, detected_event, nothing)
+        ind_edge, detected_event = _get_edge_index(edge_candidates, nbr_candidates, detected_event, nothing)
         # Update the state with the chosen one (if it exists)
+        # Should be xn here
         if ind_edge > 0
             edge_candidates[ind_edge].update_state!(A, Snplus1, xnplus1)
         end
@@ -132,7 +146,7 @@ function next_state!(Snplus1::StateLHA, A::LHA,
         if verbose
             @show turns
             @show edge_candidates
-            @show ind_edge, detected_event
+            @show ind_edge, detected_event, nbr_candidates
             println("After update")
             @show Snplus1
         end
@@ -171,17 +185,17 @@ function next_state!(Snplus1::StateLHA, A::LHA,
     first_round = true
     while first_round || length(edge_candidates) > 0
         turns += 1
-        edge_candidates = empty!(edge_candidates)
+        #edge_candidates = empty!(edge_candidates)
         current_loc = Snplus1.loc
         # Save all edges that satisfies transition predicate (synchronous ones)
-        _find_edge_candidates!(edge_candidates, current_loc, A, Snplus1, false)
+        nbr_candidates =_find_edge_candidates!(edge_candidates, current_loc, A, Snplus1, false)
         # Search the one we must chose
-        ind_edge, detected_event = _get_edge_index(edge_candidates, detected_event, tr_nplus1)
+        ind_edge, detected_event = _get_edge_index(edge_candidates, nbr_candidates, detected_event, tr_nplus1)
         # Update the state with the chosen one (if it exists)
         if verbose 
             @show turns
             @show edge_candidates
-            @show ind_edge, detected_event
+            @show ind_edge, detected_event, nbr_candidates
         end
         if ind_edge > 0
             edge_candidates[ind_edge].update_state!(A, Snplus1, xnplus1)

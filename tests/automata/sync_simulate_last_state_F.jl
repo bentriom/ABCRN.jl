@@ -11,7 +11,7 @@ sync_SIR = A_F * SIR
 
 function test_last_state(A::LHA, m::SynchronizedModel)
     σ = simulate(m)
-    test = (get_state_from_time(σ, (σ.state_lha_end).time)[1] == (σ.state_lha_end)["n"]) && ((σ.state_lha_end)["d"] == 0)
+    test = (get_state_from_time(σ, (σ.state_lha_end).time)[1] == (σ.state_lha_end)[:n]) && ((σ.state_lha_end)[:d] == 0)
     if !test
         @show σ.state_lha_end
         @show times(σ)[end]
@@ -19,7 +19,7 @@ function test_last_state(A::LHA, m::SynchronizedModel)
         @show times(σ)[end-1]
         @show σ[end-1]
         @show get_state_from_time(σ, (σ.state_lha_end).time)[1] 
-        @show (σ.state_lha_end)["n"], (σ.state_lha_end)["d"]
+        @show (σ.state_lha_end)[:n], (σ.state_lha_end)[:d]
         error("Ouch")
     end
     return test

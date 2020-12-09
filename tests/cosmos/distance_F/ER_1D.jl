@@ -52,7 +52,7 @@ for exp in l_exp
         # MarkovProcesses estimation
         set_param!(ER, "k3", convert(Float64, k3))
         sync_ER = ER*A_F
-        l_dist_pkg[i] = distribute_mean_value_lha(sync_ER, "d", nb_sim)
+        l_dist_pkg[i] = distribute_mean_value_lha(sync_ER, :d, nb_sim)
         nb_accepts_pkg = distribute_prob_accept_lha(sync_ER, nb_sim)
         #@info "About accepts" nb_sim nb_accepted nb_accepts_pkg
         test = isapprox(l_dist_cosmos[i], l_dist_pkg[i]; atol = width*1.01) || 

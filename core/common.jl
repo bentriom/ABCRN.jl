@@ -6,22 +6,24 @@ abstract type Model end
 abstract type AbstractTrajectory end
 
 const Transition = Union{String,Nothing}
-const Location = String
-const VariableAutomaton = String
+const Location = Symbol
+const VariableAutomaton = Symbol
+const VariableModel = String
+const ParameterModel = String
 
 mutable struct ContinuousTimeModel <: Model
     name::String
     dim_state::Int # state space dim
     dim_params::Int # parameter space dim
-    map_var_idx::Dict{String,Int} # maps variable str to index in the state space
-    _map_obs_var_idx::Dict{String,Int} # maps variable str to index in the observed state space
-    map_param_idx::Dict{String,Int} # maps parameter str to index in the parameter space
-    transitions::Vector{Transition}
+    map_var_idx::Dict{VariableModel,Int} # maps variable str to index in the state space
+    _map_obs_var_idx::Dict{VariableModel,Int} # maps variable str to index in the observed state space
+    map_param_idx::Dict{ParameterModel,Int} # maps parameter str to index in the parameter space
+    transitions::Vector{<:Transition}
     p::Vector{Float64}
     x0::Vector{Int}
     t0::Float64
     f!::Function
-    g::Vector{String} # of dimension dim_obs_state
+    g::Vector{VariableModel} # of dimension dim_obs_state
     _g_idx::Vector{Int} # of dimension dim_obs_state
     isabsorbing::Function
     time_bound::Float64
@@ -33,26 +35,26 @@ struct Trajectory <: AbstractTrajectory
     m::ContinuousTimeModel
     values::Vector{Vector{Int}}
     times::Vector{Float64}
-    transitions::Vector{Transition}
+    transitions::Vector{<:Transition}
 end
 
 struct Edge
-    transitions::Vector{Transition}
+    transitions::Vector{<:Transition}
     check_constraints::Function
     update_state!::Function
 end
 
 struct LHA
-    transitions::Vector{Transition}
+    transitions::Vector{<:Transition}
     locations::Vector{Location} 
     Λ::Dict{Location,Function}
     locations_init::Vector{Location}
     locations_final::Vector{Location}
     map_var_automaton_idx::Dict{VariableAutomaton,Int} # nvar keys : str_var => idx in values
     flow::Dict{Location,Vector{Float64}} # output of length nvar
-    map_edges::Dict{Tuple{Location,Location},Vector{Edge}}
-    constants::NamedTuple
-    map_var_model_idx::Dict{String,Int} # of dim d (of a model)
+    map_edges::Dict{Location, Dict{Location,Vector{Edge}}}
+    constants::Dict{Symbol,Float64}
+    map_var_model_idx::Dict{VariableModel,Int} # of dim d (of a model)
 end
 
 mutable struct StateLHA
@@ -72,21 +74,21 @@ struct SynchronizedTrajectory <: AbstractTrajectory
     sm::SynchronizedModel
     values::Vector{Vector{Int}}
     times::Vector{Float64}
-    transitions::Vector{Transition}
+    transitions::Vector{<:Transition}
 end
 
 struct ParametricModel
     m::Model
-    params::Vector{String}
+    params::Vector{ParameterModel}
     distribution::Distribution
     _param_idx::Vector{Int}
 end
 
 # Constructors
-function ContinuousTimeModel(dim_state::Int, dim_params::Int, map_var_idx::Dict, map_param_idx::Dict, transitions::Vector{String}, 
+function ContinuousTimeModel(dim_state::Int, dim_params::Int, map_var_idx::Dict, map_param_idx::Dict, transitions::Vector{<:Transition}, 
               p::Vector{Float64}, x0::Vector{Int}, t0::Float64, 
               f!::Function, isabsorbing::Function; 
-              g::Vector{String} = keys(map_var_idx), time_bound::Float64 = Inf, 
+              g::Vector{VariableModel} = keys(map_var_idx), time_bound::Float64 = Inf, 
               buffer_size::Int = 10, estim_min_states::Int = 50, name::String = "Unnamed")
     dim_obs_state = length(g)
     _map_obs_var_idx = Dict()
@@ -108,15 +110,15 @@ function ContinuousTimeModel(dim_state::Int, dim_params::Int, map_var_idx::Dict,
     return new_model
 end
 
-LHA(A::LHA, map_var::Dict{String,Int}) = LHA(A.transitions, A.locations, A.Λ, 
+LHA(A::LHA, map_var::Dict{VariableModel,Int}) = LHA(A.transitions, A.locations, A.Λ, 
                                              A.locations_init, A.locations_final, A.map_var_automaton_idx, A.flow,
                                              A.map_edges, A.constants, map_var)
 Base.:*(m::ContinuousTimeModel, A::LHA) = SynchronizedModel(m, A)
 Base.:*(A::LHA, m::ContinuousTimeModel) = SynchronizedModel(m, A)
 
-function ParametricModel(am::Model, priors::Tuple{String,UnivariateDistribution}...)
+function ParametricModel(am::Model, priors::Tuple{ParameterModel,UnivariateDistribution}...)
     m = get_proba_model(am)
-    params = String[]
+    params = ParameterModel[]
     distributions = Distribution{Univariate,Continuous}[]
     _param_idx = zeros(Int, 0)
     for prior in priors
@@ -131,7 +133,7 @@ function ParametricModel(am::Model, priors::Tuple{String,UnivariateDistribution}
     return ParametricModel(am, params, product_distribution(distributions), _param_idx)
 end
 
-function ParametricModel(am::Model, params::Vector{String}, distribution::MultivariateDistribution)
+function ParametricModel(am::Model, params::Vector{ParameterModel}, distribution::MultivariateDistribution)
     m = get_proba_model(am)
     _param_idx = zeros(Int, 0)
     for str_p in params

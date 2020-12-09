@@ -12,7 +12,7 @@ A_F = create_automaton_F(SIR, x1, x2, t1, t2, "I") # <: LHA
 function test_last_state(A::LHA, m::ContinuousTimeModel)
     σ = simulate(m)
     Send = read_trajectory(A, σ)
-    test = (get_state_from_time(σ, Send.time)[2] == Send["n"]) && (Send["d"] == 0)
+    test = (get_state_from_time(σ, Send.time)[2] == Send[:n]) && (Send[:d] == 0)
     if !test
         @show Send
         @show get_state_from_time(σ, Send.time)
