@@ -1,5 +1,6 @@
 
 length_var(A::LHA) = length(getfield(A, :map_var_automaton_idx))
+get_value(S::StateLHA, x::Vector{Int}, var::VariableModel) = x[getfield(getfield(S, :A), :map_var_model_idx)[var]]
 get_value(A::LHA, x::Vector{Int}, var::VariableModel) = x[getfield(A, :map_var_model_idx)[var]]
 
 copy(S::StateLHA) = StateLHA(getfield(S, :A), getfield(S, :loc), getfield(S, :values), getfield(S, :time))
@@ -51,7 +52,7 @@ isaccepted(S::StateLHA) = (getfield(S, :loc) in getfield(getfield(S, :A), :locat
 # Methods for synchronize / read the trajectory
 function init_state(A::LHA, x0::Vector{Int}, t0::Float64)
     S0 = StateLHA(A, :init, zeros(length_var(A)), t0)
-    for loc in A.locations_init
+    for loc in getfield(A, :locations_init)
         if A.Λ[loc](A,S0) 
             S0.loc = loc
             break
@@ -59,7 +60,8 @@ function init_state(A::LHA, x0::Vector{Int}, t0::Float64)
     end
     return S0
 end
-
+# A push! method implementend by myself because I know in most cases the edge candidates
+# are not greater than 2
 function _push_edge!(edge_candidates::Vector{Edge}, edge::Edge, nbr_candidates::Int)
     if nbr_candidates < 2
         edge_candidates[nbr_candidates+1] = edge
@@ -68,13 +70,14 @@ function _push_edge!(edge_candidates::Vector{Edge}, edge::Edge, nbr_candidates::
     end
 end
 
-function _find_edge_candidates!(edge_candidates::Vector{Edge}, current_loc::Location, 
-                                A::LHA, Snplus1::StateLHA, only_asynchronous::Bool)
+function _find_edge_candidates!(edge_candidates::Vector{Edge},
+                                edges_from_current_loc::Dict{Location,Vector{Edge}}, 
+                                Snplus1::StateLHA, constants::Dict{Symbol,Float64}, x::Vector{Int},
+                                only_asynchronous::Bool)
     nbr_candidates = 0
-    edges_from_current_loc = A.map_edges[current_loc]
     for target_loc in keys(edges_from_current_loc)
         for edge in edges_from_current_loc[target_loc]
-            if edge.check_constraints(A, Snplus1)
+            if getfield(edge, :check_constraints)(Snplus1, constants, x)
                 if edge.transitions[1] == nothing
                     _push_edge!(edge_candidates, edge, nbr_candidates)
                     nbr_candidates += 1
@@ -127,22 +130,23 @@ function next_state!(Snplus1::StateLHA, A::LHA,
         @show Sn 
         @show Snplus1 
     end
-   
+    constants = getfield(A, :constants) 
     # In terms of values not reference, Snplus1 == Sn
     # First, we check the asynchronous transitions
     while first_round || length(edge_candidates) > 0
         turns += 1
         #edge_candidates = empty!(edge_candidates)
-        current_loc = Snplus1.loc
+        current_loc = getfield(Snplus1, :loc)
+        edges_from_current_loc = getfield(A, :map_edges)[current_loc]
         # Save all edges that satisfies transition predicate (asynchronous ones)
-        nbr_candidates = _find_edge_candidates!(edge_candidates, current_loc, A, Snplus1, true)
+        nbr_candidates = _find_edge_candidates!(edge_candidates, edges_from_current_loc, Snplus1, constants, xnplus1, true)
         # Search the one we must chose, here the event is nothing because 
         # we're not processing yet the next event
         ind_edge, detected_event = _get_edge_index(edge_candidates, nbr_candidates, detected_event, nothing)
         # Update the state with the chosen one (if it exists)
         # Should be xn here
         if ind_edge > 0
-            edge_candidates[ind_edge].update_state!(A, Snplus1, xnplus1)
+            getfield(edge_candidates[ind_edge], :update_state!)(Snplus1, constants, xnplus1)
         end
         first_round = false
         if verbose
@@ -163,7 +167,7 @@ function next_state!(Snplus1::StateLHA, A::LHA,
             @show tnplus1, tr_nplus1, xnplus1
             @show edge_candidates
             for edge in edge_candidates
-                @show edge.check_constraints(A, Snplus1)
+                @show getfield(edge, :check_constraints)(Snplus1, constants, x)
             end
             error("Unpredicted behavior automaton")
         end
@@ -187,10 +191,10 @@ function next_state!(Snplus1::StateLHA, A::LHA,
     first_round = true
     while first_round || length(edge_candidates) > 0
         turns += 1
-        #edge_candidates = empty!(edge_candidates)
-        current_loc = Snplus1.loc
+        current_loc = getfield(Snplus1, :loc)
+        edges_from_current_loc = getfield(A, :map_edges)[current_loc]
         # Save all edges that satisfies transition predicate (synchronous ones)
-        nbr_candidates =_find_edge_candidates!(edge_candidates, current_loc, A, Snplus1, false)
+        nbr_candidates = _find_edge_candidates!(edge_candidates, edges_from_current_loc, Snplus1, constants, xnplus1, false)
         # Search the one we must chose
         ind_edge, detected_event = _get_edge_index(edge_candidates, nbr_candidates, detected_event, tr_nplus1)
         # Update the state with the chosen one (if it exists)
@@ -200,7 +204,7 @@ function next_state!(Snplus1::StateLHA, A::LHA,
             @show ind_edge, detected_event, nbr_candidates
         end
         if ind_edge > 0
-            edge_candidates[ind_edge].update_state!(A, Snplus1, xnplus1)
+            getfield(edge_candidates[ind_edge], :update_state!)(Snplus1, constants, xnplus1)
         end
         first_round = false
         if verbose
@@ -219,7 +223,7 @@ function next_state!(Snplus1::StateLHA, A::LHA,
             @show tnplus1, tr_nplus1, xnplus1
             @show edge_candidates
             for edge in edge_candidates
-                @show edge.check_constraints(A, Snplus1)
+                @show getfield(edge, :check_constraints)(Snplus1, constants, x)
             end
             error("Unpredicted behavior automaton")
         end
