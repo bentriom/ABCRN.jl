@@ -51,8 +51,7 @@ for i = 1:nb_k1
         set_param!(ER, :k1, convert(Float64, k1))
         set_param!(ER, :k2, convert(Float64, k2))
         sync_ER = ER*A_G_F
-        mat_dist_pkg[i,j], mat_dist_prime_pkg[i,j] = distribute_mean_value_lha(sync_ER, [:d,:dprime], nb_sim)
-        nb_accepts_pkg = distribute_prob_accept_lha(sync_ER, nb_sim)
+        mat_dist_pkg[i,j], mat_dist_prime_pkg[i,j], nb_accepts_pkg = distribute_mean_value_lha(sync_ER, [:d,:dprime], nb_sim; with_accepts = true)
         #@info "Computed distances" mat_dist_pkg[i,j] mat_dist_prime_pkg[i,j] mat_dist_cosmos[i,j] mat_dist_prime_cosmos[i,j]
         #@info "About accepts" nb_sim nb_accepted nb_accepts_pkg
         test = (isapprox(mat_dist_cosmos[i,j], mat_dist_pkg[i,j]; atol = width*1.01)) || 

@@ -30,43 +30,46 @@ Simulates a model. If `m::SynchronizedModel`, the simulation is synchronized wit
 Linear Hybrid Automaton.
 """
 function simulate(m::ContinuousTimeModel; p::Union{Nothing,AbstractVector{Float64}} = nothing)
-    p_sim = m.p
+    p_sim = getfield(m, :p)
     if p != nothing
         p_sim = p
     end
+    time_bound = getfield(m, :time_bound)
+    buffer_size = getfield(m, :buffer_size)
+    estim_min_states = getfield(m, :estim_min_states)
     # First alloc
-    full_values = Vector{Vector{Int}}(undef, m.dim_state)
-    for i = eachindex(full_values) full_values[i] = zeros(Int, m.estim_min_states) end
-    times = zeros(Float64, m.estim_min_states)
-    transitions = Vector{Transition}(undef, m.estim_min_states)
+    full_values = Vector{Vector{Int}}(undef, getfield(m, :dim_state))
+    for i = eachindex(full_values) full_values[i] = zeros(Int, estim_min_states) end
+    times = zeros(Float64, estim_min_states)
+    transitions = Vector{Transition}(undef, estim_min_states)
     # Initial values
-    for i = eachindex(full_values) full_values[i][1] = m.x0[i] end
-    times[1] = m.t0
+    for i = eachindex(full_values) full_values[i][1] = getfield(m, :x0)[i] end
+    times[1] = getfield(m, :t0)
     transitions[1] = nothing
     # Values at time n
     n = 1
-    xn = copy(m.x0)
-    tn = m.t0 
+    xn = copy(getfield(m, :x0))
+    tn = getfield(m, :t0) 
     # at time n+1
-    isabsorbing::Bool = m.isabsorbing(p_sim,xn)
+    isabsorbing::Bool = getfield(m, :isabsorbing)(p_sim,xn)
     # If x0 is absorbing
     if isabsorbing
         _resize_trajectory!(full_values, times, transitions, 1)
-        values = full_values[m._g_idx]
+        values = full_values[getfield(m, :_g_idx)]
         if isbounded(m)
-            _finish_bounded_trajectory!(values, times, transitions, m.time_bound)
+            _finish_bounded_trajectory!(values, times, transitions, time_bound)
         end
         return Trajectory(m, values, times, transitions)
     end
     # Alloc of vectors where we stock n+1 values
-    vec_x = zeros(Int, m.dim_state)
+    vec_x = zeros(Int, getfield(m, :dim_state))
     l_t = Float64[0.0]
     l_tr = Transition[nothing]
     # First we fill the allocated array
-    for i = 2:m.estim_min_states
-        m.f!(vec_x, l_t, l_tr, xn, tn, p_sim)
+    for i = 2:estim_min_states
+        getfield(m, :f!)(vec_x, l_t, l_tr, xn, tn, p_sim)
         tn = l_t[1]
-        if tn > m.time_bound || vec_x == xn
+        if tn > time_bound || vec_x == xn
             isabsorbing = (vec_x == xn)
             break
         end
@@ -75,25 +78,25 @@ function simulate(m::ContinuousTimeModel; p::Union{Nothing,AbstractVector{Float6
         _update_values!(full_values, times, transitions, xn, tn, l_tr[1], i)
     end
     # If simulation ended before the estimation of states
-    if n < m.estim_min_states
+    if n < estim_min_states
         _resize_trajectory!(full_values, times, transitions, n)
-        values = full_values[m._g_idx]
+        values = full_values[getfield(m, :_g_idx)]
         if isbounded(m)
-            _finish_bounded_trajectory!(values, times, transitions, m.time_bound)
+            _finish_bounded_trajectory!(values, times, transitions, time_bound)
         end
         return Trajectory(m, values, times, transitions)
     end
     # Otherwise, buffering system
     size_tmp = 0
-    while !isabsorbing && tn <= m.time_bound
+    while !isabsorbing && tn <= time_bound
         # Alloc buffer
-        _resize_trajectory!(full_values, times, transitions, m.estim_min_states+size_tmp+m.buffer_size)
+        _resize_trajectory!(full_values, times, transitions, estim_min_states+size_tmp+buffer_size)
         i = 0
-        while i < m.buffer_size
+        while i < buffer_size
             i += 1
-            m.f!(vec_x, l_t, l_tr, xn, tn, p_sim)
+            getfield(m, :f!)(vec_x, l_t, l_tr, xn, tn, p_sim)
             tn = l_t[1]
-            if tn > m.time_bound 
+            if tn > time_bound 
                 i -= 1
                 break
             end
@@ -104,72 +107,75 @@ function simulate(m::ContinuousTimeModel; p::Union{Nothing,AbstractVector{Float6
             end
             copyto!(xn, vec_x)
             _update_values!(full_values, times, transitions, 
-                            xn, tn, l_tr[1], m.estim_min_states+size_tmp+i)
+                            xn, tn, l_tr[1], estim_min_states+size_tmp+i)
         end
         # If simulation ended before the end of buffer
-        if i < m.buffer_size
-            _resize_trajectory!(full_values, times, transitions, m.estim_min_states+size_tmp+i)
+        if i < buffer_size
+            _resize_trajectory!(full_values, times, transitions, estim_min_states+size_tmp+i)
         end
         size_tmp += i
         n += i
     end
-    values = full_values[m._g_idx]
+    values = full_values[getfield(m, :_g_idx)]
     if isbounded(m)
         # Add last value: the convention is the last transition is nothing,
         # the trajectory is bounded
-        _finish_bounded_trajectory!(values, times, transitions, m.time_bound)
+        _finish_bounded_trajectory!(values, times, transitions, time_bound)
     end
     return Trajectory(m, values, times, transitions)
 end
 
 function simulate(product::SynchronizedModel; p::Union{Nothing,AbstractVector{Float64}} = nothing,
                   verbose::Bool = false)
-    m = product.m
-    A = product.automaton
-    p_sim = m.p
+    m = getfield(product, :m)
+    A = getfield(product, :automaton)
+    p_sim = getfield(m, :p)
     if p != nothing
         p_sim = p
     end
+    time_bound = getfield(m, :time_bound)
+    buffer_size = getfield(m, :buffer_size)
+    estim_min_states = getfield(m, :estim_min_states)
     # First alloc
-    full_values = Vector{Vector{Int}}(undef, m.dim_state)
-    for i = eachindex(full_values) full_values[i] = zeros(Int, m.estim_min_states) end
-    times = zeros(Float64, m.estim_min_states)
-    transitions = Vector{Transition}(undef, m.estim_min_states)
+    full_values = Vector{Vector{Int}}(undef, getfield(m, :dim_state))
+    for i = eachindex(full_values) full_values[i] = zeros(Int, estim_min_states) end
+    times = zeros(Float64, estim_min_states)
+    transitions = Vector{Transition}(undef, estim_min_states)
     # Initial values
-    for i = eachindex(full_values) full_values[i][1] = m.x0[i] end
-    times[1] = m.t0
+    for i = eachindex(full_values) full_values[i][1] = getfield(m, :x0)[i] end
+    times[1] = getfield(m, :t0)
     transitions[1] = nothing
-    S0 = init_state(A, m.x0, m.t0)
+    S0 = init_state(A, getfield(m, :x0), getfield(m, :t0))
     # Values at time n
     n = 1
-    xn = copy(m.x0)
-    tn = m.t0 
+    xn = copy(getfield(m, :x0))
+    tn = getfield(m, :t0) 
     Sn = copy(S0)
-    isabsorbing::Bool = m.isabsorbing(p_sim,xn)
+    isabsorbing::Bool = getfield(m, :isabsorbing)(p_sim,xn)
     isacceptedLHA::Bool = isaccepted(Sn)
     # Alloc of vectors where we stock n+1 values
-    vec_x = zeros(Int, m.dim_state)
+    vec_x = zeros(Int, getfield(m, :dim_state))
     l_t = Float64[0.0]
     l_tr = Transition[nothing]
     Snplus1 = copy(Sn)
     # If x0 is absorbing
     if isabsorbing || isacceptedLHA 
         _resize_trajectory!(full_values, times, transitions, 1)
-        values = full_values[m._g_idx]
+        values = full_values[getfield(m, :_g_idx)]
         if isbounded(m)
-            _finish_bounded_trajectory!(values, times, transitions, m.time_bound)
+            _finish_bounded_trajectory!(values, times, transitions, time_bound)
         end
         if isabsorbing && !isacceptedLHA
-            next_state!(Snplus1, A, xn, m.time_bound, nothing, Sn; verbose = verbose)
+            next_state!(Snplus1, A, xn, time_bound, nothing, Sn; verbose = verbose)
             copyto!(Sn, Snplus1)
         end
         return SynchronizedTrajectory(Sn, product, values, times, transitions)
     end
     # First we fill the allocated array
-    for i = 2:m.estim_min_states
-        m.f!(vec_x, l_t, l_tr, xn, tn, p_sim)
+    for i = 2:estim_min_states
+        getfield(m, :f!)(vec_x, l_t, l_tr, xn, tn, p_sim)
         tn = l_t[1]
-        if tn > m.time_bound || vec_x == xn
+        if tn > time_bound || vec_x == xn
             isabsorbing = (vec_x == xn)
             break
         end
@@ -185,29 +191,29 @@ function simulate(product::SynchronizedModel; p::Union{Nothing,AbstractVector{Fl
         end
     end
     # If simulation ended before the estimation of states
-    if n < m.estim_min_states
+    if n < estim_min_states
         _resize_trajectory!(full_values, times, transitions, n)
-        values = full_values[m._g_idx]
+        values = full_values[getfield(m, :_g_idx)]
         if isbounded(m)
-            _finish_bounded_trajectory!(values, times, transitions, m.time_bound)
+            _finish_bounded_trajectory!(values, times, transitions, time_bound)
         end
         if isabsorbing && !isacceptedLHA
-            next_state!(Snplus1, A, xn, m.time_bound, nothing, Sn; verbose = verbose)
+            next_state!(Snplus1, A, xn, time_bound, nothing, Sn; verbose = verbose)
             copyto!(Sn, Snplus1)
         end
         return SynchronizedTrajectory(Sn, product, values, times, transitions)
     end
     # Otherwise, buffering system
     size_tmp = 0
-    while !isabsorbing && tn <= m.time_bound && !isacceptedLHA
+    while !isabsorbing && tn <= time_bound && !isacceptedLHA
         # Alloc buffer
-        _resize_trajectory!(full_values, times, transitions, m.estim_min_states+size_tmp+m.buffer_size)
+        _resize_trajectory!(full_values, times, transitions, estim_min_states+size_tmp+buffer_size)
         i = 0
-        while i < m.buffer_size
+        while i < buffer_size
             i += 1
-            m.f!(vec_x, l_t, l_tr, xn, tn, p_sim)
+            getfield(m, :f!)(vec_x, l_t, l_tr, xn, tn, p_sim)
             tn = l_t[1]
-            if tn > m.time_bound
+            if tn > time_bound
                 i -= 1
                 break
             end
@@ -220,7 +226,7 @@ function simulate(product::SynchronizedModel; p::Union{Nothing,AbstractVector{Fl
             tr_n = l_tr[1]
             next_state!(Snplus1, A, xn, tn, tr_n, Sn; verbose = verbose)
             _update_values!(full_values, times, transitions, 
-                            xn, tn, tr_n, m.estim_min_states+size_tmp+i)
+                            xn, tn, tr_n, estim_min_states+size_tmp+i)
             copyto!(Sn, Snplus1)
             isacceptedLHA = isaccepted(Snplus1)
             if isabsorbing || isacceptedLHA
@@ -228,20 +234,20 @@ function simulate(product::SynchronizedModel; p::Union{Nothing,AbstractVector{Fl
             end
         end
         # If simulation ended before the end of buffer
-        if i < m.buffer_size
-            _resize_trajectory!(full_values, times, transitions, m.estim_min_states+size_tmp+i)
+        if i < buffer_size
+            _resize_trajectory!(full_values, times, transitions, estim_min_states+size_tmp+i)
         end
         size_tmp += i
         n += i
     end
-    values = full_values[m._g_idx]
+    values = full_values[getfield(m, :_g_idx)]
     if isbounded(m) && !isaccepted(Sn)
         # Add last value: the convention is the last transition is nothing,
         # the trajectory is bounded
-        _finish_bounded_trajectory!(values, times, transitions, m.time_bound)
+        _finish_bounded_trajectory!(values, times, transitions, time_bound)
     end
     if isabsorbing && !isacceptedLHA
-        next_state!(Snplus1, A, xn, m.time_bound, nothing, Sn; verbose = verbose)
+        next_state!(Snplus1, A, xn, time_bound, nothing, Sn; verbose = verbose)
         copyto!(Sn, Snplus1)
     end
     return SynchronizedTrajectory(Sn, product, values, times, transitions)
@@ -257,35 +263,36 @@ function volatile_simulate(product::SynchronizedModel;
                            p::Union{Nothing,AbstractVector{Float64}} = nothing, verbose::Bool = false)
     m = product.m
     A = product.automaton
-    p_sim = m.p
+    p_sim = getfield(m, :p)
     if p != nothing
         p_sim = p
     end
-    S0 = init_state(A, m.x0, m.t0)
+    time_bound = getfield(m, :time_bound)
+    S0 = init_state(A, getfield(m, :x0), getfield(m, :t0))
     # Values at time n
     n = 1
-    xn = copy(m.x0)
-    tn = m.t0 
+    xn = copy(getfield(m, :x0))
+    tn = getfield(m, :t0) 
     Sn = copy(S0)
-    isabsorbing::Bool = m.isabsorbing(p_sim,xn)
+    isabsorbing::Bool = getfield(m, :isabsorbing)(p_sim,xn)
     isacceptedLHA::Bool = isaccepted(Sn)
     # Alloc of vectors where we stock n+1 values
-    vec_x = zeros(Int, m.dim_state)
+    vec_x = zeros(Int, getfield(m, :dim_state))
     l_t = Float64[0.0]
     l_tr = Transition[nothing]
     Snplus1 = copy(Sn)
     # If x0 is absorbing
     if isabsorbing || isacceptedLHA 
         if !isacceptedLHA
-            next_state!(Snplus1, A, xn, m.time_bound, nothing, Sn; verbose = verbose)
+            next_state!(Snplus1, A, xn, time_bound, nothing, Sn; verbose = verbose)
             copyto!(Sn, Snplus1)
         end
         return Sn
     end
-    while !isabsorbing && tn <= m.time_bound && !isacceptedLHA
-        m.f!(vec_x, l_t, l_tr, xn, tn, p_sim)
+    while !isabsorbing && tn <= time_bound && !isacceptedLHA
+        getfield(m, :f!)(vec_x, l_t, l_tr, xn, tn, p_sim)
         tn = l_t[1]
-        if tn > m.time_bound
+        if tn > time_bound
             i -= 1
             break
         end
@@ -301,7 +308,7 @@ function volatile_simulate(product::SynchronizedModel;
         n += 1
     end
     if isabsorbing && !isacceptedLHA
-        next_state!(Snplus1, A, xn, m.time_bound, nothing, Sn; verbose = verbose)
+        next_state!(Snplus1, A, xn, time_bound, nothing, Sn; verbose = verbose)
         copyto!(Sn, Snplus1)
     end
     return Sn
@@ -341,16 +348,26 @@ end
 Distribute over workers the computation of the mean value 
 of a LHA over `nbr_sim` simulations of the model.
 """
-function distribute_mean_value_lha(sm::SynchronizedModel, sym_var::VariableAutomaton, nbr_sim::Int)
-    sum_val = @distributed (+) for i = 1:nbr_sim 
-        volatile_simulate(sm)[sym_var] 
+function distribute_mean_value_lha(sm::SynchronizedModel, sym_var::VariableAutomaton, nbr_sim::Int; with_accepts::Bool = false)
+    sum_val = @distributed (+) for i = 1:nbr_sim
+        S = volatile_simulate(sm)
+        if !with_accepts
+            S[sym_var]
+        else
+            [S[sym_var], isaccepted(S)]
+        end
     end
     return sum_val / nbr_sim
 end
 
-function distribute_mean_value_lha(sm::SynchronizedModel, sym_var::Vector{VariableAutomaton}, nbr_sim::Int)
+function distribute_mean_value_lha(sm::SynchronizedModel, sym_var::Vector{VariableAutomaton}, nbr_sim::Int; with_accepts::Bool = false)
     sum_val = @distributed (+) for i = 1:nbr_sim 
-        volatile_simulate(sm)[sym_var]
+        S = volatile_simulate(sm)
+        if !with_accepts
+            S[sym_var]
+        else
+            vcat(S[sym_var], isaccepted(S))
+        end
     end
     return sum_val / nbr_sim
 end
