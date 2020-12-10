@@ -102,7 +102,7 @@ macro network_model(expr_network,expr_name...)
     nbr_rand = rand(1:1000)
     nbr_reactions = length(list_expr_reactions)
     basename_func = "$(replace(model_name, ' '=>'_'))_$(nbr_rand)"
-    expr_model_f! = "function $(basename_func)_f!(xnplus1::Vector{Int}, l_t::Vector{Float64}, l_tr::Vector{Union{Nothing,String}}, xn::Vector{Int}, tn::Float64, p::Vector{Float64})\n\t"
+    expr_model_f! = "function $(basename_func)_f!(xnplus1::Vector{Int}, l_t::Vector{Float64}, l_tr::Vector{Transition}, xn::Vector{Int}, tn::Float64, p::Vector{Float64})\n\t"
     # Computation of nu and propensity functions in f!
     str_l_a = "l_a = ("
     str_test_isabsorbing = "@inbounds("

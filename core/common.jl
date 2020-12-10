@@ -5,11 +5,11 @@ import Distributions: Distribution, Univariate, Continuous, UnivariateDistributi
 abstract type Model end 
 abstract type AbstractTrajectory end
 
+const VariableModel = Symbol
+const ParameterModel = Symbol
 const Transition = Union{Symbol,Nothing}
 const Location = Symbol
 const VariableAutomaton = Symbol
-const VariableModel = Symbol
-const ParameterModel = Symbol
 
 mutable struct ContinuousTimeModel <: Model
     name::String

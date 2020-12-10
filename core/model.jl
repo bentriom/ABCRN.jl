@@ -341,9 +341,16 @@ end
 Distribute over workers the computation of the mean value 
 of a LHA over `nbr_sim` simulations of the model.
 """
-function distribute_mean_value_lha(sm::SynchronizedModel, sym_var::Union{VariableAutomaton,Vector{VariableAutomaton}}, nbr_sim::Int)
+function distribute_mean_value_lha(sm::SynchronizedModel, sym_var::VariableAutomaton, nbr_sim::Int)
     sum_val = @distributed (+) for i = 1:nbr_sim 
         volatile_simulate(sm)[sym_var] 
+    end
+    return sum_val / nbr_sim
+end
+
+function distribute_mean_value_lha(sm::SynchronizedModel, sym_var::Vector{VariableAutomaton}, nbr_sim::Int)
+    sum_val = @distributed (+) for i = 1:nbr_sim 
+        volatile_simulate(sm)[sym_var]
     end
     return sum_val / nbr_sim
 end

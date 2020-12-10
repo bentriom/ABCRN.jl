@@ -7,6 +7,7 @@ model_SIR = @network_model begin
 end "SIR"
 set_x0!(model_SIR, [95,5,0])
 set_param!(model_SIR, [0.012, 0.05])
+simulate(model_SIR)
 
 model_unnamed_SIR = @network_model begin
     R1: (S+I => 2I, ki*S*I)
@@ -14,6 +15,7 @@ model_unnamed_SIR = @network_model begin
 end
 set_x0!(model_unnamed_SIR, [95,5,0])
 set_param!(model_unnamed_SIR, [0.012, 0.05])
+simulate(model_unnamed_SIR)
 
 model_ER = @network_model begin
     R1: (E+S => ES, k1*E*S)
@@ -22,6 +24,7 @@ model_ER = @network_model begin
 end "ER"
 set_x0!(model_ER, [100,100,0,0])
 set_param!(model_ER, [1.0,1.0,1.0])
+simulate(model_ER)
 
 return true
 
