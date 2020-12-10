@@ -1,17 +1,19 @@
 
-length_var(A::LHA) = length(A.map_var_automaton_idx)
-get_value(A::LHA, x::Vector{Int}, var::VariableModel) = x[A.map_var_model_idx[var]]
+length_var(A::LHA) = length(getfield(A, :map_var_automaton_idx))
+get_value(A::LHA, x::Vector{Int}, var::VariableModel) = x[getfield(A, :map_var_model_idx)[var]]
 
-copy(S::StateLHA) = StateLHA(S.A, S.loc, S.values, S.time)
+copy(S::StateLHA) = StateLHA(getfield(S, :A), getfield(S, :loc), getfield(S, :values), getfield(S, :time))
 # Not overring getproperty, setproperty to avoid a conversion Symbol => String for the dict key
-function getindex(S::StateLHA, var::VariableAutomaton)
-    return (S.values)[(S.A).map_var_automaton_idx[var]]
-end
-getindex(S::StateLHA, l_var::Vector{VariableAutomaton}) = 
-        [S[var] for var in l_var]
-setindex!(S::StateLHA, val::Float64, var::VariableAutomaton) = (S.values)[(S.A).map_var_automaton_idx[var]] = val
-setindex!(S::StateLHA, val::Int, var::VariableAutomaton) = (S.values)[(S.A).map_var_automaton_idx[var]] = convert(Float64, val)
-setindex!(S::StateLHA, val::Bool, var::VariableAutomaton) = (S.values)[(S.A).map_var_automaton_idx[var]] = convert(Float64, val)
+
+# From the variable automaton var symbol this function get the index in S.values
+get_idx_var_automaton(S::StateLHA, var::VariableAutomaton) = getfield(getfield(S, :A), :map_var_automaton_idx)[var]
+
+getindex(S::StateLHA, var::VariableAutomaton) = getindex(getfield(S, :values), get_idx_var_automaton(S, var))
+setindex!(S::StateLHA, val::Float64, var::VariableAutomaton) = setindex!(getfield(S, :values), val, get_idx_var_automaton(S, var))
+
+getindex(S::StateLHA, l_var::Vector{VariableAutomaton}) = [S[var] for var in l_var]
+setindex!(S::StateLHA, val::Int, var::VariableAutomaton) = S[var] = convert(Float64, val)
+setindex!(S::StateLHA, val::Bool, var::VariableAutomaton) = S[var] = convert(Float64, val)
 
 function Base.show(io::IO, S::StateLHA)
     print(io, "State of LHA\n")
@@ -44,7 +46,7 @@ end
 # In future check_consistency(LHA), check if constant has the name
 # of one of the LHA fields
 
-isaccepted(S::StateLHA) = (S.loc in (S.A).locations_final)
+isaccepted(S::StateLHA) = (getfield(S, :loc) in getfield(getfield(S, :A), :locations_final))
 
 # Methods for synchronize / read the trajectory
 function init_state(A::LHA, x0::Vector{Int}, t0::Float64)
