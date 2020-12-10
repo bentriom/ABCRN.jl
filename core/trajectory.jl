@@ -165,7 +165,7 @@ end
 
 function Base.show(io::IO, σ::Trajectory)
     print(io, "Trajectory\n")
-    print(io, "- Model name: $(σ.m.name) \n")
+    print(io, "- Model name: $((σ.m).name) \n")
     print(io, "- Variable trajectories:\n")
     for obs_var in σ.m.g
         print(io, "* $obs_var: $(σ[obs_var])\n")
@@ -196,7 +196,7 @@ isaccepted(σ::SynchronizedTrajectory) = isaccepted(σ.state_lha_end)
 issteadystate(σ::AbstractTrajectory) = @warn "Unimplemented"
 
 # Access to trajectory values
-get_var_values(σ::AbstractTrajectory, var::VariableModel) = σ.values[σ.m._map_obs_var_idx[var]]
+get_var_values(σ::AbstractTrajectory, var::VariableModel) = σ.values[(σ.m)._map_obs_var_idx[var]]
 get_state(σ::AbstractTrajectory, idx::Int) = [σ.values[i][idx] for i = 1:length(σ.values)] # /!\ Creates an array
 get_value(σ::AbstractTrajectory, var::VariableModel, idx::Int) = get_var_values(σ, var)[idx]
 # Operation σ@t
@@ -219,8 +219,21 @@ function get_state_from_time(σ::AbstractTrajectory, t::Float64)
     error("Unexpected behavior")
 end
 function getproperty(σ::SynchronizedTrajectory, sym::Symbol)
+    if sym == :sm
+        return getfield(σ, :sm)
+    elseif sym == :m
+        return getfield(σ.sm, :m)
+    elseif sym in keys((σ.sm).m.map_var_idx)
+        return get_var_values(σ, sym)
+    else
+        return getfield(σ, sym)
+    end
+end
+function getproperty(σ::Trajectory, sym::Symbol)
     if sym == :m
-        return (σ.sm).m
+        return getfield(σ, :m)
+    elseif sym in keys((σ.m).map_var_idx)
+        return get_var_values(σ, sym)
     else
         return getfield(σ, sym)
     end
