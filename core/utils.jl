@@ -11,11 +11,12 @@ function cosmos_get_values(name_file::String)
     while !eof(output_file)
         line = readline(output_file)
         splitted_line = split(line, ':')
-        if (length(splitted_line) > 1) && tryparse(Float64, splitted_line[2]) !== nothing
+        str_val = split(splitted_line[2], ' ')[1]
+        if (length(splitted_line) > 1) && tryparse(Float64, str_val) !== nothing
             if !haskey(dict_values, splitted_line[1])
                 dict_values[splitted_line[1]] = zeros(0)
             end
-            push!(dict_values[splitted_line[1]], parse(Float64, splitted_line[2]))
+            push!(dict_values[splitted_line[1]], parse(Float64, str_val))
         end
     end
     close(output_file)
