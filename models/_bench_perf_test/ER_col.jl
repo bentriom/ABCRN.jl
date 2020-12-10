@@ -10,7 +10,7 @@ p = [1.0, 1.0, 1.0]
 x0 = [100, 100, 0, 0]
 t0 = 0.0
 
-function ER_col_f!(xnplus1::Vector{Int}, tnplus1::Vector{Float64}, tr::Vector{<:Transition}, 
+function ER_col_f!(xnplus1::Vector{Int}, tnplus1::Vector{Float64}, tr::Vector{Transition}, 
            xn::AbstractVector{Int}, tn::Float64, p::Vector{Float64})
     a1 = p[1] * xn[1] * xn[2]
     a2 = p[2] * xn[3]

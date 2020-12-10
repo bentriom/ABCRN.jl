@@ -9,7 +9,7 @@ l_tr = [:R1,:R2,:R3]
 p = [1.0, 1.0, 1.0]
 x0 = [100, 100, 0, 0]
 t0 = 0.0
-function ER_row_buffer_f!(mat_x::Matrix{Int}, l_t::Vector{Float64}, l_tr::Vector{<:Transition}, idx::Int,
+function ER_row_buffer_f!(mat_x::Matrix{Int}, l_t::Vector{Float64}, l_tr::Vector{Transition}, idx::Int,
            xn::AbstractVector{Int}, tn::Float64, p::Vector{Float64})
     a1 = p[1] * xn[1] * xn[2]
     a2 = p[2] * xn[3]

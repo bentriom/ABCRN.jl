@@ -9,7 +9,7 @@ l_tr_SIR = [:R1,:R2]
 p_SIR = [0.0012, 0.05]
 x0_SIR = [95, 5, 0]
 t0_SIR = 0.0
-function SIR_f!(xnplus1::Vector{Int}, l_t::Vector{Float64}, l_tr::Vector{<:Transition},
+function SIR_f!(xnplus1::Vector{Int}, l_t::Vector{Float64}, l_tr::Vector{Transition},
                 xn::Vector{Int}, tn::Float64, p::Vector{Float64})
     @inbounds a1 = p[1] * xn[1] * xn[2]
     @inbounds a2 = p[2] * xn[2]

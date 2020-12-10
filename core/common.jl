@@ -18,7 +18,7 @@ mutable struct ContinuousTimeModel <: Model
     map_var_idx::Dict{VariableModel,Int} # maps variable str to index in the state space
     _map_obs_var_idx::Dict{VariableModel,Int} # maps variable str to index in the observed state space
     map_param_idx::Dict{ParameterModel,Int} # maps parameter str to index in the parameter space
-    transitions::Vector{<:Transition}
+    transitions::Vector{Transition}
     p::Vector{Float64}
     x0::Vector{Int}
     t0::Float64
@@ -35,17 +35,17 @@ struct Trajectory <: AbstractTrajectory
     m::ContinuousTimeModel
     values::Vector{Vector{Int}}
     times::Vector{Float64}
-    transitions::Vector{<:Transition}
+    transitions::Vector{Transition}
 end
 
 struct Edge
-    transitions::Vector{<:Transition}
+    transitions::Vector{Transition}
     check_constraints::Function
     update_state!::Function
 end
 
 struct LHA
-    transitions::Vector{<:Transition}
+    transitions::Vector{Transition}
     locations::Vector{Location} 
     Λ::Dict{Location,Function}
     locations_init::Vector{Location}
@@ -74,7 +74,7 @@ struct SynchronizedTrajectory <: AbstractTrajectory
     sm::SynchronizedModel
     values::Vector{Vector{Int}}
     times::Vector{Float64}
-    transitions::Vector{<:Transition}
+    transitions::Vector{Transition}
 end
 
 struct ParametricModel
@@ -86,12 +86,13 @@ end
 
 # Constructors
 function ContinuousTimeModel(dim_state::Int, dim_params::Int, map_var_idx::Dict{VariableModel,Int}, 
-                             map_param_idx::Dict{ParameterModel,Int}, transitions::Vector{<:Transition}, 
+                             map_param_idx::Dict{ParameterModel,Int}, transitions::Vector{<:Transition},
                              p::Vector{Float64}, x0::Vector{Int}, t0::Float64, 
                              f!::Function, isabsorbing::Function; 
                              g::Vector{VariableModel} = keys(map_var_idx), time_bound::Float64 = Inf, 
                              buffer_size::Int = 10, estim_min_states::Int = 50, name::String = "Unnamed")
     dim_obs_state = length(g)
+    transitions = convert(Vector{Transition}, transitions)
     _map_obs_var_idx = Dict()
     _g_idx = Vector{Int}(undef, dim_obs_state)
     for i = 1:dim_obs_state

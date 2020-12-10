@@ -10,7 +10,7 @@ l_tr_poisson = [:R]
 p_poisson = [5.0]
 x0_poisson = [0]
 t0_poisson = 0.0
-function poisson_f!(xnplus1::Vector{Int}, l_t::Vector{Float64}, l_tr::Vector{<:Transition},
+function poisson_f!(xnplus1::Vector{Int}, l_t::Vector{Float64}, l_tr::Vector{Transition},
                     xn::Vector{Int}, tn::Float64, p::Vector{Float64})
     
     u1 = rand()

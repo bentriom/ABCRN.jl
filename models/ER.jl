@@ -9,7 +9,7 @@ l_tr_ER = [:R1,:R2,:R3]
 p_ER = [1.0, 1.0, 1.0]
 x0_ER = [100, 100, 0, 0]
 t0_ER = 0.0
-function ER_f!(xnplus1::Vector{Int}, l_t::Vector{Float64}, l_tr::Vector{<:Transition},
+function ER_f!(xnplus1::Vector{Int}, l_t::Vector{Float64}, l_tr::Vector{Transition},
                xn::Vector{Int}, tn::Float64, p::Vector{Float64})
     @inbounds a1 = p[1] * xn[1] * xn[2]
     @inbounds a2 = p[2] * xn[3]

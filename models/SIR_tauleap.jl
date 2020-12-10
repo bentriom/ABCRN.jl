@@ -10,7 +10,7 @@ l_tr_SIR_tauleap = [:U]
 p_SIR_tauleap = [0.0012, 0.05, 5.0]
 x0_SIR_tauleap = [95, 5, 0]
 t0_SIR_tauleap = 0.0
-function SIR_tauleap_f!(xnplus1::Vector{Int}, l_t::Vector{Float64}, l_tr::Vector{<:Transition},
+function SIR_tauleap_f!(xnplus1::Vector{Int}, l_t::Vector{Float64}, l_tr::Vector{Transition},
                 xn::Vector{Int}, tn::Float64, p::Vector{Float64})
     tau = p[3]
     a1 = p[1] * xn[1] * xn[2]
