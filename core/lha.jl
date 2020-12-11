@@ -117,7 +117,7 @@ end
 
 function next_state!(Snplus1::StateLHA, A::LHA, 
                      xnplus1::Vector{Int}, tnplus1::Float64, tr_nplus1::Transition, 
-                     Sn::StateLHA; verbose::Bool = false)
+                     Sn::StateLHA, xn::Vector{Int}; verbose::Bool = false)
     # En fait d'apres observation de Cosmos, après qu'on ait lu la transition on devrait stop.
     edge_candidates = Vector{Edge}(undef, 2)
     first_round::Bool = true
@@ -139,14 +139,14 @@ function next_state!(Snplus1::StateLHA, A::LHA,
         current_loc = getfield(Snplus1, :loc)
         edges_from_current_loc = getfield(A, :map_edges)[current_loc]
         # Save all edges that satisfies transition predicate (asynchronous ones)
-        nbr_candidates = _find_edge_candidates!(edge_candidates, edges_from_current_loc, Snplus1, constants, xnplus1, true)
+        nbr_candidates = _find_edge_candidates!(edge_candidates, edges_from_current_loc, Snplus1, constants, xn, true)
         # Search the one we must chose, here the event is nothing because 
         # we're not processing yet the next event
         ind_edge, detected_event = _get_edge_index(edge_candidates, nbr_candidates, detected_event, nothing)
         # Update the state with the chosen one (if it exists)
         # Should be xn here
         if ind_edge > 0
-            getfield(edge_candidates[ind_edge], :update_state!)(Snplus1, constants, xnplus1)
+            getfield(edge_candidates[ind_edge], :update_state!)(Snplus1, constants, xn)
         end
         first_round = false
         if verbose
@@ -240,8 +240,8 @@ function read_trajectory(A::LHA, σ::Trajectory; verbose = false)
     Snplus1 = copy(Sn)
     if verbose println("Init: ") end
     if verbose @show Sn end
-    for n in 1:length_states(σ)
-        next_state!(Snplus1, A_new, σ[n], l_t[n], l_tr[n], Sn; verbose = verbose)
+    for n in 2:length_states(σ)
+        next_state!(Snplus1, A_new, σ[n], l_t[n], l_tr[n], Sn, σ[n-1]; verbose = verbose)
         copyto!(Sn, Snplus1)
         if Snplus1.loc in A_new.locations_final 
             break 
