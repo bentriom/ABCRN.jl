@@ -26,6 +26,17 @@ set_x0!(model_ER, [100,100,0,0])
 set_param!(model_ER, [1.0,1.0,1.0])
 simulate(model_ER)
 
+model_birth_death = @network_model begin
+    Birth: (X => 2X, λ*X)
+    Death: (X => ∅, μ*X)
+end "Birth-death process"
+
+model_birth_death_2 = @network_model begin
+    Birth: (X => 2X, λ*X)
+    Death: (X => 0, μ*X)
+end "Birth-death process"
+
+
 return true
 
 #=
