@@ -8,6 +8,13 @@ function get_multiplicand_and_species(expr::Expr)
     return (multiplicand, sym_species)
 end
 get_multiplicand_and_species(sym::Symbol) = (1, sym)
+function get_multiplicand_and_species(expr::Real)
+    if expr == 0
+        return (0, :∅)
+    else
+        error("A number can't be a species identifier")
+    end
+end
 
 function get_str_propensity(propensity::Expr, dict_species::Dict, dict_params::Dict)
     str_propensity = ""
@@ -42,6 +49,7 @@ macro network_model(expr_network,expr_name...)
     dim_state = 0
     dim_params = 0
     list_expr_reactions = Any[]
+    empty_symbols = [:∅]
     # First we detect all of the species
     for expr_reaction in expr_network.args
         local isreaction = @capture(expr_reaction, TR_: (reactants_ => products_, propensity_))
@@ -54,14 +62,14 @@ macro network_model(expr_network,expr_name...)
                 if typeof(reaction_part) <: Expr && reaction_part.args[1] == :+ 
                     for operand in reaction_part.args[2:end]
                         mult, sym_species = get_multiplicand_and_species(operand)
-                        if !haskey(dict_species, sym_species)
+                        if !haskey(dict_species, sym_species) && !(sym_species in empty_symbols)
                             dim_state += 1
                             dict_species[sym_species] = dim_state
                         end
                     end
                 else
                     mult, sym_species = get_multiplicand_and_species(reaction_part)
-                    if !haskey(dict_species, sym_species)
+                    if !haskey(dict_species, sym_species) && !(sym_species in empty_symbols) 
                         dim_state += 1
                         dict_species[sym_species] = dim_state
                     end
@@ -102,6 +110,7 @@ macro network_model(expr_network,expr_name...)
     nbr_rand = rand(1:1000)
     nbr_reactions = length(list_expr_reactions)
     basename_func = "$(replace(model_name, ' '=>'_'))_$(nbr_rand)"
+    basename_func = replace(basename_func, '-'=>'_')
     expr_model_f! = "function $(basename_func)_f!(xnplus1::Vector{Int}, l_t::Vector{Float64}, l_tr::Vector{Transition}, xn::Vector{Int}, tn::Float64, p::Vector{Float64})\n\t"
     # Computation of nu and propensity functions in f!
     str_l_a = "l_a = ("
@@ -119,20 +128,28 @@ macro network_model(expr_network,expr_name...)
         if typeof(reactants) <: Expr && reactants.args[1] == :+ 
             for operand in reactants.args[2:end]
                 mult, sym_species = get_multiplicand_and_species(operand)
-                nu[dict_species[sym_species]] -= mult
+                if !(sym_species in empty_symbols) 
+                    nu[dict_species[sym_species]] -= mult
+                end
             end
         else
             mult, sym_species = get_multiplicand_and_species(reactants)
-            nu[dict_species[sym_species]] -= mult
+            if !(sym_species in empty_symbols)
+                nu[dict_species[sym_species]] -= mult
+            end
         end
         if typeof(products) <: Expr && products.args[1] == :+ 
             for operand in products.args[2:end]
                 mult, sym_species = get_multiplicand_and_species(operand)
-                nu[dict_species[sym_species]] += mult
+                if !(sym_species in empty_symbols)
+                    nu[dict_species[sym_species]] += mult
+                end
             end
         else
             mult, sym_species = get_multiplicand_and_species(products)
-            nu[dict_species[sym_species]] += mult
+            if !(sym_species in empty_symbols)
+                nu[dict_species[sym_species]] += mult
+            end
         end
         expr_model_f! *= "nu_$i = $(Tuple(nu))\n\t"
         # Anticipating the line l_a = (..)
