@@ -16,6 +16,7 @@ function get_multiplicand_and_species(expr::Real)
     end
 end
 
+#=
 function get_str_propensity(propensity::Expr, dict_species::Dict, dict_params::Dict)
     str_propensity = ""
     for op in propensity.args[2:end]
@@ -29,17 +30,46 @@ function get_str_propensity(propensity::Expr, dict_species::Dict, dict_params::D
     end
     return str_propensity[1:(end-2)]
 end
-function get_str_propensity(propensity::Symbol, dict_species::Dict, dict_params::Dict)
-    str_propensity = String(propensity)
-    if haskey(dict_species, str_propensity)
-        str_propensity = "xn[$(dict_species[str_propensity])]"
-    elseif haskey(dict_params, str_propensity)
-        str_propensity = "p[$(dict_params[str_propensity])]"
-    else
-        str_propensity = "$(str_propensity)"
+=#
+function get_str_propensity(propensity::Expr, dict_species::Dict, dict_params::Dict)
+    operator_expr = propensity.args[1]
+    operands_expr = propensity.args[2:end]
+    if (operator_expr in [:+, :-]) && length(operands_expr) == 1
+        return "($(operator_expr)" * "$(get_str_propensity(operands_expr[1], dict_species, dict_params)))"
     end
+    str_propensity = "("
+    for op in operands_expr[1:(end-1)]
+        str_propensity *= "$(get_str_propensity(op, dict_species, dict_params))" * "$(operator_expr)"
+    end
+    str_propensity *= "$(get_str_propensity(operands_expr[end], dict_species, dict_params)))"
     return str_propensity
 end
+function get_str_propensity(propensity::Symbol, dict_species::Dict, dict_params::Dict)
+    if haskey(dict_species, propensity)
+        return "xn[$(dict_species[propensity])]"
+    elseif haskey(dict_params, propensity)
+        return "p[$(dict_params[propensity])]"
+    else
+        error("Error during the parsing of propensity functions: a symbol is neither a parameter or a species.")
+    end
+end
+get_str_propensity(propensity::Real, dict_species::Dict, dict_params::Dict) = "$(propensity)"
+
+function fill_params!(dict_params::Dict{ParameterModel,Int}, l_dim_params::Vector{Int}, 
+                      propensity::Expr, list_species::Vector)
+    for operand in propensity.args[2:end]
+        fill_params!(dict_params, l_dim_params, operand, list_species)
+    end
+end
+function fill_params!(dict_params::Dict{ParameterModel,Int}, l_dim_params::Vector{Int}, 
+                      propensity::Symbol, list_species::Vector)
+    if !(propensity in list_species) && !haskey(dict_params, propensity)
+        l_dim_params[1] += 1
+        dict_params[propensity] = l_dim_params[1]
+    end
+end
+fill_params!(dict_params::Dict{ParameterModel,Int}, l_dim_params::Vector{Int}, 
+             propensity::Real, list_species::Vector) = nothing
 
 macro network_model(expr_network,expr_name...)
     model_name = isempty(expr_name) ? "Unnamed macro generated" : expr_name[1]
@@ -48,6 +78,7 @@ macro network_model(expr_network,expr_name...)
     dict_params = Dict{ParameterModel,Int}()
     dim_state = 0
     dim_params = 0
+    l_dim_params = [0]
     list_expr_reactions = Any[]
     empty_symbols = [:∅]
     # First we detect all of the species
@@ -83,10 +114,13 @@ macro network_model(expr_network,expr_name...)
     list_species = [species for species in keys(dict_species)]
     # Then we detect parameters in propensity expressions
     # Parameters are the symbols that are not species (at this point we know all of the involved species)
+    allowed_op_in_propensity = [:*]
     for expr_reaction in list_expr_reactions
         local isreaction = @capture(expr_reaction, TR_: (reactants_ => products_, propensity_))
+        fill_params!(dict_params, l_dim_params, propensity, list_species)
+        #=
         if typeof(propensity) <: Expr 
-            @assert propensity.args[1] == :* "Only product of species/params/constants are allowed in propensity"
+            @assert propensity.args[1] in allowed_op_in_propensity "Only product of species/params/constants are allowed in propensity"
             for operand in propensity.args[2:end]
                 if typeof(operand) <: Symbol
                     # If it's not a species, it's a parameter
@@ -105,7 +139,9 @@ macro network_model(expr_network,expr_name...)
         if !isreaction && !(typeof(expr_reaction) <: LineNumberNode)
             error("Error in an expression describing a reaction")
         end
+        =#
     end
+    dim_params = l_dim_params[1]
     # Let's write some lines that creates the function f! (step of a simulation) for this biochemical network
     nbr_rand = rand(1:1000)
     nbr_reactions = length(list_expr_reactions)
@@ -155,7 +191,7 @@ macro network_model(expr_network,expr_name...)
         # Anticipating the line l_a = (..)
         str_l_a *= "a$(i), "
     end
-    str_test_isabsorbing = str_test_isabsorbing[1:(end-2)] * ")"
+    str_test_isabsorbing = str_test_isabsorbing[1:(end-1)] * ")"
     str_l_a = str_l_a[1:(end-2)] * ")\n\t"
     expr_model_f! *= str_l_a
     expr_model_f! *= "asum = sum(l_a)\n\t"
@@ -191,8 +227,10 @@ macro network_model(expr_network,expr_name...)
     expr_model_isabsorbing = "isabsorbing_$(basename_func)(p::Vector{Float64},xn::Vector{Int}) = $(str_test_isabsorbing) === 0.0"
     model_f! = eval(Meta.parse(expr_model_f!))
     model_isabsorbing = eval(Meta.parse(expr_model_isabsorbing))
+    map_idx_var_model = Dict(value => key for (key, value) in dict_species)
+    model_g = [map_idx_var_model[i] for i = 1:length(list_species)]
     return :(ContinuousTimeModel($dim_state, $dim_params, $dict_species, $dict_params, $transitions, 
                                  $(zeros(dim_params)), $(zeros(Int, dim_state)), 0.0, $model_f!, $model_isabsorbing; 
-                                 g = $list_species, name=$model_name))
+                                 g = $model_g, name=$model_name))
 end
 
