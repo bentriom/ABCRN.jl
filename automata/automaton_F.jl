@@ -5,7 +5,7 @@ function create_automaton_F(m::ContinuousTimeModel, x1::Float64, x2::Float64, t1
     locations = [:l0, :l1, :l2, :l3]
 
     ## Invariant predicates
-    true_inv_predicate = (A::LHA, S:: StateLHA) -> return true 
+    true_inv_predicate = (x::Vector{Int}) -> return true 
     Λ_F = Dict(:l0 => true_inv_predicate, :l1 => true_inv_predicate,
                :l2 => true_inv_predicate, :l3 => true_inv_predicate)
     

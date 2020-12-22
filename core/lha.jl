@@ -53,13 +53,14 @@ isaccepted(S::StateLHA) = (getfield(S, :loc) in getfield(getfield(S, :A), :locat
 function init_state(A::LHA, x0::Vector{Int}, t0::Float64)
     S0 = StateLHA(A, :init, zeros(length_var(A)), t0)
     for loc in getfield(A, :locations_init)
-        if A.Λ[loc](A,S0) 
+        if A.Λ[loc](x0) 
             S0.loc = loc
             break
         end
     end
     return S0
 end
+
 # A push! method implementend by myself because I know in most cases the edge candidates
 # are not greater than 2
 function _push_edge!(edge_candidates::Vector{Edge}, edge::Edge, nbr_candidates::Int)
@@ -71,13 +72,14 @@ function _push_edge!(edge_candidates::Vector{Edge}, edge::Edge, nbr_candidates::
 end
 
 function _find_edge_candidates!(edge_candidates::Vector{Edge},
-                                edges_from_current_loc::Dict{Location,Vector{Edge}}, 
+                                edges_from_current_loc::Dict{Location,Vector{Edge}},
+                                Λ::Dict{Location,Function},
                                 Snplus1::StateLHA, constants::Dict{Symbol,Float64}, x::Vector{Int},
                                 only_asynchronous::Bool)
     nbr_candidates = 0
     for target_loc in keys(edges_from_current_loc)
         for edge in edges_from_current_loc[target_loc]
-            if getfield(edge, :check_constraints)(Snplus1, constants, x)
+            if Λ[target_loc](x) && getfield(edge, :check_constraints)(Snplus1, constants, x)
                 if edge.transitions[1] == nothing
                     _push_edge!(edge_candidates, edge, nbr_candidates)
                     nbr_candidates += 1
@@ -139,7 +141,7 @@ function next_state!(Snplus1::StateLHA, A::LHA,
         current_loc = getfield(Snplus1, :loc)
         edges_from_current_loc = getfield(A, :map_edges)[current_loc]
         # Save all edges that satisfies transition predicate (asynchronous ones)
-        nbr_candidates = _find_edge_candidates!(edge_candidates, edges_from_current_loc, Snplus1, constants, xn, true)
+        nbr_candidates = _find_edge_candidates!(edge_candidates, edges_from_current_loc, getfield(A, :Λ), Snplus1, constants, xn, true)
         # Search the one we must chose, here the event is nothing because 
         # we're not processing yet the next event
         ind_edge, detected_event = _get_edge_index(edge_candidates, nbr_candidates, detected_event, nothing)
@@ -194,7 +196,7 @@ function next_state!(Snplus1::StateLHA, A::LHA,
         current_loc = getfield(Snplus1, :loc)
         edges_from_current_loc = getfield(A, :map_edges)[current_loc]
         # Save all edges that satisfies transition predicate (synchronous ones)
-        nbr_candidates = _find_edge_candidates!(edge_candidates, edges_from_current_loc, Snplus1, constants, xnplus1, false)
+        nbr_candidates = _find_edge_candidates!(edge_candidates, edges_from_current_loc, getfield(A, :Λ), Snplus1, constants, xnplus1, false)
         # Search the one we must chose
         ind_edge, detected_event = _get_edge_index(edge_candidates, nbr_candidates, detected_event, tr_nplus1)
         # Update the state with the chosen one (if it exists)
