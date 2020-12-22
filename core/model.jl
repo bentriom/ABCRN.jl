@@ -465,6 +465,17 @@ function set_param!(am::Model, l_name_p::Vector{ParameterModel}, p::Vector{Float
         set_param!(m, l_name_p[i], p[i])
     end
 end
+function set_x0!(am::Model, l_name_var::Vector{VariableModel}, x0::Vector{Int})
+    m = get_proba_model(am)
+    @assert length(l_name_var) == length(x0) "State names vector state values haven't the same dimensions"
+    for i = eachindex(l_name_var)
+        set_x0!(m, l_name_var[i], x0[i])
+    end
+end
+function set_x0!(am::Model, name_var::VariableModel, var_i::Int) 
+    m = get_proba_model(am)
+    m.x0[m.map_var_idx[name_var]] = var_i
+end
 function set_x0!(am::Model, new_x0::Vector{Int})
     m = get_proba_model(am)
     @assert length(new_x0) == m.dim_state "New x0 vector hasn't the dimension of state space"
@@ -472,8 +483,8 @@ function set_x0!(am::Model, new_x0::Vector{Int})
 end
 set_time_bound!(am::Model, b::Float64) = (get_proba_model(am).time_bound = b)
 
-
 get_param(am::Model) = get_proba_model(am).p
+get_x0(am::Model) = get_proba_model(am).x0
 function getindex(am::Model, name_p::ParameterModel)
     m = get_proba_model(am)
     m.p[m.map_param_idx[name_p]]
