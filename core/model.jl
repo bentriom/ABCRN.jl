@@ -382,6 +382,21 @@ function mean_value_lha(sm::SynchronizedModel, sym_var::VariableAutomaton, nbr_s
     end
     return sum_val / nbr_sim
 end
+"""
+    `distribute_var_value_lha(sm::SynchronizedModel, nbr_sim::Int, value = 0, sym_var = :d)
+
+Compute the probability that the variable `sym_var` is equal to  `value`
+of a LHA over `nbr_sim` simulations of the model.
+"""
+function probability_var_value_lha(sm::SynchronizedModel, nbr_sim::Int; 
+                                   value::Float64 = 0.0, sym_var::VariableAutomaton = :d)
+    sum_val = @distributed (+) for i = 1:nbr_sim
+        S = volatile_simulate(sm)
+        S[sym_var] == value
+    end
+    return sum_val / nbr_sim
+end
+
 
 function distribute_prob_accept_lha(sm::SynchronizedModel, nbr_sim::Int)
     sum_val = @distributed (+) for i = 1:nbr_sim 
