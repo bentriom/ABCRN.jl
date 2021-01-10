@@ -16,6 +16,37 @@ getindex(S::StateLHA, l_var::Vector{VariableAutomaton}) = [S[var] for var in l_v
 setindex!(S::StateLHA, val::Int, var::VariableAutomaton) = S[var] = convert(Float64, val)
 setindex!(S::StateLHA, val::Bool, var::VariableAutomaton) = S[var] = convert(Float64, val)
 
+function Base.show(io::IO, A::LHA)
+    print(io, "LHA\n")
+    print(io, "- locations : $(join(A.locations,','))\n")
+    print(io, "- initial locations : $(join(A.locations_init,','))\n")
+    print(io, "- final locations : $(join(A.locations_final,','))\n")
+    print(io, "- labeling prop Λ :\n")
+    for loc  in keys(A.Λ)
+        print(io, "* $loc: $(Symbol(A.Λ[loc]))\n")
+    end
+    print(io, "- variables :\n")
+    for (var, idx) in A.map_var_automaton_idx
+        print(io, "* $var (index = $idx in variables space)\n")
+    end
+    print(io, "- flow :\n")
+    for (loc, flow_loc) in A.flow
+        print(io, "* $loc: $flow_loc\n")
+    end
+    print(io, "- edges :\n")
+    for from_loc in keys(A.map_edges)
+        for to_loc in keys(A.map_edges[from_loc])
+            edges = A.map_edges[from_loc][to_loc]
+            print(io, "* $from_loc => $to_loc ($(length(edges))): $(join(edges,','))\n")
+        end
+    end
+    print(io, "- constants :\n")
+    for (name_constant, val_constant) in A.constants
+        print(io, "* $name_constant: $val_constant\n")
+    end
+    print(io, "- transitions : $(join(A.transitions,','))\n")
+end
+
 function Base.show(io::IO, S::StateLHA)
     print(io, "State of LHA\n")
     print(io, "- location: $(S.loc)\n")

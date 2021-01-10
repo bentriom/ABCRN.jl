@@ -9,7 +9,7 @@ function create_automaton_G_and_F(m::ContinuousTimeModel, x1::Float64, x2::Float
                  :l1F, :l2F, :l3F]
 
     # Invariant predicates
-    true_inv_predicate = (x::Vector{Int}) -> return true 
+    true_inv_predicate(x::Vector{Int}) = true 
     Λ_F = Dict(:l0G => true_inv_predicate, :l1G => true_inv_predicate,
                :l2G => true_inv_predicate, :l3G => true_inv_predicate, 
                :l4G => true_inv_predicate,
