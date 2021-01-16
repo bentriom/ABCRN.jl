@@ -14,6 +14,7 @@ using Test
     @test include("unit/density_pm.jl")
     @test include("unit/dist_lp.jl")
     @test include("unit/dist_lp_var.jl")
+    @test include("unit/distributed_simulation.jl")
     @test include("unit/draw_pm.jl")
     
     @test include("unit/getindex_access_trajectory.jl")
@@ -27,7 +28,6 @@ using Test
     @test include("unit/long_sim_er.jl")
     
     @test include("unit/macro_network_model.jl")
-    @test include("unit/macro_network_model_distributed.jl")
     @test include("unit/model_prior.jl")
     @test include("unit/models_exps_er_1d.jl")
     @test include("unit/models_exps_er_2d.jl")

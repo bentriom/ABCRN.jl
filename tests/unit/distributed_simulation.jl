@@ -23,6 +23,7 @@ set_param!(model_SIR, [0.012, 0.05])
 @everywhere simulate($model_SIR)
 sym_f! = Symbol(model_SIR.f!)
 sym_isabs = Symbol(model_SIR.isabsorbing)
+# Check the creation of model has defined the necessary functions on all workers
 test_all = test_all && fetch(@spawnat 2 isdefined(Main, sym_f!)) && fetch(@spawnat 2 isdefined(Main, sym_isabs))
 test_all = test_all && fetch(@spawnat 3 isdefined(Main, sym_f!)) && fetch(@spawnat 3 isdefined(Main, sym_isabs))
 # Check the model object is not defined on workers
@@ -54,6 +55,17 @@ test_all = test_all && fetch(@spawnat 3 isdefined(Main, sym_f!)) && fetch(@spawn
 # Check the model object is not defined on workers
 test_all = test_all && !fetch(@spawnat 2 isdefined(Main, :ER)) && !fetch(@spawnat 2 isdefined(Main, :ER))
 test_all = test_all && !fetch(@spawnat 3 isdefined(Main, :ER)) && !fetch(@spawnat 3 isdefined(Main, :ER))
+
+# Synchronized model
+load_model("ER")
+observe_all!(ER)
+load_automaton("automaton_G")
+x1, x2, t1, t2 = 50.0, 100.0, 0.0, 0.8
+A_G_R5 = create_automaton_G(ER, x1, x2, t1, t2, :E) 
+sync_ER = ER * A_G_R5
+@everywhere simulate($sync_ER)
+test_all = test_all && !fetch(@spawnat 2 isdefined(Main, :sync_ER)) && !fetch(@spawnat 2 isdefined(Main, :sync_ER))
+test_all = test_all && !fetch(@spawnat 3 isdefined(Main, :sync_ER)) && !fetch(@spawnat 3 isdefined(Main, :sync_ER))
 
 rmprocs(2)
 

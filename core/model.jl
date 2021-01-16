@@ -166,7 +166,7 @@ function simulate(product::SynchronizedModel; p::Union{Nothing,AbstractVector{Fl
             _finish_bounded_trajectory!(values, times, transitions, time_bound)
         end
         if isabsorbing && !isacceptedLHA
-            next_state!(Snplus1, A, xn, time_bound, nothing, Sn, xn; verbose = verbose)
+            next_state!(Snplus1, A, xn, time_bound, nothing, Sn, xn, p_sim; verbose = verbose)
             copyto!(Sn, Snplus1)
         end
         return SynchronizedTrajectory(Sn, product, values, times, transitions)
@@ -180,7 +180,7 @@ function simulate(product::SynchronizedModel; p::Union{Nothing,AbstractVector{Fl
             break
         end
         n += 1
-        next_state!(Snplus1, A, vec_x, l_t[1], l_tr[1], Sn, xn; verbose = verbose)
+        next_state!(Snplus1, A, vec_x, l_t[1], l_tr[1], Sn, xn, p_sim; verbose = verbose)
         copyto!(xn, vec_x)
         tn = l_t[1]
         tr_n = l_tr[1]
@@ -199,7 +199,7 @@ function simulate(product::SynchronizedModel; p::Union{Nothing,AbstractVector{Fl
             _finish_bounded_trajectory!(values, times, transitions, time_bound)
         end
         if isabsorbing && !isacceptedLHA
-            next_state!(Snplus1, A, xn, time_bound, nothing, Sn, xn; verbose = verbose)
+            next_state!(Snplus1, A, xn, time_bound, nothing, Sn, xn, p_sim; verbose = verbose)
             copyto!(Sn, Snplus1)
         end
         return SynchronizedTrajectory(Sn, product, values, times, transitions)
@@ -223,7 +223,7 @@ function simulate(product::SynchronizedModel; p::Union{Nothing,AbstractVector{Fl
                 i -= 1
                 break
             end
-            next_state!(Snplus1, A, vec_x, l_t[1], l_tr[1], Sn, xn; verbose = verbose)
+            next_state!(Snplus1, A, vec_x, l_t[1], l_tr[1], Sn, xn, p_sim; verbose = verbose)
             copyto!(xn, vec_x)
             tn = l_t[1]
             tr_n = l_tr[1]
@@ -249,7 +249,7 @@ function simulate(product::SynchronizedModel; p::Union{Nothing,AbstractVector{Fl
         _finish_bounded_trajectory!(values, times, transitions, time_bound)
     end
     if isabsorbing && !isacceptedLHA
-        next_state!(Snplus1, A, xn, time_bound, nothing, Sn, xn; verbose = verbose)
+        next_state!(Snplus1, A, xn, time_bound, nothing, Sn, xn, p_sim; verbose = verbose)
         copyto!(Sn, Snplus1)
     end
     return SynchronizedTrajectory(Sn, product, values, times, transitions)
@@ -286,7 +286,7 @@ function volatile_simulate(product::SynchronizedModel;
     # If x0 is absorbing
     if isabsorbing || isacceptedLHA 
         if !isacceptedLHA
-            next_state!(Snplus1, A, xn, time_bound, nothing, Sn, xn; verbose = verbose)
+            next_state!(Snplus1, A, xn, time_bound, nothing, Sn, xn, p_sim; verbose = verbose)
             copyto!(Sn, Snplus1)
         end
         return Sn
@@ -302,7 +302,7 @@ function volatile_simulate(product::SynchronizedModel;
             isabsorbing = true
             break
         end
-        next_state!(Snplus1, A, vec_x, l_t[1], l_tr[1], Sn, xn; verbose = verbose)
+        next_state!(Snplus1, A, vec_x, l_t[1], l_tr[1], Sn, xn, p_sim; verbose = verbose)
         copyto!(xn, vec_x)
         tn = l_t[1]
         tr_n = l_tr[1]
@@ -311,7 +311,7 @@ function volatile_simulate(product::SynchronizedModel;
         n += 1
     end
     if isabsorbing && !isacceptedLHA
-        next_state!(Snplus1, A, xn, time_bound, nothing, Sn, xn; verbose = verbose)
+        next_state!(Snplus1, A, xn, time_bound, nothing, Sn, xn, p_sim; verbose = verbose)
         copyto!(Sn, Snplus1)
     end
     return Sn
