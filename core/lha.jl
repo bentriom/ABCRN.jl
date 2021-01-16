@@ -268,6 +268,7 @@ end
 function read_trajectory(A::LHA, σ::Trajectory; verbose = false)
     @assert (σ.m).dim_state == σ.m.dim_obs_state # Model should be entirely obserbed 
     A_new = LHA(A, (σ.m)._map_obs_var_idx)
+    p_sim = (σ.m).p
     l_t = times(σ)
     l_tr = transitions(σ)
     Sn = init_state(A_new, σ[1], l_t[1])
@@ -275,7 +276,7 @@ function read_trajectory(A::LHA, σ::Trajectory; verbose = false)
     if verbose println("Init: ") end
     if verbose @show Sn end
     for n in 2:length_states(σ)
-        next_state!(Snplus1, A_new, σ[n], l_t[n], l_tr[n], Sn, σ[n-1]; verbose = verbose)
+        next_state!(Snplus1, A_new, σ[n], l_t[n], l_tr[n], Sn, σ[n-1], p_sim; verbose = verbose)
         copyto!(Sn, Snplus1)
         if Snplus1.loc in A_new.locations_final 
             break 
