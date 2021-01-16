@@ -1,6 +1,4 @@
 
-import StaticArrays: SVector, SMatrix, @SVector, @SMatrix
-
 d=3
 k=2
 dict_var = Dict(:S => 1, :I => 2, :R => 3)
@@ -9,8 +7,8 @@ l_tr_SIR = [:R1,:R2]
 p_SIR = [0.0012, 0.05]
 x0_SIR = [95, 5, 0]
 t0_SIR = 0.0
-function SIR_f!(xnplus1::Vector{Int}, l_t::Vector{Float64}, l_tr::Vector{Transition},
-                xn::Vector{Int}, tn::Float64, p::Vector{Float64})
+@everywhere function SIR_f!(xnplus1::Vector{Int}, l_t::Vector{Float64}, l_tr::Vector{Transition},
+                            xn::Vector{Int}, tn::Float64, p::Vector{Float64})
     @inbounds a1 = p[1] * xn[1] * xn[2]
     @inbounds a2 = p[2] * xn[2]
     l_a = (a1, a2)
@@ -47,10 +45,10 @@ function SIR_f!(xnplus1::Vector{Int}, l_t::Vector{Float64}, l_tr::Vector{Transit
     @inbounds l_t[1] = tn + tau
     @inbounds l_tr[1] = l_str_R[reaction]
 end
-isabsorbing_SIR(p::Vector{Float64}, xn::Vector{Int}) = (p[1]*xn[1]*xn[2] + p[2]*xn[2]) === 0.0
+@everywhere isabsorbing_SIR(p::Vector{Float64}, xn::Vector{Int}) = (p[1]*xn[1]*xn[2] + p[2]*xn[2]) === 0.0
 g_SIR = [:I]
 
-SIR = ContinuousTimeModel(d,k,dict_var,dict_p,l_tr_SIR,p_SIR,x0_SIR,t0_SIR,SIR_f!,isabsorbing_SIR; g=g_SIR, name="SIR SSA pkg")
+SIR = ContinuousTimeModel(d,k,dict_var,dict_p,l_tr_SIR,p_SIR,x0_SIR,t0_SIR, getfield(Main, :SIR_f!), getfield(Main, :isabsorbing_SIR); g=g_SIR, name="SIR SSA pkg")
 
 function create_SIR(new_p::Vector{Float64})
     SIR_new = deepcopy(SIR)

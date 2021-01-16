@@ -225,12 +225,14 @@ macro network_model(expr_network,expr_name...)
     expr_model_f! *= "@inbounds l_tr[1] = l_sym_R[reaction]\n"
     expr_model_f! *= "end\n"
     expr_model_isabsorbing = "isabsorbing_$(basename_func)(p::Vector{Float64},xn::Vector{Int}) = $(str_test_isabsorbing) === 0.0"
-    model_f! = eval(Meta.parse(expr_model_f!))
-    model_isabsorbing = eval(Meta.parse(expr_model_isabsorbing))
+    @everywhere eval(Meta.parse($expr_model_f!))
+    @everywhere eval(Meta.parse($expr_model_isabsorbing))
+    symbol_func_f! = Symbol("$(basename_func)_f!")
+    symbol_func_isabsorbing = Symbol("isabsorbing_$(basename_func)")
     map_idx_var_model = Dict(value => key for (key, value) in dict_species)
     model_g = [map_idx_var_model[i] for i = 1:length(list_species)]
     return :(ContinuousTimeModel($dim_state, $dim_params, $dict_species, $dict_params, $transitions, 
-                                 $(zeros(dim_params)), $(zeros(Int, dim_state)), 0.0, $model_f!, $model_isabsorbing; 
+                                 $(zeros(dim_params)), $(zeros(Int, dim_state)), 0.0, $(getfield(Main, symbol_func_f!)), $(getfield(Main, symbol_func_isabsorbing));
                                  g = $model_g, name=$model_name))
 end
 
