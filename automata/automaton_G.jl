@@ -195,7 +195,7 @@ function create_automaton_G(m::ContinuousTimeModel, x1::Float64, x2::Float64, t1
     ## Constants
     constants = Dict{Symbol,Float64}(:x1 => x1,  :x2 => x2, :t1 => t1, :t2 => t2)
 
-    A = LHA(m.transitions, locations, Λ_F, locations_init, locations_final, 
+    A = LHA("G property", m.transitions, locations, Λ_F, locations_init, locations_final, 
             map_var_automaton_idx, flow, map_edges, constants, m.map_var_idx)
     return A
    

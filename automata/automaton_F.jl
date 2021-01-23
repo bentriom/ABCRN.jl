@@ -37,97 +37,97 @@ function create_automaton_F(m::ContinuousTimeModel, x1::Float64, x2::Float64, t1
     # l0 loc : we construct  the edges of the form l0 => (..)
     # "cc" as check_constraints
     tuple = (:l0, :l1)
-    cc_aut_F_l0l1_1(S::StateLHA, constants::Dict{Symbol,Float64}, x::Vector{Int}, p::Vector{Float64}) = true
-    us_aut_F_l0l1_1!(S::StateLHA, constants::Dict{Symbol,Float64}, x::Vector{Int}, p::Vector{Float64}) = 
+    @everywhere cc_aut_F_l0l1_1(S::StateLHA, constants::Dict{Symbol,Float64}, x::Vector{Int}, p::Vector{Float64}) = true
+    @everywhere us_aut_F_l0l1_1!(S::StateLHA, constants::Dict{Symbol,Float64}, x::Vector{Int}, p::Vector{Float64}) = 
         (S.loc = :l1; 
-         S[:n] = get_value(S, x, sym_obs);
+         S[:n] = get_value(S, x, $(Meta.quot(sym_obs)));
          S[:d] = Inf; 
-         S[:isabs] = getfield(Main, sym_isabs_func)(p, x))
-    edge1 = Edge([nothing], cc_aut_F_l0l1_1, us_aut_F_l0l1_1!)
+         S[:isabs] = getfield(Main, $(Meta.quot(sym_isabs_func)))(p, x))
+    edge1 = Edge([nothing], getfield(Main, :cc_aut_F_l0l1_1), getfield(Main, :us_aut_F_l0l1_1!))
     map_edges[:l0][:l1] = [edge1]
 
     # l1 loc : we construct  the edges of the form l1 => (..)
     tuple = (:l1, :l2)
-    cc_aut_F_l1l2_1(S::StateLHA, constants::Dict{Symbol,Float64}, x::Vector{Int}, p::Vector{Float64}) = 
+    @everywhere cc_aut_F_l1l2_1(S::StateLHA, constants::Dict{Symbol,Float64}, x::Vector{Int}, p::Vector{Float64}) = 
         getfield(S, :time) >= constants[:t1] &&
         (constants[:x1] <= S[:n] <= constants[:x2])
-    us_aut_F_l1l2_1!(S::StateLHA, constants::Dict{Symbol,Float64}, x::Vector{Int}, p::Vector{Float64}) = 
+    @everywhere us_aut_F_l1l2_1!(S::StateLHA, constants::Dict{Symbol,Float64}, x::Vector{Int}, p::Vector{Float64}) = 
         (S.loc = :l2;
          S[:d] = 0)
-    edge1 = Edge([nothing], cc_aut_F_l1l2_1, us_aut_F_l1l2_1!)
+    edge1 = Edge([nothing], getfield(Main, :cc_aut_F_l1l2_1), getfield(Main, :us_aut_F_l1l2_1!))
     
-    cc_aut_F_l1l2_4(S::StateLHA, constants::Dict{Symbol,Float64}, x::Vector{Int}, p::Vector{Float64}) = 
+    @everywhere cc_aut_F_l1l2_4(S::StateLHA, constants::Dict{Symbol,Float64}, x::Vector{Int}, p::Vector{Float64}) = 
         getfield(S, :time) >= constants[:t1] &&
         S[:d] == 0 
-    us_aut_F_l1l2_4!(S::StateLHA, constants::Dict{Symbol,Float64}, x::Vector{Int}, p::Vector{Float64}) = 
+    @everywhere us_aut_F_l1l2_4!(S::StateLHA, constants::Dict{Symbol,Float64}, x::Vector{Int}, p::Vector{Float64}) = 
         (S.loc = :l2)
-    edge4 = Edge([nothing], cc_aut_F_l1l2_4, us_aut_F_l1l2_4!)
+    edge4 = Edge([nothing], getfield(Main, :cc_aut_F_l1l2_4), getfield(Main, :us_aut_F_l1l2_4!))
 
-    cc_aut_F_l1l2_2(S::StateLHA, constants::Dict{Symbol,Float64}, x::Vector{Int}, p::Vector{Float64}) = 
+    @everywhere cc_aut_F_l1l2_2(S::StateLHA, constants::Dict{Symbol,Float64}, x::Vector{Int}, p::Vector{Float64}) = 
         (getfield(S, :time) >= constants[:t2]) && 
         (S[:n] < constants[:x1] || S[:n] > constants[:x2])
-    us_aut_F_l1l2_2!(S::StateLHA, constants::Dict{Symbol,Float64}, x::Vector{Int}, p::Vector{Float64}) = 
+    @everywhere us_aut_F_l1l2_2!(S::StateLHA, constants::Dict{Symbol,Float64}, x::Vector{Int}, p::Vector{Float64}) = 
         (S.loc = :l2;
          S[:d] = min(abs(S[:n] - constants[:x1]), abs(S[:n] - constants[:x2])))
-    edge2 = Edge([nothing], cc_aut_F_l1l2_2, us_aut_F_l1l2_2!)
+    edge2 = Edge([nothing], getfield(Main, :cc_aut_F_l1l2_2), getfield(Main, :us_aut_F_l1l2_2!))
 
-    cc_aut_F_l1l2_3(S::StateLHA, constants::Dict{Symbol,Float64}, x::Vector{Int}, p::Vector{Float64}) = 
+    @everywhere cc_aut_F_l1l2_3(S::StateLHA, constants::Dict{Symbol,Float64}, x::Vector{Int}, p::Vector{Float64}) = 
         istrue(S[:isabs]) && getfield(S, :time) <= constants[:t2]
-    us_aut_F_l1l2_3!(S::StateLHA, constants::Dict{Symbol,Float64}, x::Vector{Int}, p::Vector{Float64}) = 
+    @everywhere us_aut_F_l1l2_3!(S::StateLHA, constants::Dict{Symbol,Float64}, x::Vector{Int}, p::Vector{Float64}) = 
         (S.loc = :l2)
-    edge3 = Edge([nothing], cc_aut_F_l1l2_3, us_aut_F_l1l2_3!)
+    edge3 = Edge([nothing], getfield(Main, :cc_aut_F_l1l2_3), getfield(Main, :us_aut_F_l1l2_3!))
 
     map_edges[:l1][:l2] = [edge1, edge2, edge3, edge4]
 
     tuple = (:l1, :l3)
-    cc_aut_F_l1l3_1(S::StateLHA, constants::Dict{Symbol,Float64}, x::Vector{Int}, p::Vector{Float64}) = 
+    @everywhere cc_aut_F_l1l3_1(S::StateLHA, constants::Dict{Symbol,Float64}, x::Vector{Int}, p::Vector{Float64}) = 
         (constants[:x1] <= S[:n] <= constants[:x2])
-    us_aut_F_l1l3_1!(S::StateLHA, constants::Dict{Symbol,Float64}, x::Vector{Int}, p::Vector{Float64}) = 
+    @everywhere us_aut_F_l1l3_1!(S::StateLHA, constants::Dict{Symbol,Float64}, x::Vector{Int}, p::Vector{Float64}) = 
         (S.loc = :l3;
          S[:d] = 0;)
-    edge1 = Edge([nothing], cc_aut_F_l1l3_1, us_aut_F_l1l3_1!)
+    edge1 = Edge([nothing], getfield(Main, :cc_aut_F_l1l3_1), getfield(Main, :us_aut_F_l1l3_1!))
     
-    cc_aut_F_l1l3_2(S::StateLHA, constants::Dict{Symbol,Float64}, x::Vector{Int}, p::Vector{Float64}) = 
+    @everywhere cc_aut_F_l1l3_2(S::StateLHA, constants::Dict{Symbol,Float64}, x::Vector{Int}, p::Vector{Float64}) = 
         (S[:n] < constants[:x1] || S[:n] > constants[:x2]) && 
         (getfield(S, :time) <= constants[:t1])
-    us_aut_F_l1l3_2!(S::StateLHA, constants::Dict{Symbol,Float64}, x::Vector{Int}, p::Vector{Float64}) = 
+    @everywhere us_aut_F_l1l3_2!(S::StateLHA, constants::Dict{Symbol,Float64}, x::Vector{Int}, p::Vector{Float64}) = 
         (S.loc = :l3;
          S[:d] = min(sqrt((getfield(S, :time) - constants[:t1])^2 + (S[:n] - constants[:x2])^2), 
                       sqrt((getfield(S, :time) - constants[:t1])^2 + (S[:n] - constants[:x1])^2)))
-    edge2 = Edge([nothing], cc_aut_F_l1l3_2, us_aut_F_l1l3_2!)
+    edge2 = Edge([nothing], getfield(Main, :cc_aut_F_l1l3_2), getfield(Main, :us_aut_F_l1l3_2!))
 
-    cc_aut_F_l1l3_3(S::StateLHA, constants::Dict{Symbol,Float64}, x::Vector{Int}, p::Vector{Float64}) = 
+    @everywhere cc_aut_F_l1l3_3(S::StateLHA, constants::Dict{Symbol,Float64}, x::Vector{Int}, p::Vector{Float64}) = 
         (S[:n] < constants[:x1] || S[:n] > constants[:x2]) && 
         (constants[:t1] <= getfield(S, :time) <= constants[:t2])
-    us_aut_F_l1l3_3!(S::StateLHA, constants::Dict{Symbol,Float64}, x::Vector{Int}, p::Vector{Float64}) = 
+    @everywhere us_aut_F_l1l3_3!(S::StateLHA, constants::Dict{Symbol,Float64}, x::Vector{Int}, p::Vector{Float64}) = 
         (S.loc = :l3;
          S[:d] = min(S[:d], min(abs(S[:n] - constants[:x1]), abs(S[:n] - constants[:x2]))))
-    edge3 = Edge([nothing], cc_aut_F_l1l3_3, us_aut_F_l1l3_3!)
+    edge3 = Edge([nothing], getfield(Main, :cc_aut_F_l1l3_3), getfield(Main, :us_aut_F_l1l3_3!))
     map_edges[:l1][:l3] = [edge1, edge2, edge3]
 
     # l3 loc
     tuple = (:l3, :l1)
-    cc_aut_F_l3l1_1(S::StateLHA, constants::Dict{Symbol,Float64}, x::Vector{Int}, p::Vector{Float64}) = true
-    us_aut_F_l3l1_1!(S::StateLHA, constants::Dict{Symbol,Float64}, x::Vector{Int}, p::Vector{Float64}) = 
+    @everywhere cc_aut_F_l3l1_1(S::StateLHA, constants::Dict{Symbol,Float64}, x::Vector{Int}, p::Vector{Float64}) = true
+    @everywhere us_aut_F_l3l1_1!(S::StateLHA, constants::Dict{Symbol,Float64}, x::Vector{Int}, p::Vector{Float64}) = 
         (S.loc = :l1;
-         S[:n] = get_value(S, x, sym_obs);
-         S[:isabs] = getfield(Main, sym_isabs_func)(p, x))
-    edge1 = Edge([:ALL], cc_aut_F_l3l1_1, us_aut_F_l3l1_1!)
+         S[:n] = get_value(S, x, $(Meta.quot(sym_obs)));
+         S[:isabs] = getfield(Main, $(Meta.quot(sym_isabs_func)))(p, x))
+    edge1 = Edge([:ALL], getfield(Main, :cc_aut_F_l3l1_1), getfield(Main, :us_aut_F_l3l1_1!))
     map_edges[:l3][:l1] = [edge1]
     
     
     tuple = (:l3, :l2)
-    cc_aut_F_l3l2_1(S::StateLHA, constants::Dict{Symbol,Float64}, x::Vector{Int}, p::Vector{Float64}) = 
+    @everywhere cc_aut_F_l3l2_1(S::StateLHA, constants::Dict{Symbol,Float64}, x::Vector{Int}, p::Vector{Float64}) = 
         (getfield(S, :time) >= constants[:t2])
-    us_aut_F_l3l2_1!(S::StateLHA, constants::Dict{Symbol,Float64}, x::Vector{Int}, p::Vector{Float64}) = 
+    @everywhere us_aut_F_l3l2_1!(S::StateLHA, constants::Dict{Symbol,Float64}, x::Vector{Int}, p::Vector{Float64}) = 
         (S.loc = :l2)
-    edge1 = Edge([nothing], cc_aut_F_l3l2_1, us_aut_F_l3l2_1!)
+    edge1 = Edge([nothing], getfield(Main, :cc_aut_F_l3l2_1), getfield(Main, :us_aut_F_l3l2_1!))
     map_edges[:l3][:l2] = [edge1]
 
     ## Constants
     constants = Dict{Symbol,Float64}(:x1 => x1,  :x2 => x2, :t1 => t1, :t2 => t2)
 
-    A = LHA(m.transitions, locations, Λ_F, locations_init, locations_final, 
+    A = LHA("F property", m.transitions, locations, Λ_F, locations_init, locations_final, 
             map_var_automaton_idx, flow, map_edges, constants, m.map_var_idx)
     return A
 end

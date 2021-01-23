@@ -45,6 +45,7 @@ struct Edge
 end
 
 struct LHA
+    name::String
     transitions::Vector{Transition}
     locations::Vector{Location} 
     Λ::Dict{Location,Function}
@@ -112,9 +113,10 @@ function ContinuousTimeModel(dim_state::Int, dim_params::Int, map_var_idx::Dict{
     return new_model
 end
 
-LHA(A::LHA, map_var::Dict{VariableModel,Int}) = LHA(A.transitions, A.locations, A.Λ, 
+LHA(A::LHA, map_var::Dict{VariableModel,Int}) = LHA(A.name, A.transitions, A.locations, A.Λ, 
                                                     A.locations_init, A.locations_final, A.map_var_automaton_idx, A.flow,
                                                     A.map_edges, A.constants, map_var)
+
 Base.:*(m::ContinuousTimeModel, A::LHA) = SynchronizedModel(m, A)
 Base.:*(A::LHA, m::ContinuousTimeModel) = SynchronizedModel(m, A)
 

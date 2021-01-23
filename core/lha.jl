@@ -17,8 +17,7 @@ setindex!(S::StateLHA, val::Int, var::VariableAutomaton) = S[var] = convert(Floa
 setindex!(S::StateLHA, val::Bool, var::VariableAutomaton) = S[var] = convert(Float64, val)
 
 function Base.show(io::IO, A::LHA)
-    print(io, "LHA\n")
-    print(io, "- locations : $(join(A.locations,','))\n")
+    print(io, "$(A.name) automaton (LHA)\n")
     print(io, "- initial locations : $(join(A.locations_init,','))\n")
     print(io, "- final locations : $(join(A.locations_final,','))\n")
     print(io, "- labeling prop Λ :\n")
@@ -159,7 +158,7 @@ function next_state!(Snplus1::StateLHA, A::LHA,
     turns = 0
        
     if verbose 
-        println("#####")
+        println("##### Begin next_state!")
         @show xnplus1, tnplus1, tr_nplus1
         @show Sn 
         @show Snplus1 
@@ -262,6 +261,7 @@ function next_state!(Snplus1::StateLHA, A::LHA,
             error("Unpredicted behavior automaton")
         end
     end
+    if verbose println("##### End next_state!") end
 end
 
 # For tests purposes
