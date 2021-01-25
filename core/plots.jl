@@ -22,7 +22,7 @@ function plot(σ::AbstractTrajectory, vars::VariableModel...; plot_transitions::
     end
     
     # Plots
-    p = plot(title = "Trajectory of $(σ.m.name) model", palette = :lightrainbow, background_color_legend=:transparent, dpi = 480)
+    p = plot(title = "Trajectory of $(σ.m.name) model", palette = :lightrainbow, legend = :outertopright, background_color_legend=:transparent, dpi = 480)
     for var in to_plot
         @assert var in get_obs_var(σ) 
         plot!(p, times(σ), σ[var], 
@@ -76,8 +76,8 @@ function plot!(A::LHA)
 end
 
 # For tests purposes
-function plot_periodic_trajectory(A::LHA, σ::SynchronizedTrajectory, sym_obs::Symbol; verbose = false)
-    @assert (σ.m).dim_state == σ.m.dim_obs_state # Model should be entirely obserbed
+function plot_periodic_trajectory(A::LHA, σ::SynchronizedTrajectory, sym_obs::Symbol; verbose = false, filename::String = "")
+    @assert sym_obs in get_obs_var(σ) "Variable is not observed in the model"
     @assert A.name in ["Period"]
     A_new = LHA(A, (σ.m)._map_obs_var_idx)
     p_sim = (σ.m).p
@@ -111,15 +111,21 @@ function plot_periodic_trajectory(A::LHA, σ::SynchronizedTrajectory, sym_obs::S
     loc_to_color(loc::Symbol) = colors_loc[loc]
     for loc in A.locations
         idx_locations = findall(x->x==loc, locations_trajectory)
-        label_state = (loc in [:low, :mid, :high]) ? "State $sym_obs ($loc loc)" : ""
+        label_state = (loc in [:low, :mid, :high]) ? "$sym_obs ($loc loc)" : ""
         scatter!(p, times(σ)[idx_locations], σ[sym_obs][idx_locations], color = colors_loc[loc], 
                     markersize = 1.0, markershape = :cross, 
-                    label = label_state)
+                    label = label_state, xlabel = "Time", ylabel = "Species $sym_obs")
     end
     annot_n = [(times(σ)[idx_n[i]], σ[sym_obs][idx_n[i]] - 10, text("n = $(values_n[i])", 6, :bottom)) for i = eachindex(idx_n)]
     scatter!(p, times(σ)[idx_n], σ[sym_obs][idx_n], annotations = annot_n,
                              markershape = :utriangle, markersize = 3, label = "n")
     hline!(p, [A.constants[:L], A.constants[:H]], label = "L, H", color = :grey; linestyle = :dot)
+    
+    if filename == ""
+        display(p)
+    else
+        png(p, filename)
+    end
 end
 
 export plot, plot!, plot_periodic_trajectory

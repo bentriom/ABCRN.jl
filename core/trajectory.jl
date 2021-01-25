@@ -149,6 +149,29 @@ function _riemann_sum(f::Function, t_begin::Real, t_end::Real, step::Float64)
     return res
 end
 
+function vectorize(σ::AbstractTrajectory, sym_var::Symbol, 
+                   timeline::AbstractVector{Float64})
+    times_var = times(σ)
+    time_end = isbounded(σ) ? times_var[end] : Inf
+    @assert timeline[end] <= time_end "Trajectory is bounded and timeline is out of bounds."
+    states_var = σ[sym_var]
+    nbr_states = length(states_var)
+    nbr_points = length(timeline)
+    trajectory_points = zeros(nbr_points)
+    index_timeline = 1
+    for i = eachindex(states_var)
+        next_transition_time = (i < nbr_states) ? times_var[i+1] : time_end*1.01
+        while index_timeline <= nbr_points && timeline[index_timeline] < next_transition_time
+            trajectory_points[index_timeline] = states_var[i]
+            index_timeline += 1
+        end
+        if index_timeline > nbr_points
+            break
+        end
+    end
+    return trajectory_points
+end
+
 function check_consistency(σ::AbstractTrajectory)
     test_length_var = true
     for i = 1:σ.m.dim_obs_state 
@@ -218,6 +241,26 @@ function get_state_from_time(σ::AbstractTrajectory, t::Float64)
     end
     error("Unexpected behavior")
 end
+# Operation σ@t
+function get_var_from_time(σ::AbstractTrajectory, sym_var::Symbol, t::Float64)
+    @assert t >= 0.0
+    l_t = times(σ)
+    if t == l_t[end] return σ[sym_var][end] end
+    if t > l_t[end]
+        if !isbounded(σ)
+            return σ[sym_var][end]
+        else 
+            error("This trajectory is bounded and you're accessing out of the bounds")
+        end
+    end
+    for i in eachindex(l_t)
+        if l_t[i] <= t < l_t[i+1]
+            return σ[sym_var][i]
+        end
+    end
+    error("Unexpected behavior")
+end
+
 function getproperty(σ::SynchronizedTrajectory, sym::Symbol)
     if sym == :sm
         return getfield(σ, :sm)

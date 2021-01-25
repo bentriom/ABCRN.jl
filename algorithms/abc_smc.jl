@@ -165,12 +165,12 @@ function _abc_smc(pm::ParametricModel, nbr_particles::Int, alpha::Float64,
             normalize!(wl_current, 1)
             @info "End"
         end
+        current_time = time()
         @info "After this step, time spent and number of simulations" steptime=(current_time-begin_time_ite) step_nbr_sim
         mat_p_old = copy(mat_p)
         wl_old = copy(wl_current)
         fill!(l_nbr_sim, 0)
         flush(stdout)
-        current_time = time()
         old_epsilon = epsilon
 	end
 
@@ -273,13 +273,13 @@ function _distributed_abc_smc(pm::ParametricModel, nbr_particles::Int, alpha::Fl
             normalize!(wl_current, 1)
             @info "End"
         end
+        current_time = time()
         @info "After this step, time spent and number of simulations" steptime=(current_time-begin_time_ite) step_nbr_sim
         mat_p_old = mat_p
         wl_old = wl_current
         vec_dist = convert(Array, d_vec_dist)
         fill!(l_nbr_sim, 0)
         flush(stdout)
-        current_time = time()
         old_epsilon = epsilon
 	end
 
