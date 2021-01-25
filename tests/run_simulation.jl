@@ -16,5 +16,6 @@ if !isdir(str_dir_pics) mkdir(str_dir_pics) end
     @test include("simulation/sim_pm_sync_er.jl")
     @test include("simulation/sim_sir_tauleap.jl")
     @test include("simulation/sim_poisson.jl")
+    @test include("simulation/sim_repressilator.jl")
 end
 
