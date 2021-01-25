@@ -20,9 +20,10 @@ S[:idx] >= constants[:nbr_obs] + 1
 
 @everywhere cc_eucl_dist_aut_l1l1_2(S::StateLHA, constants::Dict{Symbol,Float64}, x::Vector{Int}, p::Vector{Float64}) = true 
 
-function create_euclidean_distance_automaton(m::ContinuousTimeModel, timeline::Vector{Float64}, observations::Vector{Float64}, sym_obs::VariableModel)
+function create_euclidean_distance_automaton(m::ContinuousTimeModel, timeline::AbstractVector{Float64}, observations::AbstractVector{Float64}, sym_obs::VariableModel)
+    # Requirements for the automaton
     @assert sym_obs in m.g "$(sym_obs) is not observed."
-    @assert length(timeline) == length(observations)
+    @assert length(timeline) == length(observations) "Timeline and observations vectors don't have the same length"
     nbr_observations = length(observations)
 
     # Locations

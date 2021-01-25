@@ -136,7 +136,11 @@ S[:n] == constants[:N]
 
 function create_period_automaton(m::ContinuousTimeModel, L::Float64, H::Float64, N::Int, sym_obs::VariableModel;
                                  initT::Float64 = 0.0)
+    # Requirements for the automaton
     @assert sym_obs in m.g "$(sym_obs) is not observed."
+    @assert (L < H) "L >= H impossible for period automaton."
+    @assert (N >= 1) "N < 1 impossible for period automaton."
+    
     N = convert(Float64, N)
     nbr_rand = rand(1:1000)
     basename_func = "$(replace(m.name, ' '=>'_'))_$(nbr_rand)"

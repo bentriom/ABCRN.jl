@@ -118,7 +118,11 @@ getfield(S, :time) >= constants[:t2]
  S[:tprime] = 0.0)
 
 function create_automaton_G(m::ContinuousTimeModel, x1::Float64, x2::Float64, t1::Float64, t2::Float64, sym_obs::VariableModel)
-    @assert sym_obs in m.g
+    # Requirements for the automaton
+    @assert sym_obs in m.g "$(sym_obs) is not observed."
+    @assert (x1 <= x2) "x1 > x2 impossible for G automaton."
+    @assert (t1 <= t2) "t1 > t2 impossible for G automaton."
+    
     # Locations
     locations = [:l0, :l1, :l2, :l3, :l4]
 

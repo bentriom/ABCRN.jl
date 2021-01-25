@@ -1,8 +1,11 @@
 
 @everywhere istrue(val::Float64) = convert(Bool, val)
 
-# Invariant predicate functions
+## Invariant predicate functions
+
 @everywhere true_inv_predicate(x::Vector{Int}) = true 
+
+## Edges check constraint and update state functions
 
 # l0G loc
 # l0G => l1G
@@ -185,9 +188,14 @@ istrue(S[:isabs]) && getfield(S, :time) <= constants[:t4]
 
 function create_automaton_G_and_F(m::ContinuousTimeModel, x1::Float64, x2::Float64, t1::Float64, t2::Float64, sym_obs_G::VariableModel,
                                   x3::Float64, x4::Float64, t3::Float64, t4::Float64, sym_obs_F::VariableModel)
-
-    @assert sym_obs_G in m.g
-    @assert sym_obs_F in m.g
+    # Requirements for the automaton
+    @assert sym_obs_G in m.g && sym_obs_F in m.g "$(sym_obs_G) or $(sym_obs_F) are not observed."
+    @assert (x1 <= x2) "x1 > x2 impossible for G and F automaton."
+    @assert (t1 <= t2) "t1 > t2 impossible for G and F automaton."
+    @assert (x3 <= x4) "x3 > x3 impossible for G and F automaton."
+    @assert (t3 <= t4) "t3 > t4 impossible for G and F automaton."
+    @assert (t2 <= t3) "t3 > t2 impossible for G and F automaton."
+    
     # Locations
     locations = [:l0G, :l1G, :l2G, :l3G, :l4G,
                  :l1F, :l2F, :l3F]

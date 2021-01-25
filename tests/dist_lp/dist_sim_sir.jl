@@ -7,7 +7,7 @@ SIR.time_bound = time_bound
 test_all = true
 
 for p = 1:2
-    nb_sim = 10
+    local nb_sim = 10
     for i = 1:nb_sim
         let σ1, σ2, test, test2
             σ1 = simulate(SIR)
