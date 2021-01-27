@@ -104,19 +104,19 @@ end
 function _find_edge_candidates!(edge_candidates::Vector{Edge},
                                 edges_from_current_loc::Dict{Location,Vector{Edge}},
                                 Λ::Dict{Location,Function},
-                                Snplus1::StateLHA, constants::Dict{Symbol,Float64}, 
+                                Snplus1::StateLHA,
                                 x::Vector{Int}, p::Vector{Float64},
                                 only_asynchronous::Bool)
     nbr_candidates = 0
     for target_loc in keys(edges_from_current_loc)
         for edge in edges_from_current_loc[target_loc]
-            if Λ[target_loc](x) && getfield(edge, :check_constraints)(Snplus1, constants, x, p)
-                if edge.transitions[1] == nothing
+            if Λ[target_loc](x) && getfield(edge, :check_constraints)(Snplus1, x, p)
+                if getfield(edge, :transitions)[1] == nothing
                     _push_edge!(edge_candidates, edge, nbr_candidates)
                     nbr_candidates += 1
                     return nbr_candidates
                 end
-                if !only_asynchronous && edge.transitions[1] != nothing
+                if !only_asynchronous && getfield(edge, :transitions)[1] != nothing
                     _push_edge!(edge_candidates, edge, nbr_candidates)
                     nbr_candidates += 1
                 end
@@ -133,13 +133,13 @@ function _get_edge_index(edge_candidates::Vector{Edge}, nbr_candidates::Int,
     for i = 1:nbr_candidates
         edge = edge_candidates[i]
         # Asynchronous edge detection: we fire it
-        if edge.transitions[1] == nothing 
+        if getfield(edge, :transitions)[1] == nothing 
             return (i, bool_event)
         end
         # Synchronous detection
         if !detected_event && tr_nplus1 != nothing
-            if (edge.transitions[1] == :ALL) || 
-               (tr_nplus1 in edge.transitions)
+            if (getfield(edge, :transitions)[1] == :ALL) || 
+                (tr_nplus1 in getfield(edge, :transitions))
                 ind_edge = i
                 bool_event = true
             end
@@ -163,7 +163,6 @@ function next_state!(Snplus1::StateLHA, A::LHA,
         @show Sn 
         @show Snplus1 
     end
-    constants = getfield(A, :constants) 
     # In terms of values not reference, Snplus1 == Sn
     # First, we check the asynchronous transitions
     while first_round || length(edge_candidates) > 0
@@ -172,14 +171,14 @@ function next_state!(Snplus1::StateLHA, A::LHA,
         current_loc = getfield(Snplus1, :loc)
         edges_from_current_loc = getfield(A, :map_edges)[current_loc]
         # Save all edges that satisfies transition predicate (asynchronous ones)
-        nbr_candidates = _find_edge_candidates!(edge_candidates, edges_from_current_loc, getfield(A, :Λ), Snplus1, constants, xn, p, true)
+        nbr_candidates = _find_edge_candidates!(edge_candidates, edges_from_current_loc, getfield(A, :Λ), Sn, xn, p, true) #Snplus1=>Sn
         # Search the one we must chose, here the event is nothing because 
         # we're not processing yet the next event
         ind_edge, detected_event = _get_edge_index(edge_candidates, nbr_candidates, detected_event, nothing)
         # Update the state with the chosen one (if it exists)
         # Should be xn here
         if ind_edge > 0
-            getfield(edge_candidates[ind_edge], :update_state!)(Snplus1, constants, xn, p)
+            getfield(edge_candidates[ind_edge], :update_state!)(Snplus1, xn, p)
         end
         first_round = false
         if verbose
@@ -193,6 +192,7 @@ function next_state!(Snplus1::StateLHA, A::LHA,
             break 
         end
         # For debug
+        #=
         if turns > 100
             println("Number of turns in next_state! is suspicious")
             @show first_round, detected_event
@@ -200,10 +200,11 @@ function next_state!(Snplus1::StateLHA, A::LHA,
             @show tnplus1, tr_nplus1, xnplus1
             @show edge_candidates
             for edge in edge_candidates
-                @show getfield(edge, :check_constraints)(Snplus1, constants, x, p)
+                @show getfield(edge, :check_constraints)(Snplus1, xn, p)
             end
             error("Unpredicted behavior automaton")
         end
+        =#
     end
     if verbose 
         @show Snplus1 
@@ -227,7 +228,7 @@ function next_state!(Snplus1::StateLHA, A::LHA,
         current_loc = getfield(Snplus1, :loc)
         edges_from_current_loc = getfield(A, :map_edges)[current_loc]
         # Save all edges that satisfies transition predicate (synchronous ones)
-        nbr_candidates = _find_edge_candidates!(edge_candidates, edges_from_current_loc, getfield(A, :Λ), Snplus1, constants, xnplus1, p, false)
+        nbr_candidates = _find_edge_candidates!(edge_candidates, edges_from_current_loc, getfield(A, :Λ), Snplus1, xnplus1, p, false)
         # Search the one we must chose
         ind_edge, detected_event = _get_edge_index(edge_candidates, nbr_candidates, detected_event, tr_nplus1)
         # Update the state with the chosen one (if it exists)
@@ -237,7 +238,7 @@ function next_state!(Snplus1::StateLHA, A::LHA,
             @show ind_edge, detected_event, nbr_candidates
         end
         if ind_edge > 0
-            getfield(edge_candidates[ind_edge], :update_state!)(Snplus1, constants, xnplus1, p)
+            getfield(edge_candidates[ind_edge], :update_state!)(Snplus1, xnplus1, p)
         end
         first_round = false
         if verbose
@@ -249,6 +250,7 @@ function next_state!(Snplus1::StateLHA, A::LHA,
             break 
         end
         # For debug
+        #=
         if turns > 100
             println("Number of turns in next_state! is suspicious")
             @show detected_event
@@ -256,10 +258,11 @@ function next_state!(Snplus1::StateLHA, A::LHA,
             @show tnplus1, tr_nplus1, xnplus1
             @show edge_candidates
             for edge in edge_candidates
-                @show getfield(edge, :check_constraints)(Snplus1, constants, x, p)
+                @show getfield(edge, :check_constraints)(Snplus1, x, p)
             end
             error("Unpredicted behavior automaton")
         end
+        =#
     end
     if verbose println("##### End next_state!") end
 end

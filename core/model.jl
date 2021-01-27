@@ -295,7 +295,6 @@ function volatile_simulate(product::SynchronizedModel;
         getfield(m, :f!)(vec_x, l_t, l_tr, xn, tn, p_sim)
         if l_t[1] > time_bound
             tn = l_t[1]
-            i -= 1
             break
         end
         if vec_x == xn

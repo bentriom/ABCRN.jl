@@ -1,76 +1,4 @@
 
-@everywhere istrue(val::Float64) = convert(Bool, val)
-
-# Invariant predicates functions
-@everywhere true_inv_predicate(x::Vector{Int}) = true 
-
-# Check constraints and update state functions
-
-# l0 loc : we construct  the edges of the form l0 => (..)
-# "cc" as check_constraints and "us" as update_state
-# l0 => l1
-@everywhere cc_aut_F_l0l1_1(S::StateLHA, constants::Dict{Symbol,Float64}, x::Vector{Int}, p::Vector{Float64}) = true
-# us_aut_F_l0l1_1! inside create_automaton_F
-
-# l1 loc
-# l1 => l2
-@everywhere cc_aut_F_l1l2_1(S::StateLHA, constants::Dict{Symbol,Float64}, x::Vector{Int}, p::Vector{Float64}) = 
-getfield(S, :time) >= constants[:t1] &&
-(constants[:x1] <= S[:n] <= constants[:x2])
-@everywhere us_aut_F_l1l2_1!(S::StateLHA, constants::Dict{Symbol,Float64}, x::Vector{Int}, p::Vector{Float64}) = 
-(S.loc = :l2;
- S[:d] = 0)
-
-@everywhere cc_aut_F_l1l2_4(S::StateLHA, constants::Dict{Symbol,Float64}, x::Vector{Int}, p::Vector{Float64}) = 
-getfield(S, :time) >= constants[:t1] &&
-S[:d] == 0 
-@everywhere us_aut_F_l1l2_4!(S::StateLHA, constants::Dict{Symbol,Float64}, x::Vector{Int}, p::Vector{Float64}) = 
-(S.loc = :l2)
-
-@everywhere cc_aut_F_l1l2_2(S::StateLHA, constants::Dict{Symbol,Float64}, x::Vector{Int}, p::Vector{Float64}) = 
-(getfield(S, :time) >= constants[:t2]) && 
-(S[:n] < constants[:x1] || S[:n] > constants[:x2])
-@everywhere us_aut_F_l1l2_2!(S::StateLHA, constants::Dict{Symbol,Float64}, x::Vector{Int}, p::Vector{Float64}) = 
-(S.loc = :l2;
- S[:d] = min(abs(S[:n] - constants[:x1]), abs(S[:n] - constants[:x2])))
-
-@everywhere cc_aut_F_l1l2_3(S::StateLHA, constants::Dict{Symbol,Float64}, x::Vector{Int}, p::Vector{Float64}) = 
-istrue(S[:isabs]) && getfield(S, :time) <= constants[:t2]
-@everywhere us_aut_F_l1l2_3!(S::StateLHA, constants::Dict{Symbol,Float64}, x::Vector{Int}, p::Vector{Float64}) = 
-(S.loc = :l2)
-
-# l1 => l3
-@everywhere cc_aut_F_l1l3_1(S::StateLHA, constants::Dict{Symbol,Float64}, x::Vector{Int}, p::Vector{Float64}) = 
-(constants[:x1] <= S[:n] <= constants[:x2])
-@everywhere us_aut_F_l1l3_1!(S::StateLHA, constants::Dict{Symbol,Float64}, x::Vector{Int}, p::Vector{Float64}) = 
-(S.loc = :l3;
- S[:d] = 0;)
-
-@everywhere cc_aut_F_l1l3_2(S::StateLHA, constants::Dict{Symbol,Float64}, x::Vector{Int}, p::Vector{Float64}) = 
-(S[:n] < constants[:x1] || S[:n] > constants[:x2]) && 
-(getfield(S, :time) <= constants[:t1])
-@everywhere us_aut_F_l1l3_2!(S::StateLHA, constants::Dict{Symbol,Float64}, x::Vector{Int}, p::Vector{Float64}) = 
-(S.loc = :l3;
- S[:d] = min(sqrt((getfield(S, :time) - constants[:t1])^2 + (S[:n] - constants[:x2])^2), 
-             sqrt((getfield(S, :time) - constants[:t1])^2 + (S[:n] - constants[:x1])^2)))
-
-@everywhere cc_aut_F_l1l3_3(S::StateLHA, constants::Dict{Symbol,Float64}, x::Vector{Int}, p::Vector{Float64}) = 
-(S[:n] < constants[:x1] || S[:n] > constants[:x2]) && 
-(constants[:t1] <= getfield(S, :time) <= constants[:t2])
-@everywhere us_aut_F_l1l3_3!(S::StateLHA, constants::Dict{Symbol,Float64}, x::Vector{Int}, p::Vector{Float64}) = 
-(S.loc = :l3;
- S[:d] = min(S[:d], min(abs(S[:n] - constants[:x1]), abs(S[:n] - constants[:x2]))))
-
-# l3 loc
-# l3 => l1
-@everywhere cc_aut_F_l3l1_1(S::StateLHA, constants::Dict{Symbol,Float64}, x::Vector{Int}, p::Vector{Float64}) = true
-
-# l3 => l2
-@everywhere cc_aut_F_l3l2_1(S::StateLHA, constants::Dict{Symbol,Float64}, x::Vector{Int}, p::Vector{Float64}) = 
-(getfield(S, :time) >= constants[:t2])
-@everywhere us_aut_F_l3l2_1!(S::StateLHA, constants::Dict{Symbol,Float64}, x::Vector{Int}, p::Vector{Float64}) = 
-(S.loc = :l2)
-
 function create_automaton_F(m::ContinuousTimeModel, x1::Float64, x2::Float64, t1::Float64, t2::Float64, sym_obs::VariableModel)
     # Requirements for the automaton
     @assert sym_obs in m.g "$(sym_obs) is not observed."
@@ -81,6 +9,7 @@ function create_automaton_F(m::ContinuousTimeModel, x1::Float64, x2::Float64, t1
     locations = [:l0, :l1, :l2, :l3]
 
     ## Invariant predicates
+    @everywhere true_inv_predicate(x::Vector{Int}) = true 
     Λ_F = Dict(:l0 => getfield(Main, :true_inv_predicate), :l1 => getfield(Main, :true_inv_predicate),
                :l2 => getfield(Main, :true_inv_predicate), :l3 => getfield(Main, :true_inv_predicate))
     
@@ -106,53 +35,124 @@ function create_automaton_F(m::ContinuousTimeModel, x1::Float64, x2::Float64, t1
         map_edges[loc] = Dict{Location, Vector{Edge}}()
     end
     
-    sym_isabs_func = Symbol(m.isabsorbing)
     idx_obs_var = getfield(m, :map_var_idx)[sym_obs]
-    nbr_rand = rand(1:1000)
+    idx_var_n = map_var_automaton_idx[:n] 
+    idx_var_d = map_var_automaton_idx[:d] 
+    idx_var_isabs = map_var_automaton_idx[:isabs] 
+
+    nbr_rand = rand(1:100000)
     basename_func = "$(replace(m.name, ' '=>'_'))_$(nbr_rand)"
     basename_func = replace(basename_func, '-'=>'_')
+    sym_isabs_func = Symbol(m.isabsorbing)
+    func_name(type_func::Symbol, from_loc::Location, to_loc::Location, edge_number::Int) = 
+    Symbol("$(type_func)_aut_F_$(basename_func)_$(from_loc)$(to_loc)_$(edge_number)$(type_func == :us ? "!" : "")")
+    meta_elementary_functions = quote 
+        @everywhere istrue(val::Float64) = convert(Bool, val)
+
+        ## Check constraints and update state functions
+        # l0 loc : we construct  the edges of the form l0 => (..)
+        # "cc" as check_constraints and "us" as update_state
+        # l0 => l1
+        @everywhere $(func_name(:cc, :l0, :l1, 1))(S::StateLHA, x::Vector{Int}, p::Vector{Float64}) = true
+        @everywhere $(func_name(:us, :l0, :l1, 1))(S::StateLHA, x::Vector{Int}, p::Vector{Float64}) = 
+        (S.loc = :l1; 
+         getfield(S, :values)[$(idx_var_n)] = x[$(idx_obs_var)];
+         setindex!(getfield(S, :values), Inf, $(idx_var_d)); 
+         setindex!(getfield(S, :values), getfield(Main, $(Meta.quot(sym_isabs_func)))(p, x), $(idx_var_isabs)))
+
+        # l1 loc
+        # l1 => l2
+        @everywhere $(func_name(:cc, :l1, :l2, 1))(S::StateLHA, x::Vector{Int}, p::Vector{Float64}) = 
+        getfield(S, :time) >= $t1 &&
+        ($x1 <= getfield(S, :values)[$(idx_var_n)] <= $x2)
+        @everywhere $(func_name(:us, :l1, :l2, 1))(S::StateLHA, x::Vector{Int}, p::Vector{Float64}) = 
+        (S.loc = :l2;
+         setindex!(getfield(S, :values), 0, $(idx_var_d)))
+
+        @everywhere $(func_name(:cc, :l1, :l2, 4))(S::StateLHA, x::Vector{Int}, p::Vector{Float64}) = 
+        getfield(S, :time) >= $t1 &&
+        getfield(S, :values)[$(idx_var_d)] == 0 
+        @everywhere $(func_name(:us, :l1, :l2, 4))(S::StateLHA, x::Vector{Int}, p::Vector{Float64}) = 
+        (S.loc = :l2)
+
+        @everywhere $(func_name(:cc, :l1, :l2, 2))(S::StateLHA, x::Vector{Int}, p::Vector{Float64}) = 
+        (getfield(S, :time) >= $t2) && 
+        (getfield(S, :values)[$(idx_var_n)] < $x1 || getfield(S, :values)[$(idx_var_n)] > $x2)
+        @everywhere $(func_name(:us, :l1, :l2, 2))(S::StateLHA, x::Vector{Int}, p::Vector{Float64}) = 
+        (S.loc = :l2;
+         setindex!(getfield(S, :values), min(abs(getfield(S, :values)[$(idx_var_n)] - $x1), abs(getfield(S, :values)[$(idx_var_n)] - $x2)), $(idx_var_d)))
+
+        @everywhere $(func_name(:cc, :l1, :l2, 3))(S::StateLHA, x::Vector{Int}, p::Vector{Float64}) = 
+        istrue(getfield(S, :values)[$(idx_var_isabs)]) && getfield(S, :time) <= $t2
+        @everywhere $(func_name(:us, :l1, :l2, 3))(S::StateLHA, x::Vector{Int}, p::Vector{Float64}) = 
+        (S.loc = :l2)
+
+        # l1 => l3
+        @everywhere $(func_name(:cc, :l1, :l3, 1))(S::StateLHA, x::Vector{Int}, p::Vector{Float64}) = 
+        ($x1 <= getfield(S, :values)[$(idx_var_n)] <= $x2)
+        @everywhere $(func_name(:us, :l1, :l3, 1))(S::StateLHA, x::Vector{Int}, p::Vector{Float64}) = 
+        (S.loc = :l3;
+         setindex!(getfield(S, :values), 0, $(idx_var_d)))
+
+        @everywhere $(func_name(:cc, :l1, :l3, 2))(S::StateLHA, x::Vector{Int}, p::Vector{Float64}) = 
+        (getfield(S, :values)[$(idx_var_n)] < $x1 || getfield(S, :values)[$(idx_var_n)] > $x2) && 
+        (getfield(S, :time) <= $t1)
+        @everywhere $(func_name(:us, :l1, :l3, 2))(S::StateLHA, x::Vector{Int}, p::Vector{Float64}) = 
+        (S.loc = :l3;
+         setindex!(getfield(S, :values), min(sqrt((getfield(S, :time) - $t1)^2 + (getfield(S, :values)[$(idx_var_n)] - $x2)^2), 
+                                             sqrt((getfield(S, :time) - $t1)^2 + (getfield(S, :values)[$(idx_var_n)] - $x1)^2)), $(idx_var_d)))
+
+        @everywhere $(func_name(:cc, :l1, :l3, 3))(S::StateLHA, x::Vector{Int}, p::Vector{Float64}) = 
+        (getfield(S, :values)[$(idx_var_n)] < $x1 || getfield(S, :values)[$(idx_var_n)] > $x2) && 
+        ($t1 <= getfield(S, :time) <= $t2)
+        @everywhere $(func_name(:us, :l1, :l3, 3))(S::StateLHA, x::Vector{Int}, p::Vector{Float64}) = 
+        (S.loc = :l3;
+         val_min = min(getfield(S, :values)[$(idx_var_d)], 
+                       min(abs(getfield(S, :values)[$(idx_var_n)] - $x1), abs(getfield(S, :values)[$(idx_var_n)] - $x2)));
+         setindex!(getfield(S, :values), val_min, $(idx_var_d)))
+
+        # l3 loc
+        # l3 => l1
+        @everywhere $(func_name(:cc, :l3, :l1, 1))(S::StateLHA, x::Vector{Int}, p::Vector{Float64}) = true
+        @everywhere $(func_name(:us, :l3, :l1, 1))(S::StateLHA, x::Vector{Int}, p::Vector{Float64}) = 
+        (S.loc = :l1;
+         getfield(S, :values)[$(idx_var_n)] = x[$(idx_obs_var)];
+         setindex!(getfield(S, :values), getfield(Main, $(Meta.quot(sym_isabs_func)))(p, x), $(idx_var_isabs)))
+
+        # l3 => l2
+        @everywhere $(func_name(:cc, :l3, :l2, 1))(S::StateLHA, x::Vector{Int}, p::Vector{Float64}) = 
+        (getfield(S, :time) >= $t2)
+        @everywhere $(func_name(:us, :l3, :l2, 1))(S::StateLHA, x::Vector{Int}, p::Vector{Float64}) = 
+        (S.loc = :l2)
+    end
+    eval(meta_elementary_functions)
 
     # l0 loc
     # l0 => l1
-    sym_func_us_l0l1_1 = Symbol("us_aut_F_$(basename_func)_l0l1_1!")
-    str_us_l0l1_1 = "
-    @everywhere $(sym_func_us_l0l1_1)(S::StateLHA, constants::Dict{Symbol,Float64}, x::Vector{Int}, p::Vector{Float64}) = \n
-    (S.loc = :l1; \n
-     S[:n] = x[$(idx_obs_var)];\n
-     S[:d] = Inf; \n
-     S[:isabs] = getfield(Main, $(Meta.quot(sym_isabs_func)))(p, x))"
-    eval(Meta.parse(str_us_l0l1_1))
-    edge1 = Edge([nothing], getfield(Main, :cc_aut_F_l0l1_1), getfield(Main, sym_func_us_l0l1_1))
+    edge1 = Edge([nothing], getfield(Main, func_name(:cc, :l0, :l1, 1)), getfield(Main, func_name(:us, :l0, :l1, 1)))
     map_edges[:l0][:l1] = [edge1]
 
     # l1 loc
     # l1 => l2
-    edge1 = Edge([nothing], getfield(Main, :cc_aut_F_l1l2_1), getfield(Main, :us_aut_F_l1l2_1!))
-    edge2 = Edge([nothing], getfield(Main, :cc_aut_F_l1l2_2), getfield(Main, :us_aut_F_l1l2_2!))
-    edge3 = Edge([nothing], getfield(Main, :cc_aut_F_l1l2_3), getfield(Main, :us_aut_F_l1l2_3!))
-    edge4 = Edge([nothing], getfield(Main, :cc_aut_F_l1l2_4), getfield(Main, :us_aut_F_l1l2_4!))
+    edge1 = Edge([nothing], getfield(Main, func_name(:cc, :l1, :l2, 1)), getfield(Main, func_name(:us, :l1, :l2, 1)))
+    edge2 = Edge([nothing], getfield(Main, func_name(:cc, :l1, :l2, 2)), getfield(Main, func_name(:us, :l1, :l2, 2)))
+    edge3 = Edge([nothing], getfield(Main, func_name(:cc, :l1, :l2, 3)), getfield(Main, func_name(:us, :l1, :l2, 3)))
+    edge4 = Edge([nothing], getfield(Main, func_name(:cc, :l1, :l2, 4)), getfield(Main, func_name(:us, :l1, :l2, 4)))
     map_edges[:l1][:l2] = [edge1, edge2, edge3, edge4]
 
     # l1 => l3
-    edge1 = Edge([nothing], getfield(Main, :cc_aut_F_l1l3_1), getfield(Main, :us_aut_F_l1l3_1!))
-    edge2 = Edge([nothing], getfield(Main, :cc_aut_F_l1l3_2), getfield(Main, :us_aut_F_l1l3_2!))
-    edge3 = Edge([nothing], getfield(Main, :cc_aut_F_l1l3_3), getfield(Main, :us_aut_F_l1l3_3!))
+    edge1 = Edge([nothing], getfield(Main, func_name(:cc, :l1, :l3, 1)), getfield(Main, func_name(:us, :l1, :l3, 1)))
+    edge2 = Edge([nothing], getfield(Main, func_name(:cc, :l1, :l3, 2)), getfield(Main, func_name(:us, :l1, :l3, 2)))
+    edge3 = Edge([nothing], getfield(Main, func_name(:cc, :l1, :l3, 3)), getfield(Main, func_name(:us, :l1, :l3, 3)))
     map_edges[:l1][:l3] = [edge1, edge2, edge3]
   
     # l3 loc
     # l3 => l1
-    sym_func_us_l3l1_1 = Symbol("us_aut_F_$(basename_func)_l0l1_1!")
-    str_us_l3l1_1 = 
-    "@everywhere $(sym_func_us_l3l1_1)(S::StateLHA, constants::Dict{Symbol,Float64}, x::Vector{Int}, p::Vector{Float64}) = \n
-    (S.loc = :l1;\n
-    S[:n] = x[$(idx_obs_var)];\n
-    S[:isabs] = getfield(Main, $(Meta.quot(sym_isabs_func)))(p, x))"
-    eval(Meta.parse(str_us_l3l1_1))
-    edge1 = Edge([:ALL], getfield(Main, :cc_aut_F_l3l1_1), getfield(Main, sym_func_us_l3l1_1))
+    edge1 = Edge([:ALL], getfield(Main, func_name(:cc, :l3, :l1, 1)), getfield(Main, func_name(:us, :l3, :l1, 1)))
     map_edges[:l3][:l1] = [edge1]
     
     # l3 => l2
-    edge1 = Edge([nothing], getfield(Main, :cc_aut_F_l3l2_1), getfield(Main, :us_aut_F_l3l2_1!))
+    edge1 = Edge([nothing], getfield(Main, func_name(:cc, :l3, :l2, 1)), getfield(Main, func_name(:us, :l3, :l2, 1)))
     map_edges[:l3][:l2] = [edge1]
 
     ## Constants

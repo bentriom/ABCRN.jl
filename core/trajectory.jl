@@ -1,4 +1,6 @@
 
+## About distances
+
 # Top-level Lp distance function
 """
 `dist_lp(l_σ1, l_σ2; verbose, p, str_stat_list, str_stat_trajectory)`   
@@ -68,6 +70,7 @@ function dist_lp(x_obs::Vector{Int}, t_x::Vector{Float64}, y_obs::Vector{Int}, t
                  verbose::Bool = false, p::Int = 1)
     current_y_obs = y_obs[1]
     current_t_y = t_y[2]
+    nbr_y_obs = length(y_obs)
     idx = 1
     res = 0.0
     for i = 1:(length(x_obs)-1)
@@ -78,7 +81,7 @@ function dist_lp(x_obs::Vector{Int}, t_x::Vector{Float64}, y_obs::Vector{Int}, t
             @show t_x[i+1]
         end
         last_t_y = t_x[i]
-        while current_t_y < t_x[i+1]
+        while current_t_y < t_x[i+1] && idx <= nbr_y_obs
             rect =  abs(current_y_obs - x_obs[i])^p * (current_t_y - last_t_y)
             res += rect
             if verbose
@@ -170,6 +173,13 @@ function vectorize(σ::AbstractTrajectory, sym_var::Symbol,
         end
     end
     return trajectory_points
+end
+
+function euclidean_distance(σ::AbstractTrajectory, sym_obs::Symbol,
+                            tml::AbstractVector{Float64}, observations::AbstractVector{Float64})
+    traj_obs = vectorize(σ, sym_obs, tml)
+    diff_obs = observations - traj_obs
+    return sqrt(dot(diff_obs, diff_obs))
 end
 
 function check_consistency(σ::AbstractTrajectory)
