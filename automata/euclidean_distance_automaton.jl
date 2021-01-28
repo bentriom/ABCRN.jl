@@ -55,11 +55,14 @@ function create_euclidean_distance_automaton(m::ContinuousTimeModel, timeline::A
         # l1 => l1
         # Defined below 
         @everywhere $(func_name(:cc, :l1, :l1, 1))(S::StateLHA, x::Vector{Int}, p::Vector{Float64}) =
-        getfield(S, :values)[$(idx_var_t)] >= $(timeline)[convert(Int, getfield(S, :values)[$(idx_var_idx)])]
+        (tml = $(Tuple(timeline));
+         tml_idx = tml[convert(Int, getfield(S, :values)[$(idx_var_idx)])];
+         getfield(S, :values)[$(idx_var_t)] >= tml_idx)
         @everywhere $(func_name(:us, :l1, :l1, 1))(S::StateLHA, x::Vector{Int}, p::Vector{Float64}) =
-        (setindex!(getfield(S, :values), getfield(S, :values)[$(idx_var_d)] + 
-                                        (getfield(S, :values)[$(idx_var_n)]  - $(observations)[convert(Int, getfield(S, :values)[$(idx_var_idx)])])^2, 
-                                        $(idx_var_d));
+        (y_obs = $(Tuple(observations));
+         y_obs_idx = y_obs[convert(Int, getfield(S, :values)[$(idx_var_idx)])];
+         setindex!(getfield(S, :values), getfield(S, :values)[$(idx_var_d)] + (getfield(S, :values)[$(idx_var_n)]  - y_obs_idx)^2, 
+                                         $(idx_var_d));
          setindex!(getfield(S, :values), getfield(S, :values)[$(idx_var_idx)] + 1.0, $(idx_var_idx)))
         
         @everywhere $(func_name(:cc, :l1, :l1, 2))(S::StateLHA, x::Vector{Int}, p::Vector{Float64}) = true 
