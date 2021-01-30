@@ -24,7 +24,7 @@ function plot(σ::AbstractTrajectory, vars::VariableModel...; plot_transitions::
     # Plots
     p = plot(title = "Trajectory of $(σ.m.name) model", palette = :lightrainbow, legend = :outertopright, background_color_legend=:transparent, dpi = 480)
     for var in to_plot
-        @assert var in get_obs_var(σ) 
+        @assert var in get_obs_var(σ) "Variable $var is not observed." 
         plot!(p, times(σ), σ[var], 
               xlabel = "Time", ylabel = "Number of species",
               label = var,
@@ -55,18 +55,18 @@ end
 
 function plot!(A::LHA)
     if A.name in ["F property", "G property"]
-        if haskey(A.constants, "x1") && haskey(A.constants, "x2") && haskey(A.constants, "t1") && haskey(A.constants, "t2") 
-            x1, x2, t1, t2 = A.constants["x1"], A.constants["x2"], A.constants["t1"], A.constants["t2"] 
+        if haskey(A.constants, :x1) && haskey(A.constants, :x2) && haskey(A.constants, :t1) && haskey(A.constants, :t2) 
+            x1, x2, t1, t2 = A.constants[:x1], A.constants[:x2], A.constants[:t1], A.constants[:t2] 
             plot!(Shape([(t1,x1), (t1,x2), (t2,x2), (t2,x1), (t1,x1)]), opacity = 0.5, label = "Region LHA")
         end
     end
     if A.name in ["G and F property"]    
-        if haskey(A.constants, "x1") && haskey(A.constants, "x2") && haskey(A.constants, "t1") && haskey(A.constants, "t2") 
-            x1, x2, t1, t2 = A.constants["x1"], A.constants["x2"], A.constants["t1"], A.constants["t2"] 
+        if haskey(A.constants, :x1) && haskey(A.constants, :x2) && haskey(A.constants, :t1) && haskey(A.constants, :t2) 
+            x1, x2, t1, t2 = A.constants[:x1], A.constants[:x2], A.constants[:t1], A.constants[:t2] 
             plot!(Shape([(t1,x1), (t1,x2), (t2,x2), (t2,x1), (t1,x1)]), opacity = 0.5, label = "Region LHA")
         end
-        if haskey(A.constants, "x3") && haskey(A.constants, "x4") && haskey(A.constants, "t3") && haskey(A.constants, "t4") 
-            x3, x4, t3, t4 = A.constants["x3"], A.constants["x4"], A.constants["t3"], A.constants["t4"] 
+        if haskey(A.constants, :x3) && haskey(A.constants, :x4) && haskey(A.constants, :t3) && haskey(A.constants, :t4) 
+            x3, x4, t3, t4 = A.constants[:x3], A.constants[:x4], A.constants[:t3], A.constants[:t4] 
             plot!(Shape([(t3,x3), (t3,x4), (t4,x4), (t4,x3), (t3,x3)]), opacity = 0.5, label = "Region LHA")
         end
     end
