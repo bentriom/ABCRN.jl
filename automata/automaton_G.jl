@@ -113,6 +113,7 @@ function create_automaton_G(m::ContinuousTimeModel, x1::Float64, x2::Float64, t1
 
 
         # l1 => l2
+        #=
         @everywhere $(func_name(:cc, :l1, :l2, 1))(S::StateLHA, x::Vector{Int}, p::Vector{Float64}) = 
         istrue(getfield(S, :values)[$(idx_var_in)]) && 
         getfield(S, :time) >= $t2
@@ -139,6 +140,7 @@ function create_automaton_G(m::ContinuousTimeModel, x1::Float64, x2::Float64, t1
         @everywhere $(func_name(:us, :l1, :l2, 4))(S::StateLHA, x::Vector{Int}, p::Vector{Float64}) = 
         (setfield!(S, :loc, Symbol("l2")); 
          setindex!(getfield(S, :values), getfield(S, :values)[$(idx_var_d)] + ($t2 - getfield(S, :time)) * min(abs($x1 - getfield(S, :values)[$(idx_var_n)]), abs($x2 - getfield(S, :values)[$(idx_var_n)])), $(idx_var_d)))
+        =#
 
         # l3 => l1
         @everywhere $(func_name(:cc, :l3, :l1, 1))(S::StateLHA, x::Vector{Int}, p::Vector{Float64}) = true
@@ -157,23 +159,23 @@ function create_automaton_G(m::ContinuousTimeModel, x1::Float64, x2::Float64, t1
          setindex!(getfield(S, :values), true, $(idx_var_in));
          setindex!(getfield(S, :values), getfield(Main, $(Meta.quot(sym_isabs_func)))(p, x), $(idx_var_isabs)))
 
-        # l2 => l1
+        # l3 => l2
         @everywhere $(func_name(:cc, :l3, :l2, 2))(S::StateLHA, x::Vector{Int}, p::Vector{Float64}) = 
         istrue(getfield(S, :values)[$(idx_var_in)]) && 
-        getfield(S, :time) >= $t2
+        (getfield(S, :time) >= $t2 || istrue(getfield(S, :values)[$(idx_var_isabs)]))
         @everywhere $(func_name(:us, :l3, :l2, 2))(S::StateLHA, x::Vector{Int}, p::Vector{Float64}) = 
         (setfield!(S, :loc, Symbol("l2"));
          setindex!(getfield(S, :values), getfield(S, :values)[$(idx_var_d)] * ($t2 - $t1), $(idx_var_d)))
 
         @everywhere $(func_name(:cc, :l3, :l2, 1))(S::StateLHA, x::Vector{Int}, p::Vector{Float64}) = 
         !istrue(getfield(S, :values)[$(idx_var_in)]) && 
-        getfield(S, :time) >= $t2
+        (getfield(S, :time) >= $t2 || istrue(getfield(S, :values)[$(idx_var_isabs)]))
         @everywhere $(func_name(:us, :l3, :l2, 1))(S::StateLHA, x::Vector{Int}, p::Vector{Float64}) = 
         (setfield!(S, :loc, Symbol("l2")))
 
         # l4 => l2
         @everywhere $(func_name(:cc, :l4, :l2, 1))(S::StateLHA, x::Vector{Int}, p::Vector{Float64}) = 
-        (getfield(S, :time) >= $t2)
+        (getfield(S, :time) >= $t2 || istrue(getfield(S, :values)[$(idx_var_isabs)]))
         @everywhere $(func_name(:us, :l4, :l2, 1))(S::StateLHA, x::Vector{Int}, p::Vector{Float64}) = 
         (setfield!(S, :loc, Symbol("l2")); 
          setindex!(getfield(S, :values), getfield(S, :values)[$(idx_var_d)] + getfield(S, :values)[$(idx_var_tprime)] * min(abs($x1 - getfield(S, :values)[$(idx_var_n)]), abs($x2 - getfield(S, :values)[$(idx_var_n)])), $(idx_var_d));
@@ -200,11 +202,13 @@ function create_automaton_G(m::ContinuousTimeModel, x1::Float64, x2::Float64, t1
     map_edges[:l1][:l4] = [edge1, edge2]
    
     # l1 => l2
+    #=
     edge1 = Edge([nothing], getfield(Main, func_name(:cc, :l1, :l2, 1)), getfield(Main, func_name(:us, :l1, :l2, 1)))
     edge2 = Edge([nothing], getfield(Main, func_name(:cc, :l1, :l2, 2)), getfield(Main, func_name(:us, :l1, :l2, 2)))
     edge3 = Edge([nothing], getfield(Main, func_name(:cc, :l1, :l2, 3)), getfield(Main, func_name(:us, :l1, :l2, 3)))
     edge4 = Edge([nothing], getfield(Main, func_name(:cc, :l1, :l2, 4)), getfield(Main, func_name(:us, :l1, :l2, 4)))
     map_edges[:l1][:l2] = [edge1, edge2, edge3, edge4]
+    =#
 
     # l3 loc
     # l3 => l1

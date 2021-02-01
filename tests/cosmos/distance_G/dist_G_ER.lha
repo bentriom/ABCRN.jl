@@ -30,7 +30,7 @@ Locations={
 
 Edges={
 % Init
-((l0,l1), #, t>=0, {n=E,d=0,in=1,test_abs=k_1*(E*S)+k_2*ES});
+((l0,l1), #, t>=0, {n=E,d=0,in=1,test_abs=k_1*(E*S)+(k_2+k_3)*ES});
 
 ((l1,l3), #, t<=t1 & n<=x1-1, {d=min(((n-x1)^2)^0.5,((n-x2)^2)^0.5),in=0});
 ((l1,l3), #, t<=t1 & n>=x2+1, {d=min(((n-x1)^2)^0.5,((n-x2)^2)^0.5),in=0});
@@ -43,18 +43,21 @@ Edges={
 ((l1,l4), #, in=1 & t>=t1 & t<=t2 & n<=x1-1, #);
 ((l1,l4), #, in=1 & t>=t1 & t<=t2 & n>=x2+1, #);
 
-((l1,l2), #, in=1 & t>=t2, #);
-((l1,l2), #, in=0 & t>=t2, {d=d*(t2-t1)});
-((l1,l2), #, test_abs=0 & t<=t1, {d=min(((n-x1)^2)^0.5,((n-x2)^2)^0.5)*(t2-t1)});
-((l1,l2), #, test_abs=0 & t>=t1 & t<=t2, {d=d+(t2-t)*min(((n-x1)^2)^0.5,((n-x2)^2)^0.5)});
+%((l1,l2), #, in=1 & t>=t2, #);
+%((l1,l2), #, in=1 & t>=t2, {d=d*(t2-t1)});
+%((l1,l2), #, test_abs=0 & t<=t1, {d=min(((n-x1)^2)^0.5,((n-x2)^2)^0.5)*(t2-t1)});
+%((l1,l2), #, test_abs=0 & t>=t1 & t<=t2, {d=d+(t2-t)*min(((n-x1)^2)^0.5,((n-x2)^2)^0.5)});
 
-((l3,l1), ALL, t>=0, {n=E,test_abs=k_1*(E*S)+k_2*ES});
+((l3,l1), ALL, t>=0, {n=E,test_abs=k_1*(E*S)+(k_2+k_3)*ES});
 
 ((l3,l2), #, in=1 & t>=t2, {d=d*(t2-t1)});
+((l3,l2), #, in=1 & test_abs=0, {d=d*(t2-t1)});
 ((l3,l2), #, in=0 & t>=t2, #);
+((l3,l2), #, in=0 & test_abs=0, #);
 
-((l4,l1), ALL, t>=0, {d=d+tprime*min(((n-x1)^2)^0.5,((n-x2)^2)^0.5),tprime=0,n=E,in=1,test_abs=k_1*(E*S)+k_2*ES});
+((l4,l1), ALL, t>=0, {d=d+tprime*min(((n-x1)^2)^0.5,((n-x2)^2)^0.5),tprime=0,n=E,in=1,test_abs=k_1*(E*S)+(k_2+k_3)*ES});
 
 ((l4,l2), #, t>=t2, {d=d+tprime*min(((n-x1)^2)^0.5,((n-x2)^2)^0.5)});
+((l4,l2), #, test_abs=0, {d=d+tprime*min(((n-x1)^2)^0.5,((n-x2)^2)^0.5)});
 };
 

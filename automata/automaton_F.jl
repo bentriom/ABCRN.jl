@@ -62,49 +62,51 @@ function create_automaton_F(m::ContinuousTimeModel, x1::Float64, x2::Float64, t1
 
         # l1 loc
         # l1 => l2
+        #=
         @everywhere $(func_name(:cc, :l1, :l2, 1))(S::StateLHA, x::Vector{Int}, p::Vector{Float64}) = 
         getfield(S, :time) >= $t1 &&
         ($x1 <= getfield(S, :values)[$(idx_var_n)] <= $x2)
         @everywhere $(func_name(:us, :l1, :l2, 1))(S::StateLHA, x::Vector{Int}, p::Vector{Float64}) = 
         (S.loc = :l2;
          setindex!(getfield(S, :values), 0, $(idx_var_d)))
-
-        @everywhere $(func_name(:cc, :l1, :l2, 4))(S::StateLHA, x::Vector{Int}, p::Vector{Float64}) = 
+        =#
+        #=
+        @everywhere $(func_name(:cc, :l1, :l2, 3))(S::StateLHA, x::Vector{Int}, p::Vector{Float64}) = 
+        istrue(getfield(S, :values)[$(idx_var_isabs)]) && getfield(S, :time) <= $t2
+        @everywhere $(func_name(:us, :l1, :l2, 3))(S::StateLHA, x::Vector{Int}, p::Vector{Float64}) = 
+        (S.loc = :l2)
+        =#
+        @everywhere $(func_name(:cc, :l1, :l2, 1))(S::StateLHA, x::Vector{Int}, p::Vector{Float64}) = 
         getfield(S, :time) >= $t1 &&
         getfield(S, :values)[$(idx_var_d)] == 0 
-        @everywhere $(func_name(:us, :l1, :l2, 4))(S::StateLHA, x::Vector{Int}, p::Vector{Float64}) = 
+        @everywhere $(func_name(:us, :l1, :l2, 1))(S::StateLHA, x::Vector{Int}, p::Vector{Float64}) = 
         (S.loc = :l2)
 
         @everywhere $(func_name(:cc, :l1, :l2, 2))(S::StateLHA, x::Vector{Int}, p::Vector{Float64}) = 
         (getfield(S, :time) >= $t2) && 
         (getfield(S, :values)[$(idx_var_n)] < $x1 || getfield(S, :values)[$(idx_var_n)] > $x2)
         @everywhere $(func_name(:us, :l1, :l2, 2))(S::StateLHA, x::Vector{Int}, p::Vector{Float64}) = 
-        (S.loc = :l2;
-         setindex!(getfield(S, :values), min(abs(getfield(S, :values)[$(idx_var_n)] - $x1), abs(getfield(S, :values)[$(idx_var_n)] - $x2)), $(idx_var_d)))
-
-        @everywhere $(func_name(:cc, :l1, :l2, 3))(S::StateLHA, x::Vector{Int}, p::Vector{Float64}) = 
-        istrue(getfield(S, :values)[$(idx_var_isabs)]) && getfield(S, :time) <= $t2
-        @everywhere $(func_name(:us, :l1, :l2, 3))(S::StateLHA, x::Vector{Int}, p::Vector{Float64}) = 
-        (S.loc = :l2)
+        (S.loc = :l2;)
+        #setindex!(getfield(S, :values), min(abs(getfield(S, :values)[$(idx_var_n)] - $x1), abs(getfield(S, :values)[$(idx_var_n)] - $x2)), $(idx_var_d)))
 
         # l1 => l3
         @everywhere $(func_name(:cc, :l1, :l3, 1))(S::StateLHA, x::Vector{Int}, p::Vector{Float64}) = 
-        ($x1 <= getfield(S, :values)[$(idx_var_n)] <= $x2)
+        (getfield(S, :time) <= $t1) &&
+        (getfield(S, :values)[$(idx_var_n)] < $x1 || getfield(S, :values)[$(idx_var_n)] > $x2)
         @everywhere $(func_name(:us, :l1, :l3, 1))(S::StateLHA, x::Vector{Int}, p::Vector{Float64}) = 
-        (S.loc = :l3;
-         setindex!(getfield(S, :values), 0, $(idx_var_d)))
-
-        @everywhere $(func_name(:cc, :l1, :l3, 2))(S::StateLHA, x::Vector{Int}, p::Vector{Float64}) = 
-        (getfield(S, :values)[$(idx_var_n)] < $x1 || getfield(S, :values)[$(idx_var_n)] > $x2) && 
-        (getfield(S, :time) <= $t1)
-        @everywhere $(func_name(:us, :l1, :l3, 2))(S::StateLHA, x::Vector{Int}, p::Vector{Float64}) = 
         (S.loc = :l3;
          setindex!(getfield(S, :values), min(sqrt((getfield(S, :time) - $t1)^2 + (getfield(S, :values)[$(idx_var_n)] - $x2)^2), 
                                              sqrt((getfield(S, :time) - $t1)^2 + (getfield(S, :values)[$(idx_var_n)] - $x1)^2)), $(idx_var_d)))
+        
+        @everywhere $(func_name(:cc, :l1, :l3, 2))(S::StateLHA, x::Vector{Int}, p::Vector{Float64}) = 
+        ($x1 <= getfield(S, :values)[$(idx_var_n)] <= $x2)
+        @everywhere $(func_name(:us, :l1, :l3, 2))(S::StateLHA, x::Vector{Int}, p::Vector{Float64}) = 
+        (S.loc = :l3;
+         setindex!(getfield(S, :values), 0, $(idx_var_d)))
 
         @everywhere $(func_name(:cc, :l1, :l3, 3))(S::StateLHA, x::Vector{Int}, p::Vector{Float64}) = 
-        (getfield(S, :values)[$(idx_var_n)] < $x1 || getfield(S, :values)[$(idx_var_n)] > $x2) && 
-        ($t1 <= getfield(S, :time) <= $t2)
+        (getfield(S, :time) >= $t1) &&
+        (getfield(S, :values)[$(idx_var_n)] < $x1 || getfield(S, :values)[$(idx_var_n)] > $x2)
         @everywhere $(func_name(:us, :l1, :l3, 3))(S::StateLHA, x::Vector{Int}, p::Vector{Float64}) = 
         (S.loc = :l3;
          val_min = min(getfield(S, :values)[$(idx_var_d)], 
@@ -121,7 +123,7 @@ function create_automaton_F(m::ContinuousTimeModel, x1::Float64, x2::Float64, t1
 
         # l3 => l2
         @everywhere $(func_name(:cc, :l3, :l2, 1))(S::StateLHA, x::Vector{Int}, p::Vector{Float64}) = 
-        (getfield(S, :time) >= $t2)
+        (getfield(S, :time) >= $t2 || istrue(getfield(S, :values)[$(idx_var_isabs)]))
         @everywhere $(func_name(:us, :l3, :l2, 1))(S::StateLHA, x::Vector{Int}, p::Vector{Float64}) = 
         (S.loc = :l2)
     end
@@ -136,9 +138,10 @@ function create_automaton_F(m::ContinuousTimeModel, x1::Float64, x2::Float64, t1
     # l1 => l2
     edge1 = Edge([nothing], getfield(Main, func_name(:cc, :l1, :l2, 1)), getfield(Main, func_name(:us, :l1, :l2, 1)))
     edge2 = Edge([nothing], getfield(Main, func_name(:cc, :l1, :l2, 2)), getfield(Main, func_name(:us, :l1, :l2, 2)))
-    edge3 = Edge([nothing], getfield(Main, func_name(:cc, :l1, :l2, 3)), getfield(Main, func_name(:us, :l1, :l2, 3)))
-    edge4 = Edge([nothing], getfield(Main, func_name(:cc, :l1, :l2, 4)), getfield(Main, func_name(:us, :l1, :l2, 4)))
-    map_edges[:l1][:l2] = [edge1, edge2, edge3, edge4]
+    map_edges[:l1][:l2] = [edge1, edge2]
+    #edge3 = Edge([nothing], getfield(Main, func_name(:cc, :l1, :l2, 3)), getfield(Main, func_name(:us, :l1, :l2, 3)))
+    #edge4 = Edge([nothing], getfield(Main, func_name(:cc, :l1, :l2, 4)), getfield(Main, func_name(:us, :l1, :l2, 4)))
+    #map_edges[:l1][:l2] = [edge1, edge2, edge3, edge4]
 
     # l1 => l3
     edge1 = Edge([nothing], getfield(Main, func_name(:cc, :l1, :l3, 1)), getfield(Main, func_name(:us, :l1, :l3, 1)))
