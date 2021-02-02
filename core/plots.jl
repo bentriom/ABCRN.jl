@@ -1,6 +1,6 @@
 
 import Plots: plot, plot!, scatter!, hline!, Shape, text
-import Plots: current, palette, display, png, close
+import Plots: current, palette, display, png, close, savefig
 
 """
     `plot(σ, var...; plot_transitions=false)`
@@ -27,14 +27,14 @@ function plot(σ::AbstractTrajectory, vars::VariableModel...; plot_transitions::
         @assert var in get_obs_var(σ) "Variable $var is not observed." 
         plot!(p, times(σ), σ[var], 
               xlabel = "Time", ylabel = "Number of species",
-              label = var,
+              label = "$var",
               linetype=:steppost)
     end
     if plot_transitions
         for (i, var) in enumerate(to_plot)
             for tr in l_tr
                 idx_tr = findall(x->x==tr, transitions(σ))
-                label = (tr == nothing || i > 1) ? "" : tr
+                label = (tr == nothing || i > 1) ? "" : "$tr"
                 alpha = (tr == nothing) ? 0.0 : 0.5
                 scatter!(p, times(σ)[idx_tr], σ[var][idx_tr], label=label, 
                          markershape=:cross, markeralpha=alpha, 
@@ -49,7 +49,7 @@ function plot(σ::AbstractTrajectory, vars::VariableModel...; plot_transitions::
     if filename == ""
         display(p)
     else
-        png(p, filename)
+        savefig(p, filename)
     end
 end
 
@@ -124,7 +124,7 @@ function plot_periodic_trajectory(A::LHA, σ::SynchronizedTrajectory, sym_obs::S
     if filename == ""
         display(p)
     else
-        png(p, filename)
+        savefig(p, filename)
     end
 end
 

@@ -13,5 +13,5 @@ pm_sync_ER = ParametricModel(sync_ER, (:k3, Uniform(0.0, 100.0)))
 @show r.nbr_sim
 
 histogram(r.mat_p_end', bins = :sqrt, weights = r.weights, normalize = :density, xlims = (0.0, 100.0))
-png("R2_hist.png")
+savefig("R2_hist.svg")
 

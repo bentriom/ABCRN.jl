@@ -11,5 +11,5 @@ pm_sync_ER = ParametricModel(sync_ER, (:k3, Uniform(0.0, 100.0)))
 r = automaton_abc(pm_sync_ER; nbr_particles = 1000)
 
 histogram(r.mat_p_end', weights = r.weights, normalize = :density, xlims = (0.0, 100.0))
-png("R3_hist.png")
+savefig("R3_hist.svg")
 

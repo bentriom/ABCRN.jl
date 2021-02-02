@@ -20,5 +20,5 @@ return test
 
 #using Plots
 #histogram(r.mat_p_end', weights = r.weights, normalize = :density)
-#png("R1_hist.png")
+#savefig("R1_hist.svg")
 

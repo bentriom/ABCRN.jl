@@ -47,7 +47,7 @@ samples_weights = r.weights
 
 # Histogram
 histogram2d(samples_abc_post[1,:], samples_abc_post[2,:], weights = samples_weights, normalize = :density)
-png(path_results * "histogram.png")
+savefig(path_results * "histogram.svg")
 =#
 ## Satisfaction function
 
@@ -88,11 +88,11 @@ xaxis = 0:0.1:1.5
 yaxis = 0:1.0:100.0
 p = plot(title = "Multivariate KDE", dpi = 480, background_color_legend = :transparent)
 plot!(p, xaxis, yaxis, prob_func, st = :surface, c = :coolwarm, camera = (30, 45))
-png(path_results * "estim_abc_satisfaction_prob_function.png")
+savefig(path_results * "estim_abc_satisfaction_prob_function.svg")
 x_MC = readdlm("/home/moud/results_last_automata/estim_satisfaction_func_MC/$(exp)/grid_X.csv", ',')
 y_MC = readdlm("/home/moud/results_last_automata/estim_satisfaction_func_MC/$(exp)/grid_Y.csv", ',')
 z_MC = readdlm("/home/moud/results_last_automata/estim_satisfaction_func_MC/$(exp)/satisfaction_func.csv", ',')
 p = plot(title = "ABC MC", dpi = 480, background_color_legend = :transparent)
 plot!(p, [x_MC...], [y_MC...], [z_MC...], st = :surface, c = :coolwarm, camera = (30, 45), label = "MC spf")
-png(path_results * "estim_MC_satisfaction_prob_function.png")
+savefig(path_results * "estim_MC_satisfaction_prob_function.svg")
 

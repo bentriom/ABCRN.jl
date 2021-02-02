@@ -34,5 +34,5 @@ test = size(r.mat_p_end)[1] == pm_sync_ER.df &&
 return test
 
 #histogram(r.mat_p_end', weights = r.weights, normalize = :density)
-#png("R1_hist.png")
+#savefig("R1_hist.svg")
 

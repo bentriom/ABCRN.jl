@@ -45,7 +45,7 @@ samples_weights = r.weights
 
 # Histogram
 histogram(samples_abc_post, weights = r.weights, normalize = :density)
-png(path_results * "histogram.png")
+savefig(path_results * "histogram.svg")
 
 ## Satisfaction function
 
@@ -92,5 +92,5 @@ y_MC = readdlm("/home/moud/plot_R1-3/estim_MC/$(exp)/satisfaction_func.csv", ','
 inf_x, sup_x = 0.0, 100.0
 x_MC = inf_x:((sup_x-inf_x)/(length(y_MC)-1)):sup_x
 plot!(x_MC, y_MC, label = "MC spf")
-png(path_results * "satisfaction_prob_function.png")
+savefig(path_results * "satisfaction_prob_function.svg")
 
