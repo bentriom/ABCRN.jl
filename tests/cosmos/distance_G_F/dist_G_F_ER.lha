@@ -58,7 +58,7 @@ Edges={
 ((l4G,l1G), ALL, t>=0, {d=d+tprime*min(((n-x1)^2)^0.5,((n-x2)^2)^0.5),tprime=0,n=E,in=1,test_abs=k_1*(E*S)+(k_2+k_3)*ES});
 
 ((l4G,l2G), #, t>=t2, {d=d+tprime*min(((n-x1)^2)^0.5,((n-x2)^2)^0.5)});
-((l4G,l2G), #, test_abs=0, {d=d+tprime*min(((n-x1)^2)^0.5,((n-x2)^2)^0.5)});
+((l4G,l2G), #, test_abs=0, {d=d+(t2-t)*min(((n-x1)^2)^0.5,((n-x2)^2)^0.5)});
 
 % From G to F automaton
 ((l2G,l1F), #, t>=0, {n=P,test_abs=k_1*(E*S)+(k_2+k_3)*ES,dprime=9997999});

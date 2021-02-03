@@ -191,10 +191,17 @@ function create_automaton_G_and_F(m::ContinuousTimeModel, x1::Float64, x2::Float
 
         # l4G => l2G
         @everywhere $(func_name(:cc, :l4G, :l2G, 1))(S::StateLHA, x::Vector{Int}, p::Vector{Float64}) = 
-        (getfield(S, :time) >= $t2 || istrue(getfield(S, :values)[$(idx_var_isabs)]))
+        (istrue(getfield(S, :values)[$(idx_var_isabs)]))
         @everywhere $(func_name(:us, :l4G, :l2G, 1))(S::StateLHA, x::Vector{Int}, p::Vector{Float64}) = 
         (setfield!(S, :loc, Symbol("l2G")); 
+         setindex!(getfield(S, :values), getfield(S, :values)[$(idx_var_d)] +  ($t2 - getfield(S, :time)) * min(abs($x1 - getfield(S, :values)[$(idx_var_n)]), abs($x2 - getfield(S, :values)[$(idx_var_n)])), $(idx_var_d));)
+        
+        @everywhere $(func_name(:cc, :l4G, :l2G, 2))(S::StateLHA, x::Vector{Int}, p::Vector{Float64}) = 
+        (getfield(S, :time) >= $t2)
+        @everywhere $(func_name(:us, :l4G, :l2G, 2))(S::StateLHA, x::Vector{Int}, p::Vector{Float64}) = 
+        (setfield!(S, :loc, Symbol("l2G")); 
          setindex!(getfield(S, :values), getfield(S, :values)[$(idx_var_d)] +  getfield(S, :values)[$(idx_var_tprime)] * min(abs($x1 - getfield(S, :values)[$(idx_var_n)]), abs($x2 - getfield(S, :values)[$(idx_var_n)])), $(idx_var_d));)
+
 
         # Connection between the two automata: l2G => l1F
         @everywhere $(func_name(:cc, :l2G, :l1F, 1))(S::StateLHA, x::Vector{Int}, p::Vector{Float64}) = true
@@ -316,7 +323,8 @@ function create_automaton_G_and_F(m::ContinuousTimeModel, x1::Float64, x2::Float
 
     # l4G => l2G
     edge1 = Edge([nothing], getfield(Main, func_name(:cc, :l4G, :l2G, 1)), getfield(Main, func_name(:us, :l4G, :l2G, 1)))
-    map_edges[:l4G][:l2G] = [edge1]
+    edge2 = Edge([nothing], getfield(Main, func_name(:cc, :l4G, :l2G, 2)), getfield(Main, func_name(:us, :l4G, :l2G, 2)))
+    map_edges[:l4G][:l2G] = [edge1,edge2]
 
     # l2G loc
     # l2G => l1F : Transition from autF to autG
