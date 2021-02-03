@@ -268,7 +268,8 @@ function create_automaton_G_and_F(m::ContinuousTimeModel, x1::Float64, x2::Float
         @everywhere $(func_name(:cc, :l3F, :l2F, 1))(S::StateLHA, x::Vector{Int}, p::Vector{Float64}) = 
         (getfield(S, :time) >= $t4 || istrue(getfield(S, :values)[$(idx_var_isabs)]))
         @everywhere $(func_name(:us, :l3F, :l2F, 1))(S::StateLHA, x::Vector{Int}, p::Vector{Float64}) = 
-        (setfield!(S, :loc, Symbol("l2F")))
+        (setfield!(S, :loc, Symbol("l2F"));
+         setindex!(getfield(S, :values), getfield(S, :values)[$(idx_var_d)] + getfield(S, :values)[$(idx_var_dprime)], $(idx_var_d)))
     end
     eval(meta_elementary_functions)
 

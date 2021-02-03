@@ -76,8 +76,8 @@ Edges={
 
 ((l3F,l1F), ALL, t>=0, {n=P,test_abs=k_1*(E*S)+(k_2+k_3)*ES});
 
-((l3F,l2F), #, t>=t4, {dprime=d+dprime});
-((l3F,l2F), #, test_abs=0, {dprime=d+dprime});
+((l3F,l2F), #, t>=t4, {d=d+dprime});
+((l3F,l2F), #, test_abs=0, {d=d+dprime});
 
 
 %((l1G,l2G), #, in=1 & t>=t2, #);
