@@ -35,7 +35,7 @@ function automaton_abc(pm::ParametricModel; nbr_particles::Int = 100, alpha::Flo
     @assert kernel_type in ["mvnormal", "knn_mvnormal"]
     if dir_results != nothing
         dir_results = basename(dir_results) != "" ? dir_results * "/" : dir_results 
-        file_cfg = open(dir_results * "results_abc.out", "w")
+        file_cfg = open(dir_results * "config_abc.out", "w")
         write(file_cfg, "ParametricModel : $(pm) \n")
         write(file_cfg, "Number of particles : $(nbr_particles) \n")
         write(file_cfg, "alpha : $(alpha) \n")
@@ -179,7 +179,7 @@ function _abc_smc(pm::ParametricModel, nbr_particles::Int, alpha::Float64,
     if dir_results != nothing
         writedlm(dir_results * "weights_end.csv", wl_old, ',')
         writedlm(dir_results * "mat_p_end.csv", mat_p_old, ',')
-        file_cfg = open(dir_results * "results.out", "a")
+        file_cfg = open(dir_results * "results_abc.out", "w")
         write(file_cfg, "\n")
         write(file_cfg, "About the results: \n")
         write(file_cfg, "Total number of simulations: $nbr_tot_sim\n")
@@ -288,7 +288,7 @@ function _distributed_abc_smc(pm::ParametricModel, nbr_particles::Int, alpha::Fl
     if dir_results != nothing
         writedlm(dir_results * "weights_end.csv", wl_current, ',')
         writedlm(dir_results * "mat_p_end.csv", mat_p, ',')
-        file_cfg = open(dir_results * "results.out", "a")
+        file_cfg = open(dir_results * "results_abc.out", "w")
         write(file_cfg, "\n")
         write(file_cfg, "About the results: \n")
         write(file_cfg, "Total number of simulations: $nbr_tot_sim\n")
