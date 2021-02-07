@@ -133,7 +133,10 @@ function simulate(product::SynchronizedModel; p::Union{Nothing,AbstractVector{Fl
     if p != nothing
         p_sim = p
     end
+    x0 = getfield(m, :x0)
+    t0 = getfield(m, :t0)
     time_bound = getfield(m, :time_bound)
+    S0 = init_state(A, x0, t0)
     buffer_size = getfield(m, :buffer_size)
     estim_min_states = getfield(m, :estim_min_states)
     # First alloc
@@ -142,15 +145,15 @@ function simulate(product::SynchronizedModel; p::Union{Nothing,AbstractVector{Fl
     times = zeros(Float64, estim_min_states)
     transitions = Vector{Transition}(undef, estim_min_states)
     # Initial values
-    for i = eachindex(full_values) full_values[i][1] = getfield(m, :x0)[i] end
-    times[1] = getfield(m, :t0)
+    for i = eachindex(full_values) full_values[i][1] = x0[i] end
+    times[1] = t0
     transitions[1] = nothing
-    S0 = init_state(A, getfield(m, :x0), getfield(m, :t0))
     # Values at time n
     n = 1
-    xn = copy(getfield(m, :x0))
-    tn = getfield(m, :t0) 
+    xn = copy(x0)
+    tn = copy(t0) 
     Sn = copy(S0)
+    next_state!(Sn, A, x0, t0, nothing, S0, x0, p_sim; verbose = verbose)
     isabsorbing::Bool = getfield(m, :isabsorbing)(p_sim,xn)
     isacceptedLHA::Bool = isaccepted(Sn)
     # Alloc of vectors where we stock n+1 values
@@ -269,13 +272,16 @@ function volatile_simulate(product::SynchronizedModel;
     if p != nothing
         p_sim = p
     end
+    x0 = getfield(m, :x0)
+    t0 = getfield(m, :t0)
     time_bound = getfield(m, :time_bound)
-    S0 = init_state(A, getfield(m, :x0), getfield(m, :t0))
+    S0 = init_state(A, x0, t0)
     # Values at time n
     n = 1
-    xn = copy(getfield(m, :x0))
-    tn = getfield(m, :t0) 
+    xn = copy(x0)
+    tn = copy(t0) 
     Sn = copy(S0)
+    next_state!(Sn, A, x0, t0, nothing, S0, x0, p_sim; verbose = verbose)
     isabsorbing::Bool = getfield(m, :isabsorbing)(p_sim,xn)
     isacceptedLHA::Bool = isaccepted(Sn)
     # Alloc of vectors where we stock n+1 values

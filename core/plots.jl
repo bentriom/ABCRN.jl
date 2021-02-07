@@ -53,25 +53,27 @@ function plot(σ::AbstractTrajectory, vars::VariableModel...; plot_transitions::
     end
 end
 
-function plot!(A::LHA)
+function plot!(A::LHA; label::String = "")
+    label_region = (label == "") ? "Region LHA" : label
     if A.name in ["F property", "G property"]
         if haskey(A.constants, :x1) && haskey(A.constants, :x2) && haskey(A.constants, :t1) && haskey(A.constants, :t2) 
             x1, x2, t1, t2 = A.constants[:x1], A.constants[:x2], A.constants[:t1], A.constants[:t2] 
-            plot!(Shape([(t1,x1), (t1,x2), (t2,x2), (t2,x1), (t1,x1)]), opacity = 0.5, label = "Region LHA")
+            plot!(Shape([(t1,x1), (t1,x2), (t2,x2), (t2,x1), (t1,x1)]), opacity = 0.5, label = label_region)
         end
     end
     if A.name in ["G and F property"]    
         if haskey(A.constants, :x1) && haskey(A.constants, :x2) && haskey(A.constants, :t1) && haskey(A.constants, :t2) 
             x1, x2, t1, t2 = A.constants[:x1], A.constants[:x2], A.constants[:t1], A.constants[:t2] 
-            plot!(Shape([(t1,x1), (t1,x2), (t2,x2), (t2,x1), (t1,x1)]), opacity = 0.5, label = "Region LHA")
+            plot!(Shape([(t1,x1), (t1,x2), (t2,x2), (t2,x1), (t1,x1)]), opacity = 0.5, label = label_region)
         end
         if haskey(A.constants, :x3) && haskey(A.constants, :x4) && haskey(A.constants, :t3) && haskey(A.constants, :t4) 
             x3, x4, t3, t4 = A.constants[:x3], A.constants[:x4], A.constants[:t3], A.constants[:t4] 
-            plot!(Shape([(t3,x3), (t3,x4), (t4,x4), (t4,x3), (t3,x3)]), opacity = 0.5, label = "Region LHA")
+            plot!(Shape([(t3,x3), (t3,x4), (t4,x4), (t4,x3), (t3,x3)]), opacity = 0.5, label = label_region)
         end
     end
+    label_region = (label == "") ? "L, H" : label
     if A.name == "Period"
-        hline!([A.constants[:L], A.constants[:H]], label = "L, H", linestyle = :dot)
+        hline!([A.constants[:L], A.constants[:H]], label = label_region, linestyle = :dot)
     end
 end
 
