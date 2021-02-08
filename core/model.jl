@@ -402,6 +402,13 @@ function probability_var_value_lha(sm::SynchronizedModel, nbr_sim::Int;
     return sum_val / nbr_sim
 end
 
+function smc_chernoff(sm::SynchronizedModel; approx::Float64 = 0.01, confidence::Float64 = 0.99)
+    @assert sm.automaton.name in ["F property", "G property", "G and F property"] 
+    nbr_sim = log(2/(1-confidence)) / (2*approx^2)
+    nbr_sim = convert(Int, trunc(nbr_sim)+1)
+    @show nbr_sim
+    return probability_var_value_lha(sm, nbr_sim)
+end
 
 function distribute_prob_accept_lha(sm::SynchronizedModel, nbr_sim::Int)
     sum_val = @distributed (+) for i = 1:nbr_sim 
