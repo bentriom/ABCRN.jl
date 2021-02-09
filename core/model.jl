@@ -402,9 +402,10 @@ function probability_var_value_lha(sm::SynchronizedModel, nbr_sim::Int;
     return sum_val / nbr_sim
 end
 
+number_simulations_smc_chernoff(approx::Float64, conf::Float64) = log(2/(1-conf)) / (2*approx^2)
 function smc_chernoff(sm::SynchronizedModel; approx::Float64 = 0.01, confidence::Float64 = 0.99)
     @assert sm.automaton.name in ["F property", "G property", "G and F property"] 
-    nbr_sim = log(2/(1-confidence)) / (2*approx^2)
+    nbr_sim = number_simulations_smc_chernoff(approx, confidence) 
     nbr_sim = convert(Int, trunc(nbr_sim)+1)
     return probability_var_value_lha(sm, nbr_sim)
 end

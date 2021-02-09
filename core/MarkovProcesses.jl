@@ -29,7 +29,8 @@ export get_index, get_value, length_var, isaccepted
 
 # Model related methods
 export simulate, volatile_simulate
-export distribute_mean_value_lha, mean_value_lha, distribute_prob_accept_lha, probability_var_value_lha, smc_chernoff
+export distribute_mean_value_lha, mean_value_lha, distribute_prob_accept_lha, probability_var_value_lha 
+export number_simulations_smc_chernoff, smc_chernoff
 export set_param!, set_x0!, set_time_bound!, set_observed_var!, observe_all!
 export get_param, get_x0, getproperty, get_proba_model, get_observed_var
 export isbounded, isaccepted, check_consistency
