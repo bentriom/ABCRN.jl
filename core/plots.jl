@@ -106,7 +106,7 @@ function plot_periodic_trajectory(A::LHA, σ::SynchronizedTrajectory, sym_obs::S
             break 
         end
     end
-    p = plot(title = "Oscillatory trajectory of $(σ.m.name) model", 
+    p = plot(title = "Oscillatory trajectory of $(σ.m.name) model", palette = :lightrainbow,
              background_color_legend=:transparent, dpi = 480, legend = :outertopright) #legendfontsize, legend
     colors_loc = Dict(:l0 => :silver, :l0prime => :silver, :final => :black,
                       :low => :skyblue2, :mid => :orange, :high => :red)
