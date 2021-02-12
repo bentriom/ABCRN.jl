@@ -8,6 +8,7 @@ copy(S::StateLHA) = StateLHA(getfield(S, :A), getfield(S, :loc), getfield(S, :va
 
 # From the variable automaton var symbol this function get the index in S.values
 get_idx_var_automaton(S::StateLHA, var::VariableAutomaton) = getfield(getfield(S, :A), :map_var_automaton_idx)[var]
+get_value(S::StateLHA, idx_var::Int) = getfield(S, :values)[idx_var]
 
 getindex(S::StateLHA, var::VariableAutomaton) = getindex(getfield(S, :values), get_idx_var_automaton(S, var))
 setindex!(S::StateLHA, val::Float64, var::VariableAutomaton) = setindex!(getfield(S, :values), val, get_idx_var_automaton(S, var))

@@ -1,6 +1,16 @@
+#(S[:mean_tp] * (S[:n]-1) + S[:tp]) / S[:n]
+#(S[:var_tp] * (S[:n]-1) + (S[:mean_tp]-S[:tp])^2) / S[:n]
+
+@everywhere f_mean_tp(mean_tp::Float64, tp::Float64, n::Float64) =
+(mean_tp * n + tp) / (n+1)
+@everywhere g_var_tp(var_tp::Float64, mean_tp::Float64, tp::Float64, n::Float64) =
+((n-1)*var_tp + (tp-mean_tp)*(tp - f_mean_tp(mean_tp, tp, n+1))) / n
+
+@everywhere mean_error(mean_tp::Float64, var_tp::Float64, ref_mean_tp::Float64, ref_var_tp::Float64) =
+abs(mean_tp - ref_mean_tp)
 
 function create_period_automaton(m::ContinuousTimeModel, L::Float64, H::Float64, N::Int, sym_obs::VariableModel;
-                                 initT::Float64 = 0.0)
+                                 initT::Float64 = 0.0, ref_mean_tp::Float64 = 0.0, ref_var_tp::Float64 = 0.0, error_func::Symbol = :mean_error)
     # Requirements for the automaton
     @assert sym_obs in m.g "$(sym_obs) is not observed."
     @assert (L < H) "L >= H impossible for period automaton."
@@ -35,28 +45,21 @@ function create_period_automaton(m::ContinuousTimeModel, L::Float64, H::Float64,
     
     ## Map of automaton variables
     map_var_automaton_idx = Dict{VariableAutomaton,Int}(:t => 1, :n => 2, :top => 3, :tp => 4,
-                                                        :mean_tp => 5, :var_tp => 6)
+                                                        :mean_tp => 5, :var_tp => 6, :d => 7)
 
-    flow = Dict{Location,Vector{Float64}}(:l0 => [1.0,0.0,0.0,0.0,0.0,0.0],
-                                          :l0prime => [1.0,0.0,0.0,0.0,0.0,0.0],
-                                          :low => [1.0,0.0,0.0,1.0,0.0,0.0],
-                                          :mid => [1.0,0.0,0.0,1.0,0.0,0.0],
-                                          :high => [1.0,0.0,0.0,1.0,0.0,0.0],
-                                          :final => [1.0,0.0,0.0,0.0,0.0,0.0]) 
+    flow = Dict{Location,Vector{Float64}}(:l0 => [1.0,0.0,0.0,0.0,0.0,0.0,0.0],
+                                          :l0prime => [1.0,0.0,0.0,0.0,0.0,0.0,0.0],
+                                          :low => [1.0,0.0,0.0,1.0,0.0,0.0,0.0],
+                                          :mid => [1.0,0.0,0.0,1.0,0.0,0.0,0.0],
+                                          :high => [1.0,0.0,0.0,1.0,0.0,0.0,0.0],
+                                          :final => [1.0,0.0,0.0,0.0,0.0,0.0,0.0]) 
     ## Edges
     map_edges = Dict{Location, Dict{Location, Vector{Edge}}}()
     for loc in locations 
         map_edges[loc] = Dict{Location, Vector{Edge}}()
     end
-    
-    idx_obs_var = getfield(m, :map_var_idx)[sym_obs]
-    idx_var_t = map_var_automaton_idx[:t] 
-    idx_var_tp = map_var_automaton_idx[:tp] 
-    idx_var_mean_tp = map_var_automaton_idx[:mean_tp] 
-    idx_var_var_tp = map_var_automaton_idx[:var_tp] 
-    idx_var_n = map_var_automaton_idx[:n] 
-    idx_var_top = map_var_automaton_idx[:top]
-    
+ 
+    get_idx_var(var::Symbol) = map_var_automaton_idx[var] 
     nbr_rand = rand(1:100000)
     basename_func = "$(replace(m.name, ' '=>'_'))_$(nbr_rand)"
     basename_func = replace(basename_func, '-'=>'_')
@@ -74,18 +77,21 @@ function create_period_automaton(m::ContinuousTimeModel, L::Float64, H::Float64,
 
         # * l0 => l0prime
         @everywhere $(func_name(:cc, :l0, :l0prime, 1))(S::StateLHA, x::Vector{Int}, p::Vector{Float64}) = 
-        S[:t] >= $initT
+        get_value(S, $(get_idx_var(:t))) >= $initT
         @everywhere $(func_name(:us, :l0, :l0prime, 1))(S::StateLHA, x::Vector{Int}, p::Vector{Float64}) =
-        (setfield!(S, :loc, Symbol("l0prime")))
+        (setfield!(S, :loc, Symbol("l0prime"));
+         setindex!(getfield(S, :values), Inf, $(get_idx_var(:d))))
 
         # * l0 => low
         @everywhere $(func_name(:cc, :l0, :low, 1))(S::StateLHA, x::Vector{Int}, p::Vector{Float64}) = 
-        S[:t] >= $initT
+        get_value(S, $(get_idx_var(:t))) >= $initT
         @everywhere $(func_name(:us, :l0, :low, 1))(S::StateLHA, x::Vector{Int}, p::Vector{Float64}) =
         (setfield!(S, :loc, Symbol("low"));
-         setindex!(getfield(S, :values), 0.0, $(idx_var_t));
-         setindex!(getfield(S, :values), 0.0, $(idx_var_top));
-         setindex!(getfield(S, :values), -1, $(idx_var_n)))
+         setindex!(getfield(S, :values), 0.0, $(get_idx_var(:t)));
+         setindex!(getfield(S, :values), 0.0, $(get_idx_var(:top)));
+         setindex!(getfield(S, :values), -1, $(get_idx_var(:n)));
+         setindex!(getfield(S, :values), 0.0, $(get_idx_var(:tp)));
+         setindex!(getfield(S, :values), Inf, $(get_idx_var(:d))))
 
         # l0prime
         # * l0prime => l0prime
@@ -99,103 +105,123 @@ function create_period_automaton(m::ContinuousTimeModel, L::Float64, H::Float64,
         true
         @everywhere $(func_name(:us, :l0prime, :low, 1))(S::StateLHA, x::Vector{Int}, p::Vector{Float64}) =
         (setfield!(S, :loc, Symbol("low"));
-         setindex!(getfield(S, :values), 0.0, $(idx_var_t));
-         setindex!(getfield(S, :values), 0.0, $(idx_var_top));
-         setindex!(getfield(S, :values), -1, $(idx_var_n)))
+         setindex!(getfield(S, :values), 0.0, $(get_idx_var(:t)));
+         setindex!(getfield(S, :values), 0.0, $(get_idx_var(:top)));
+         setindex!(getfield(S, :values), -1, $(get_idx_var(:n)));
+         setindex!(getfield(S, :values), 0.0, $(get_idx_var(:tp))))
 
         # low 
         # * low => low
         @everywhere $(func_name(:cc, :low, :low, 1))(S::StateLHA, x::Vector{Int}, p::Vector{Float64}) = 
-        S[:n] < $N
+        get_value(S, $(get_idx_var(:n))) < $N
         @everywhere $(func_name(:us, :low, :low, 1))(S::StateLHA, x::Vector{Int}, p::Vector{Float64}) =
         (nothing)
 
         # * low => mid 
         @everywhere $(func_name(:cc, :low, :mid, 1))(S::StateLHA, x::Vector{Int}, p::Vector{Float64}) = 
-        S[:n] < $N
+        get_value(S, $(get_idx_var(:n))) < $N
         @everywhere $(func_name(:us, :low, :mid, 1))(S::StateLHA, x::Vector{Int}, p::Vector{Float64}) =
         (setfield!(S, :loc, Symbol("mid")))
 
         # * low => final
         @everywhere $(func_name(:cc, :low, :final, 1))(S::StateLHA, x::Vector{Int}, p::Vector{Float64}) = 
-        S[:n] == $N
+        get_value(S, $(get_idx_var(:n))) == $N
         @everywhere $(func_name(:us, :low, :final, 1))(S::StateLHA, x::Vector{Int}, p::Vector{Float64}) =
-        (setfield!(S, :loc, Symbol("final")))
+        (setfield!(S, :loc, Symbol("final"));
+         val_d = getfield(Main, $(Meta.quot(error_func)))(get_value(S, $(get_idx_var(:mean_tp))), 
+                                                          get_value(S, $(get_idx_var(:var_tp))), 
+                                                          $(ref_mean_tp), $(ref_var_tp));
+         setindex!(getfield(S, :values), val_d, $(get_idx_var(:d))))
 
         # mid
         # * mid => mid
         @everywhere $(func_name(:cc, :mid, :mid, 1))(S::StateLHA, x::Vector{Int}, p::Vector{Float64}) = 
-        S[:n] < $N
+        get_value(S, $(get_idx_var(:n))) < $N
         @everywhere $(func_name(:us, :mid, :mid, 1))(S::StateLHA, x::Vector{Int}, p::Vector{Float64}) =
         (nothing)
 
         # * mid => low 
         @everywhere $(func_name(:cc, :mid, :low, 1))(S::StateLHA, x::Vector{Int}, p::Vector{Float64}) = 
-        S[:n] < $N &&
-        S[:top] == 0.0
+        get_value(S, $(get_idx_var(:n))) < $N &&
+        get_value(S, $(get_idx_var(:top))) == 0.0
         @everywhere $(func_name(:us, :mid, :low, 1))(S::StateLHA, x::Vector{Int}, p::Vector{Float64}) =
         (setfield!(S, :loc, Symbol("low")))
 
         @everywhere $(func_name(:cc, :mid, :low, 2))(S::StateLHA, x::Vector{Int}, p::Vector{Float64}) = 
-        S[:n] == -1.0 &&
-        S[:top] == 1.0
+        get_value(S, $(get_idx_var(:n))) == -1.0 &&
+        get_value(S, $(get_idx_var(:top))) == 1.0
         @everywhere $(func_name(:us, :mid, :low, 2))(S::StateLHA, x::Vector{Int}, p::Vector{Float64}) =
         (setfield!(S, :loc, Symbol("low"));
-         setindex!(getfield(S, :values), S[:n] + 1, $(idx_var_n));
-         setindex!(getfield(S, :values), 0.0, $(idx_var_t));
-         setindex!(getfield(S, :values), 0.0, $(idx_var_top)))
+         setindex!(getfield(S, :values), get_value(S, $(get_idx_var(:n))) + 1, $(get_idx_var(:n)));
+         setindex!(getfield(S, :values), 0.0, $(get_idx_var(:t)));
+         setindex!(getfield(S, :values), 0.0, $(get_idx_var(:top))))
 
         @everywhere $(func_name(:cc, :mid, :low, 3))(S::StateLHA, x::Vector{Int}, p::Vector{Float64}) = 
-        (0 <= S[:n] <= 1) &&
-        S[:top] == 1.0
+        (0 <= get_value(S, $(get_idx_var(:n))) <= 1) &&
+        get_value(S, $(get_idx_var(:top))) == 1.0
         @everywhere $(func_name(:us, :mid, :low, 3))(S::StateLHA, x::Vector{Int}, p::Vector{Float64}) =
         (setfield!(S, :loc, Symbol("low"));
-         setindex!(getfield(S, :values), S[:n] + 1, $(idx_var_n));
-         setindex!(getfield(S, :values), 0.0, $(idx_var_top));
-         setindex!(getfield(S, :values), (S[:mean_tp] * (S[:n]-1) + S[:tp]) / S[:n], $(idx_var_mean_tp));
-         setindex!(getfield(S, :values), 0.0, $(idx_var_tp)))
+         setindex!(getfield(S, :values), get_value(S, $(get_idx_var(:n))) + 1, $(get_idx_var(:n)));
+         setindex!(getfield(S, :values), 0.0, $(get_idx_var(:top)));
+         setindex!(getfield(S, :values), f_mean_tp(get_value(S, $(get_idx_var(:mean_tp))), 
+                                                   get_value(S, $(get_idx_var(:tp))),
+                                                   get_value(S, $(get_idx_var(:n)))), $(get_idx_var(:mean_tp)));
+         setindex!(getfield(S, :values), 0.0, $(get_idx_var(:tp))))
 
         @everywhere $(func_name(:cc, :mid, :low, 4))(S::StateLHA, x::Vector{Int}, p::Vector{Float64}) = 
-        (2 <= S[:n] < $N) &&
-        S[:top] == 1.0
+        (2 <= get_value(S, $(get_idx_var(:n))) < $N) &&
+        get_value(S, $(get_idx_var(:top))) == 1.0
         @everywhere $(func_name(:us, :mid, :low, 4))(S::StateLHA, x::Vector{Int}, p::Vector{Float64}) =
         (setfield!(S, :loc, Symbol("low"));
-         setindex!(getfield(S, :values), S[:n] + 1, $(idx_var_n));
-         setindex!(getfield(S, :values), 0.0, $(idx_var_top));
-         setindex!(getfield(S, :values), (S[:mean_tp] * (S[:n]-1) + S[:tp]) / S[:n], $(idx_var_mean_tp));
-         setindex!(getfield(S, :values), (S[:var_tp] * (S[:n]-1) + (S[:mean_tp]-S[:tp])^2) / S[:n], $(idx_var_var_tp)))
+         setindex!(getfield(S, :values), get_value(S, $(get_idx_var(:n))) + 1, $(get_idx_var(:n)));
+         setindex!(getfield(S, :values), 0.0, $(get_idx_var(:top)));
+         setindex!(getfield(S, :values), f_mean_tp(get_value(S, $(get_idx_var(:mean_tp))), 
+                                                   get_value(S, $(get_idx_var(:tp))),
+                                                   get_value(S, $(get_idx_var(:n)))), $(get_idx_var(:mean_tp)));
+         setindex!(getfield(S, :values), g_var_tp(get_value(S, $(get_idx_var(:var_tp))), 
+                                                   get_value(S, $(get_idx_var(:mean_tp))),
+                                                   get_value(S, $(get_idx_var(:tp))),
+                                                   get_value(S, $(get_idx_var(:n)))), $(get_idx_var(:var_tp))))
 
         # * mid => high
         @everywhere $(func_name(:cc, :mid, :high, 1))(S::StateLHA, x::Vector{Int}, p::Vector{Float64}) = 
-        S[:n] < $N
+        get_value(S, $(get_idx_var(:n))) < $N
         @everywhere $(func_name(:us, :mid, :high, 1))(S::StateLHA, x::Vector{Int}, p::Vector{Float64}) =
         (setfield!(S, :loc, Symbol("high"));
-         setindex!(getfield(S, :values), 1.0, $(idx_var_top)))
+         setindex!(getfield(S, :values), 1.0, $(get_idx_var(:top))))
 
         # * mid => final
         @everywhere $(func_name(:cc, :mid, :final, 1))(S::StateLHA, x::Vector{Int}, p::Vector{Float64}) = 
-        S[:n] == $N
+        get_value(S, $(get_idx_var(:n))) == $N
         @everywhere $(func_name(:us, :mid, :final, 1))(S::StateLHA, x::Vector{Int}, p::Vector{Float64}) =
-        (setfield!(S, :loc, Symbol("final")))
+        (setfield!(S, :loc, Symbol("final"));
+         val_d = getfield(Main, Meta.quot($error_func))(get_value(S, $(get_idx_var(:mean_tp))),
+                                                        get_value(S, $(get_idx_var(:var_tp))),
+                                                        $(ref_mean_tp), $(ref_var_tp));
+         setindex!(getfield(S, :values), val_d, $(get_idx_var(:d))))
 
         # high 
         # * high => high
         @everywhere $(func_name(:cc, :high, :high, 1))(S::StateLHA, x::Vector{Int}, p::Vector{Float64}) = 
-        S[:n] < $N
+        get_value(S, $(get_idx_var(:n))) < $N
         @everywhere $(func_name(:us, :high, :high, 1))(S::StateLHA, x::Vector{Int}, p::Vector{Float64}) =
         (nothing)
 
         # * high => mid
         @everywhere $(func_name(:cc, :high, :mid, 1))(S::StateLHA, x::Vector{Int}, p::Vector{Float64}) = 
-        S[:n] < $N
+        get_value(S, $(get_idx_var(:n))) < $N
         @everywhere $(func_name(:us, :high, :mid, 1))(S::StateLHA, x::Vector{Int}, p::Vector{Float64}) =
         (setfield!(S, :loc, Symbol("mid")))
 
         # * high => final
         @everywhere $(func_name(:cc, :high, :final, 1))(S::StateLHA, x::Vector{Int}, p::Vector{Float64}) = 
-        S[:n] == $N
+        get_value(S, $(get_idx_var(:n))) == $N
         @everywhere $(func_name(:us, :high, :final, 1))(S::StateLHA, x::Vector{Int}, p::Vector{Float64}) =
-        (setfield!(S, :loc, Symbol("final")))
+        (setfield!(S, :loc, Symbol("final"));
+         val_d = getfield(Main, Meta.quot($error_func))(get_value(S, $(get_idx_var(:mean_tp))),
+                                                        get_value(S, $(get_idx_var(:var_tp))),
+                                                        $(ref_mean_tp), $(ref_var_tp));
+         setindex!(getfield(S, :values), val_d, $(get_idx_var(:d))))
     end
     eval(meta_elementary_functions)
 
