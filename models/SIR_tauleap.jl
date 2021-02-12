@@ -23,8 +23,8 @@ t0_SIR_tauleap = 0.0
     # column-major order
     nu_1 = (-1, 1, 0)
     nu_2 = (0, -1, 1)
-    nbr_R1 = rand(Poisson(a1*tau))
-    nbr_R2 = rand(Poisson(a2*tau))
+    nbr_R1 = (a1 > 0.0) ? rand(Poisson(a1*tau)) : 0.0
+    nbr_R2 = (a2 > 0.0) ? rand(Poisson(a2*tau)) : 0.0
     for i = 1:3
         @inbounds xnplus1[i] = xn[i]+ nbr_R1*nu_1[i] + nbr_R2*nu_2[i]
     end
