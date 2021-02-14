@@ -153,8 +153,8 @@ function create_period_automaton(m::ContinuousTimeModel, L::Float64, H::Float64,
         @everywhere $(func_name(:us, :mid, :low, 2))(S::StateLHA, x::Vector{Int}, p::Vector{Float64}) =
         (setfield!(S, :loc, Symbol("low"));
          setindex!(getfield(S, :values), get_value(S, $(get_idx_var(:n))) + 1, $(get_idx_var(:n)));
-         setindex!(getfield(S, :values), 0.0, $(get_idx_var(:t)));
-         setindex!(getfield(S, :values), 0.0, $(get_idx_var(:top))))
+         setindex!(getfield(S, :values), 0.0, $(get_idx_var(:top)));
+         setindex!(getfield(S, :values), 0.0, $(get_idx_var(:tp))))
 
         @everywhere $(func_name(:cc, :mid, :low, 3))(S::StateLHA, x::Vector{Int}, p::Vector{Float64}) = 
         (0 <= get_value(S, $(get_idx_var(:n))) <= 1) &&
@@ -181,7 +181,8 @@ function create_period_automaton(m::ContinuousTimeModel, L::Float64, H::Float64,
          setindex!(getfield(S, :values), g_var_tp(get_value(S, $(get_idx_var(:var_tp))), 
                                                    get_value(S, $(get_idx_var(:mean_tp))),
                                                    get_value(S, $(get_idx_var(:tp))),
-                                                   get_value(S, $(get_idx_var(:n)))), $(get_idx_var(:var_tp))))
+                                                   get_value(S, $(get_idx_var(:n)))), $(get_idx_var(:var_tp)));
+         setindex!(getfield(S, :values), 0.0, $(get_idx_var(:tp))))
 
         # * mid => high
         @everywhere $(func_name(:cc, :mid, :high, 1))(S::StateLHA, x::Vector{Int}, p::Vector{Float64}) = 

@@ -160,7 +160,7 @@ function simulate(product::SynchronizedModel; p::Union{Nothing,AbstractVector{Fl
     vec_x = zeros(Int, getfield(m, :dim_state))
     l_t = Float64[0.0]
     l_tr = Transition[nothing]
-    Snplus1 = copy(Sn)
+    Snplus1 = deepcopy(Sn)
     # If x0 is absorbing
     if isabsorbing || isacceptedLHA 
         _resize_trajectory!(full_values, times, transitions, 1)
@@ -288,7 +288,7 @@ function volatile_simulate(product::SynchronizedModel;
     vec_x = zeros(Int, getfield(m, :dim_state))
     l_t = Float64[0.0]
     l_tr = Transition[nothing]
-    Snplus1 = copy(Sn)
+    Snplus1 = deepcopy(Sn)
     # If x0 is absorbing
     if isabsorbing || isacceptedLHA 
         if !isacceptedLHA

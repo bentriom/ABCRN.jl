@@ -78,31 +78,32 @@ function plot!(A::LHA; label::String = "")
 end
 
 # For tests purposes
-function plot_periodic_trajectory(A::LHA, σ::SynchronizedTrajectory, sym_obs::Symbol; verbose = false, filename::String = "")
+function plot_periodic_trajectory(A::LHA, σ::SynchronizedTrajectory, sym_obs::Symbol; verbose = false, annot_size::Float64 = 6.0, filename::String = "")
     @assert sym_obs in get_obs_var(σ) "Variable is not observed in the model"
     @assert A.name in ["Period"]
-    A_new = LHA(A, (σ.m)._map_obs_var_idx)
     p_sim = (σ.m).p
     l_t = times(σ)
     l_tr = transitions(σ)
-    Sn = init_state(A_new, σ[1], l_t[1])
-    Snplus1 = copy(Sn)
+    Sn = init_state(A, σ[1], l_t[1])
+    Snplus1 = deepcopy(Sn)
     nbr_states = length_states(σ)
     locations_trajectory = Vector{Location}(undef, nbr_states)
     locations_trajectory[1] = Sn.loc
     idx_n = [1]
     values_n = [Sn[:n]]
+    values_tp = [Sn[:tp]]
     if verbose println("Init: ") end
     if verbose @show Sn end
     for n in 2:nbr_states
-        next_state!(Snplus1, A_new, σ[n], l_t[n], l_tr[n], Sn, σ[n-1], p_sim; verbose = verbose)
+        next_state!(Snplus1, A, σ[n], l_t[n], l_tr[n], Sn, σ[n-1], p_sim; verbose = verbose)
+        if Snplus1[:n] != values_n[end]
+            push!(idx_n, n)
+            push!(values_n, Snplus1[:n])
+            push!(values_tp, Sn[:tp])
+        end
         copyto!(Sn, Snplus1)
         locations_trajectory[n] = Sn.loc
-        if Sn[:n] != values_n[end]
-            push!(idx_n, n)
-            push!(values_n, Sn[:n])
-        end
-        if Snplus1.loc in A_new.locations_final 
+        if Snplus1.loc in A.locations_final 
             break 
         end
     end
@@ -118,8 +119,10 @@ function plot_periodic_trajectory(A::LHA, σ::SynchronizedTrajectory, sym_obs::S
                     markersize = 1.0, markershape = :cross, 
                     label = label_state, xlabel = "Time", ylabel = "Species $sym_obs")
     end
-    annot_n = [(times(σ)[idx_n[i]], σ[sym_obs][idx_n[i]] - 10, text("n = $(values_n[i])", 6, :bottom)) for i = eachindex(idx_n)]
-    scatter!(p, times(σ)[idx_n], σ[sym_obs][idx_n], annotations = annot_n,
+    annot_n = [(times(σ)[idx_n[i]], σ[sym_obs][idx_n[i]] - 10, text("n = $(values_n[i])", annot_size, :top)) for i = eachindex(idx_n)]
+    annot_tp = [(times(σ)[idx_n[i]], σ[sym_obs][idx_n[i]] - 10, text("tp = $(round(values_tp[i], digits = 2))", annot_size, :bottom)) for i = eachindex(idx_n)]
+    annots = vcat(annot_n, annot_tp)
+    scatter!(p, times(σ)[idx_n], σ[sym_obs][idx_n], annotations = annots,
                              markershape = :utriangle, markersize = 3, label = "n")
     hline!(p, [A.constants[:L], A.constants[:H]], label = "L, H", color = :grey; linestyle = :dot)
     
