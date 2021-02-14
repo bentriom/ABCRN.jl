@@ -78,7 +78,8 @@ function plot!(A::LHA; label::String = "")
 end
 
 # For tests purposes
-function plot_periodic_trajectory(A::LHA, σ::SynchronizedTrajectory, sym_obs::Symbol; verbose = false, annot_size::Float64 = 6.0, filename::String = "")
+function plot_periodic_trajectory(A::LHA, σ::SynchronizedTrajectory, sym_obs::Symbol; 
+                                  verbose = false, annot_size = 6, show_tp = false, filename::String = "")
     @assert sym_obs in get_obs_var(σ) "Variable is not observed in the model"
     @assert A.name in ["Period"]
     p_sim = (σ.m).p
@@ -120,12 +121,13 @@ function plot_periodic_trajectory(A::LHA, σ::SynchronizedTrajectory, sym_obs::S
                     label = label_state, xlabel = "Time", ylabel = "Species $sym_obs")
     end
     annot_n = [(times(σ)[idx_n[i]], σ[sym_obs][idx_n[i]] - 10, text("n = $(values_n[i])", annot_size, :top)) for i = eachindex(idx_n)]
-    annot_tp = [(times(σ)[idx_n[i]], σ[sym_obs][idx_n[i]] - 10, text("tp = $(round(values_tp[i], digits = 2))", annot_size, :bottom)) for i = eachindex(idx_n)]
-    annots = vcat(annot_n, annot_tp)
+    annot_tp = [(times(σ)[idx_n[i]], σ[sym_obs][idx_n[i]] - 10, text("tp = $(round(values_tp[i], digits = 5))", annot_size, :bottom)) for i = eachindex(idx_n)]
+    annots = (show_tp) ? vcat(annot_n, annot_tp) : annot_n
     scatter!(p, times(σ)[idx_n], σ[sym_obs][idx_n], annotations = annots,
                              markershape = :utriangle, markersize = 3, label = "n")
     hline!(p, [A.constants[:L], A.constants[:H]], label = "L, H", color = :grey; linestyle = :dot)
-    
+    @show values_n
+    @show values_tp    
     if filename == ""
         display(p)
     else
