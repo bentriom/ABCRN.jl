@@ -126,8 +126,6 @@ function plot_periodic_trajectory(A::LHA, σ::SynchronizedTrajectory, sym_obs::S
     scatter!(p, times(σ)[idx_n], σ[sym_obs][idx_n], annotations = annots,
                              markershape = :utriangle, markersize = 3, label = "n")
     hline!(p, [A.constants[:L], A.constants[:H]], label = "L, H", color = :grey; linestyle = :dot)
-    @show values_n
-    @show values_tp    
     if filename == ""
         display(p)
     else
