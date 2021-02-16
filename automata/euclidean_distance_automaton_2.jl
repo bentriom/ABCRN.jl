@@ -69,11 +69,11 @@ function create_euclidean_distance_automaton_2(m::ContinuousTimeModel, timeline:
     eval(meta_elementary_functions)
     # l0 loc
     # l0 => l1
-    edge1 = Edge([nothing], getfield(Main, func_name(:cc, :l0, :l1, 1)), getfield(Main, func_name(:us, :l0, :l1, 1)))
+    edge1 = Edge(nothing, getfield(Main, func_name(:cc, :l0, :l1, 1)), getfield(Main, func_name(:us, :l0, :l1, 1)))
     map_edges[:l0][:l1] = [edge1]
 
     # lnbr_obs => lfinal
-    edge1 = Edge([nothing], getfield(Main, func_name(:cc, loc_nbr_obs, :lfinal, 1)), getfield(Main, func_name(:us, loc_nbr_obs, :lfinal, 1)))
+    edge1 = Edge(nothing, getfield(Main, func_name(:cc, loc_nbr_obs, :lfinal, 1)), getfield(Main, func_name(:us, loc_nbr_obs, :lfinal, 1)))
     map_edges[loc_nbr_obs][:lfinal] = [edge1]
     # lnbr_obs => lnbr_obs
     edge1 = Edge([:ALL], getfield(Main, func_name(:cc, loc_nbr_obs, loc_nbr_obs, 1)), getfield(Main, func_name(:us, loc_nbr_obs, loc_nbr_obs, 1)))
@@ -100,7 +100,7 @@ function create_euclidean_distance_automaton_2(m::ContinuousTimeModel, timeline:
         eval(meta_elementary_functions_loci)
 
         # loci => loci+1
-        edge1 = Edge([nothing], getfield(Main, func_name(:cc, loci, locip1, 1)), getfield(Main, func_name(:us, loci, locip1, 1)))
+        edge1 = Edge(nothing, getfield(Main, func_name(:cc, loci, locip1, 1)), getfield(Main, func_name(:us, loci, locip1, 1)))
         map_edges[loci][locip1] = [edge1]
         # loci => loci
         edge1 = Edge([:ALL], getfield(Main, func_name(:cc, loci, loci, 1)), getfield(Main, func_name(:us, loci, loci, 1)))

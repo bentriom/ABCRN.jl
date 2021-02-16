@@ -232,10 +232,10 @@ function create_period_automaton(m::ContinuousTimeModel, L::Float64, H::Float64,
     edge_1 = Edge([:ALL], getfield(Main, func_name(:cc, :l0, :l0, 1)), getfield(Main, func_name(:us, :l0, :l0, 1)))
     map_edges[:l0][:l0] = [edge_1]
     # * l0 => l0prime
-    edge_1 = Edge([nothing], getfield(Main, func_name(:cc, :l0, :l0prime, 1)), getfield(Main, func_name(:us, :l0, :l0prime, 1)))
+    edge_1 = Edge(nothing, getfield(Main, func_name(:cc, :l0, :l0prime, 1)), getfield(Main, func_name(:us, :l0, :l0prime, 1)))
     map_edges[:l0][:l0prime] = [edge_1]
     # * l0 => low
-    edge_1 = Edge([nothing], getfield(Main, func_name(:cc, :l0, :low, 1)), getfield(Main, func_name(:us, :l0, :low, 1)))
+    edge_1 = Edge(nothing, getfield(Main, func_name(:cc, :l0, :low, 1)), getfield(Main, func_name(:us, :l0, :low, 1)))
     map_edges[:l0][:low] = [edge_1]
 
     # l0prime
@@ -243,7 +243,7 @@ function create_period_automaton(m::ContinuousTimeModel, L::Float64, H::Float64,
     edge_1 = Edge([:ALL], getfield(Main, func_name(:cc, :l0prime, :l0prime, 1)), getfield(Main, func_name(:us, :l0prime, :l0prime, 1)))
     map_edges[:l0prime][:l0prime] = [edge_1]
     # * l0prime => low
-    edge_1 = Edge([nothing], getfield(Main, func_name(:cc, :l0prime, :low, 1)), getfield(Main, func_name(:us, :l0prime, :low, 1)))
+    edge_1 = Edge(nothing, getfield(Main, func_name(:cc, :l0prime, :low, 1)), getfield(Main, func_name(:us, :l0prime, :low, 1)))
     map_edges[:l0prime][:low] = [edge_1]
 
     # low 
@@ -254,7 +254,7 @@ function create_period_automaton(m::ContinuousTimeModel, L::Float64, H::Float64,
     edge_1 = Edge([:ALL], getfield(Main, func_name(:cc, :low, :mid, 1)), getfield(Main, func_name(:us, :low, :mid, 1)))
     map_edges[:low][:mid] = [edge_1]
     # * low => final
-    edge_1 = Edge([nothing], getfield(Main, func_name(:cc, :low, :final, 1)), getfield(Main, func_name(:us, :low, :final, 1)))
+    edge_1 = Edge(nothing, getfield(Main, func_name(:cc, :low, :final, 1)), getfield(Main, func_name(:us, :low, :final, 1)))
     map_edges[:low][:final] = [edge_1]
 
     # mid
@@ -271,7 +271,7 @@ function create_period_automaton(m::ContinuousTimeModel, L::Float64, H::Float64,
     edge_1 = Edge([:ALL], getfield(Main, func_name(:cc, :mid, :high, 1)), getfield(Main, func_name(:us, :mid, :high, 1)))
     map_edges[:mid][:high] = [edge_1]
     # * mid => final
-    edge_1 = Edge([nothing], getfield(Main, func_name(:cc, :mid, :final, 1)), getfield(Main, func_name(:us, :mid, :final, 1)))
+    edge_1 = Edge(nothing, getfield(Main, func_name(:cc, :mid, :final, 1)), getfield(Main, func_name(:us, :mid, :final, 1)))
     map_edges[:mid][:final] = [edge_1]
 
     # high 
@@ -282,7 +282,7 @@ function create_period_automaton(m::ContinuousTimeModel, L::Float64, H::Float64,
     edge_1 = Edge([:ALL], getfield(Main, func_name(:cc, :high, :mid, 1)), getfield(Main, func_name(:us, :high, :mid, 1)))
     map_edges[:high][:mid] = [edge_1]
     # * high => final
-    edge_1 = Edge([nothing], getfield(Main, func_name(:cc, :high, :final, 1)), getfield(Main, func_name(:us, :high, :final, 1)))
+    edge_1 = Edge(nothing, getfield(Main, func_name(:cc, :high, :final, 1)), getfield(Main, func_name(:us, :high, :final, 1)))
     map_edges[:high][:final] = [edge_1] 
 
     ## Constants

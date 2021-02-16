@@ -18,8 +18,9 @@ test = euclidean_distance(σ, :I, tml_obs, y_obs) == σ.state_lha_end[:d]
 aut2 = create_euclidean_distance_automaton_2(SIR, tml_obs, y_obs, :I)
 sync_SIR = SIR * aut2
 σ = simulate(sync_SIR)
-@show euclidean_distance(σ, :I, tml_obs, y_obs), σ.state_lha_end[:d]
-test = euclidean_distance(σ, :I, tml_obs, y_obs) == σ.state_lha_end[:d]
+test2 = euclidean_distance(σ, :I, tml_obs, y_obs) == σ.state_lha_end[:d]
 
-return test
+test_all = test && test2
+
+return test_all
 

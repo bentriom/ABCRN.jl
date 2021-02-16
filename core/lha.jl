@@ -59,7 +59,7 @@ end
 
 function Base.show(io::IO, E::Edge)
     print(io, "(Edge: ")
-    print(io, (E.transitions[1] == nothing) ? "Asynchronous #, " : ("Synchronized with " * join(E.transitions,',') * ", "))
+    print(io, (E.transitions == nothing) ? "Asynchronous #, " : ("Synchronized with " * join(E.transitions,',') * ", "))
     print(io, Symbol(E.check_constraints))
     print(io, ", ")
     print(io, Symbol(E.update_state!))
@@ -112,14 +112,15 @@ function _find_edge_candidates!(edge_candidates::Vector{Edge},
     for target_loc in keys(edges_from_current_loc)
         for edge in edges_from_current_loc[target_loc]
             if Λ[target_loc](x) && getfield(edge, :check_constraints)(Snplus1, x, p)
-                if getfield(edge, :transitions)[1] == nothing
+                if getfield(edge, :transitions) == nothing
                     _push_edge!(edge_candidates, edge, nbr_candidates)
                     nbr_candidates += 1
                     return nbr_candidates
-                end
-                if !only_asynchronous && getfield(edge, :transitions)[1] != nothing
-                    _push_edge!(edge_candidates, edge, nbr_candidates)
-                    nbr_candidates += 1
+                else
+                    if !only_asynchronous
+                        _push_edge!(edge_candidates, edge, nbr_candidates)
+                        nbr_candidates += 1
+                    end
                 end
             end
         end
@@ -134,7 +135,7 @@ function _get_edge_index(edge_candidates::Vector{Edge}, nbr_candidates::Int,
     for i = 1:nbr_candidates
         edge = edge_candidates[i]
         # Asynchronous edge detection: we fire it
-        if getfield(edge, :transitions)[1] == nothing 
+        if getfield(edge, :transitions) == nothing
             return (i, detected_event)
         end
         # Synchronous detection

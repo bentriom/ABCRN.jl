@@ -282,27 +282,27 @@ function create_automaton_G_and_F(m::ContinuousTimeModel, x1::Float64, x2::Float
 
     # l0G loc
     # l0G => l1G
-    edge1 = Edge([nothing], getfield(Main, func_name(:cc, :l0G, :l1G, 1)), getfield(Main, func_name(:us, :l0G, :l1G, 1)))
+    edge1 = Edge(nothing, getfield(Main, func_name(:cc, :l0G, :l1G, 1)), getfield(Main, func_name(:us, :l0G, :l1G, 1)))
     map_edges[:l0G][:l1G] = [edge1]
 
     # l1G => l3G
-    edge1 = Edge([nothing], getfield(Main, func_name(:cc, :l1G, :l3G, 1)), getfield(Main, func_name(:us, :l1G, :l3G, 1)))
-    edge2 = Edge([nothing], getfield(Main, func_name(:cc, :l1G, :l3G, 2)), getfield(Main, func_name(:us, :l1G, :l3G, 2)))
-    edge3 = Edge([nothing], getfield(Main, func_name(:cc, :l1G, :l3G, 3)), getfield(Main, func_name(:us, :l1G, :l3G, 3)))
-    edge4 = Edge([nothing], getfield(Main, func_name(:cc, :l1G, :l3G, 4)), getfield(Main, func_name(:us, :l1G, :l3G, 4)))
+    edge1 = Edge(nothing, getfield(Main, func_name(:cc, :l1G, :l3G, 1)), getfield(Main, func_name(:us, :l1G, :l3G, 1)))
+    edge2 = Edge(nothing, getfield(Main, func_name(:cc, :l1G, :l3G, 2)), getfield(Main, func_name(:us, :l1G, :l3G, 2)))
+    edge3 = Edge(nothing, getfield(Main, func_name(:cc, :l1G, :l3G, 3)), getfield(Main, func_name(:us, :l1G, :l3G, 3)))
+    edge4 = Edge(nothing, getfield(Main, func_name(:cc, :l1G, :l3G, 4)), getfield(Main, func_name(:us, :l1G, :l3G, 4)))
     map_edges[:l1G][:l3G] = [edge1, edge2, edge3, edge4]
 
     # l1G => l4G
-    edge1 = Edge([nothing], getfield(Main, func_name(:cc, :l1G, :l4G, 1)), getfield(Main, func_name(:us, :l1G, :l4G, 1)))
-    edge2 = Edge([nothing], getfield(Main, func_name(:cc, :l1G, :l4G, 2)), getfield(Main, func_name(:us, :l1G, :l4G, 2)))
+    edge1 = Edge(nothing, getfield(Main, func_name(:cc, :l1G, :l4G, 1)), getfield(Main, func_name(:us, :l1G, :l4G, 1)))
+    edge2 = Edge(nothing, getfield(Main, func_name(:cc, :l1G, :l4G, 2)), getfield(Main, func_name(:us, :l1G, :l4G, 2)))
     map_edges[:l1G][:l4G] = [edge1, edge2]
 
     # l1G => l2G
     #=
-    edge1 = Edge([nothing], getfield(Main, func_name(:cc, :l1G, :l2G, 1)), getfield(Main, func_name(:us, :l1G, :l2G, 1)))
-    edge2 = Edge([nothing], getfield(Main, func_name(:cc, :l1G, :l2G, 2)), getfield(Main, func_name(:us, :l1G, :l2G, 2)))
-    edge3 = Edge([nothing], getfield(Main, func_name(:cc, :l1G, :l2G, 3)), getfield(Main, func_name(:us, :l1G, :l2G, 3)))
-    edge4 = Edge([nothing], getfield(Main, func_name(:cc, :l1G, :l2G, 4)), getfield(Main, func_name(:us, :l1G, :l2G, 4)))
+    edge1 = Edge(nothing, getfield(Main, func_name(:cc, :l1G, :l2G, 1)), getfield(Main, func_name(:us, :l1G, :l2G, 1)))
+    edge2 = Edge(nothing, getfield(Main, func_name(:cc, :l1G, :l2G, 2)), getfield(Main, func_name(:us, :l1G, :l2G, 2)))
+    edge3 = Edge(nothing, getfield(Main, func_name(:cc, :l1G, :l2G, 3)), getfield(Main, func_name(:us, :l1G, :l2G, 3)))
+    edge4 = Edge(nothing, getfield(Main, func_name(:cc, :l1G, :l2G, 4)), getfield(Main, func_name(:us, :l1G, :l2G, 4)))
     map_edges[:l1G][:l2G] = [edge3, edge4, edge1, edge2]
     =#
 
@@ -312,8 +312,8 @@ function create_automaton_G_and_F(m::ContinuousTimeModel, x1::Float64, x2::Float
     map_edges[:l3G][:l1G] = [edge1]
 
     # l3G => l2G
-    edge1 = Edge([nothing], getfield(Main, func_name(:cc, :l3G, :l2G, 1)), getfield(Main, func_name(:us, :l3G, :l2G, 1)))
-    edge2 = Edge([nothing], getfield(Main, func_name(:cc, :l3G, :l2G, 2)), getfield(Main, func_name(:us, :l3G, :l2G, 2)))
+    edge1 = Edge(nothing, getfield(Main, func_name(:cc, :l3G, :l2G, 1)), getfield(Main, func_name(:us, :l3G, :l2G, 1)))
+    edge2 = Edge(nothing, getfield(Main, func_name(:cc, :l3G, :l2G, 2)), getfield(Main, func_name(:us, :l3G, :l2G, 2)))
     map_edges[:l3G][:l2G] = [edge1, edge2]
 
     # l4 loc
@@ -322,28 +322,28 @@ function create_automaton_G_and_F(m::ContinuousTimeModel, x1::Float64, x2::Float
     map_edges[:l4G][:l1G] = [edge1]
 
     # l4G => l2G
-    edge1 = Edge([nothing], getfield(Main, func_name(:cc, :l4G, :l2G, 1)), getfield(Main, func_name(:us, :l4G, :l2G, 1)))
-    edge2 = Edge([nothing], getfield(Main, func_name(:cc, :l4G, :l2G, 2)), getfield(Main, func_name(:us, :l4G, :l2G, 2)))
+    edge1 = Edge(nothing, getfield(Main, func_name(:cc, :l4G, :l2G, 1)), getfield(Main, func_name(:us, :l4G, :l2G, 1)))
+    edge2 = Edge(nothing, getfield(Main, func_name(:cc, :l4G, :l2G, 2)), getfield(Main, func_name(:us, :l4G, :l2G, 2)))
     map_edges[:l4G][:l2G] = [edge1,edge2]
 
     # l2G loc
     # l2G => l1F : Transition from autF to autG
-    edge1 = Edge([nothing], getfield(Main, func_name(:cc, :l2G, :l1F, 1)), getfield(Main, func_name(:us, :l2G, :l1F, 1)))
+    edge1 = Edge(nothing, getfield(Main, func_name(:cc, :l2G, :l1F, 1)), getfield(Main, func_name(:us, :l2G, :l1F, 1)))
     map_edges[:l2G][:l1F] = [edge1]
 
     # l1F loc
     # l1F => l3F
-    edge1 = Edge([nothing], getfield(Main, func_name(:cc, :l1F, :l2F, 1)), getfield(Main, func_name(:us, :l1F, :l2F, 1)))
-    edge2 = Edge([nothing], getfield(Main, func_name(:cc, :l1F, :l2F, 2)), getfield(Main, func_name(:us, :l1F, :l2F, 2)))
+    edge1 = Edge(nothing, getfield(Main, func_name(:cc, :l1F, :l2F, 1)), getfield(Main, func_name(:us, :l1F, :l2F, 1)))
+    edge2 = Edge(nothing, getfield(Main, func_name(:cc, :l1F, :l2F, 2)), getfield(Main, func_name(:us, :l1F, :l2F, 2)))
     map_edges[:l1F][:l2F] = [edge1, edge2]
-    #edge3 = Edge([nothing], getfield(Main, func_name(:cc, :l1F, :l2F, 3)), getfield(Main, func_name(:us, :l1F, :l2F, 3)))
-    #edge4 = Edge([nothing], getfield(Main, func_name(:cc, :l1F, :l2F, 4)), getfield(Main, func_name(:us, :l1F, :l2F, 4)))
+    #edge3 = Edge(nothing, getfield(Main, func_name(:cc, :l1F, :l2F, 3)), getfield(Main, func_name(:us, :l1F, :l2F, 3)))
+    #edge4 = Edge(nothing, getfield(Main, func_name(:cc, :l1F, :l2F, 4)), getfield(Main, func_name(:us, :l1F, :l2F, 4)))
     #map_edges[:l1F][:l2F] = [edge1, edge4, edge3, edge2]
 
     # l1F => l3F
-    edge1 = Edge([nothing], getfield(Main, func_name(:cc, :l1F, :l3F, 1)), getfield(Main, func_name(:us, :l1F, :l3F, 1)))
-    edge2 = Edge([nothing], getfield(Main, func_name(:cc, :l1F, :l3F, 2)), getfield(Main, func_name(:us, :l1F, :l3F, 2)))
-    edge3 = Edge([nothing], getfield(Main, func_name(:cc, :l1F, :l3F, 3)), getfield(Main, func_name(:us, :l1F, :l3F, 3)))
+    edge1 = Edge(nothing, getfield(Main, func_name(:cc, :l1F, :l3F, 1)), getfield(Main, func_name(:us, :l1F, :l3F, 1)))
+    edge2 = Edge(nothing, getfield(Main, func_name(:cc, :l1F, :l3F, 2)), getfield(Main, func_name(:us, :l1F, :l3F, 2)))
+    edge3 = Edge(nothing, getfield(Main, func_name(:cc, :l1F, :l3F, 3)), getfield(Main, func_name(:us, :l1F, :l3F, 3)))
     map_edges[:l1F][:l3F] = [edge1, edge2, edge3]
 
     # l3F loc
@@ -352,7 +352,7 @@ function create_automaton_G_and_F(m::ContinuousTimeModel, x1::Float64, x2::Float
     map_edges[:l3F][:l1F] = [edge1]
 
     # l3F => l2F
-    edge1 = Edge([nothing], getfield(Main, func_name(:cc, :l3F, :l2F, 1)), getfield(Main, func_name(:us, :l3F, :l2F, 1)))    
+    edge1 = Edge(nothing, getfield(Main, func_name(:cc, :l3F, :l2F, 1)), getfield(Main, func_name(:us, :l3F, :l2F, 1)))    
     map_edges[:l3F][:l2F] = [edge1]
 
     ## Constants

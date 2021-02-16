@@ -131,22 +131,22 @@ function create_automaton_F(m::ContinuousTimeModel, x1::Float64, x2::Float64, t1
 
     # l0 loc
     # l0 => l1
-    edge1 = Edge([nothing], getfield(Main, func_name(:cc, :l0, :l1, 1)), getfield(Main, func_name(:us, :l0, :l1, 1)))
+    edge1 = Edge(nothing, getfield(Main, func_name(:cc, :l0, :l1, 1)), getfield(Main, func_name(:us, :l0, :l1, 1)))
     map_edges[:l0][:l1] = [edge1]
 
     # l1 loc
     # l1 => l2
-    edge1 = Edge([nothing], getfield(Main, func_name(:cc, :l1, :l2, 1)), getfield(Main, func_name(:us, :l1, :l2, 1)))
-    edge2 = Edge([nothing], getfield(Main, func_name(:cc, :l1, :l2, 2)), getfield(Main, func_name(:us, :l1, :l2, 2)))
+    edge1 = Edge(nothing, getfield(Main, func_name(:cc, :l1, :l2, 1)), getfield(Main, func_name(:us, :l1, :l2, 1)))
+    edge2 = Edge(nothing, getfield(Main, func_name(:cc, :l1, :l2, 2)), getfield(Main, func_name(:us, :l1, :l2, 2)))
     map_edges[:l1][:l2] = [edge1, edge2]
-    #edge3 = Edge([nothing], getfield(Main, func_name(:cc, :l1, :l2, 3)), getfield(Main, func_name(:us, :l1, :l2, 3)))
-    #edge4 = Edge([nothing], getfield(Main, func_name(:cc, :l1, :l2, 4)), getfield(Main, func_name(:us, :l1, :l2, 4)))
+    #edge3 = Edge(nothing, getfield(Main, func_name(:cc, :l1, :l2, 3)), getfield(Main, func_name(:us, :l1, :l2, 3)))
+    #edge4 = Edge(nothing, getfield(Main, func_name(:cc, :l1, :l2, 4)), getfield(Main, func_name(:us, :l1, :l2, 4)))
     #map_edges[:l1][:l2] = [edge1, edge2, edge3, edge4]
 
     # l1 => l3
-    edge1 = Edge([nothing], getfield(Main, func_name(:cc, :l1, :l3, 1)), getfield(Main, func_name(:us, :l1, :l3, 1)))
-    edge2 = Edge([nothing], getfield(Main, func_name(:cc, :l1, :l3, 2)), getfield(Main, func_name(:us, :l1, :l3, 2)))
-    edge3 = Edge([nothing], getfield(Main, func_name(:cc, :l1, :l3, 3)), getfield(Main, func_name(:us, :l1, :l3, 3)))
+    edge1 = Edge(nothing, getfield(Main, func_name(:cc, :l1, :l3, 1)), getfield(Main, func_name(:us, :l1, :l3, 1)))
+    edge2 = Edge(nothing, getfield(Main, func_name(:cc, :l1, :l3, 2)), getfield(Main, func_name(:us, :l1, :l3, 2)))
+    edge3 = Edge(nothing, getfield(Main, func_name(:cc, :l1, :l3, 3)), getfield(Main, func_name(:us, :l1, :l3, 3)))
     map_edges[:l1][:l3] = [edge1, edge2, edge3]
   
     # l3 loc
@@ -155,7 +155,7 @@ function create_automaton_F(m::ContinuousTimeModel, x1::Float64, x2::Float64, t1
     map_edges[:l3][:l1] = [edge1]
     
     # l3 => l2
-    edge1 = Edge([nothing], getfield(Main, func_name(:cc, :l3, :l2, 1)), getfield(Main, func_name(:us, :l3, :l2, 1)))
+    edge1 = Edge(nothing, getfield(Main, func_name(:cc, :l3, :l2, 1)), getfield(Main, func_name(:us, :l3, :l2, 1)))
     map_edges[:l3][:l2] = [edge1]
 
     ## Constants
