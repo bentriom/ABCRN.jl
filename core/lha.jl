@@ -135,7 +135,7 @@ function _get_edge_index(edge_candidates::Vector{Edge}, nbr_candidates::Int,
         edge = edge_candidates[i]
         # Asynchronous edge detection: we fire it
         if getfield(edge, :transitions)[1] == nothing 
-            return (i, bool_event)
+            return (i, detected_event)
         end
         # Synchronous detection
         if !detected_event && tr_nplus1 != nothing
@@ -269,10 +269,11 @@ function next_state!(Snplus1::StateLHA, A::LHA,
 end
 
 # For tests purposes
-function read_trajectory(A::LHA, σ::Trajectory; verbose = false)
-    @assert (σ.m).dim_state == σ.m.dim_obs_state # Model should be entirely obserbed 
-    A_new = LHA(A, (σ.m)._map_obs_var_idx)
-    p_sim = (σ.m).p
+function read_trajectory(A::LHA, σ::AbstractTrajectory; verbose = false)
+    proba_model = get_proba_model(σ.m)
+    @assert proba_model.dim_state == proba_model.dim_obs_state # Model should be entirely obserbed 
+    A_new = LHA(A, proba_model._map_obs_var_idx)
+    p_sim = proba_model.p
     l_t = times(σ)
     l_tr = transitions(σ)
     Sn = init_state(A_new, σ[1], l_t[1])
