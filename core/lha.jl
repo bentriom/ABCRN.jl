@@ -213,13 +213,16 @@ function next_state!(Snplus1::StateLHA, A::LHA,
         println("Time flies with the flow...")
     end
     # Now time flies according to the flow
-    for i in eachindex(Snplus1.values)
-        coeff_deriv = (A.flow[Snplus1.loc])[i]
+    values_Snplus1 = getfield(Snplus1, :values)
+    time_Snplus1 = getfield(Snplus1, :time)
+    current_loc = getfield(Snplus1, :loc)
+    for i in eachindex(values_Snplus1)
+        @inbounds coeff_deriv = (getfield(A, :flow)[current_loc])[i]
         if coeff_deriv > 0
-            Snplus1.values[i] += coeff_deriv*(tnplus1 - Snplus1.time)
+            @inbounds values_Snplus1[i] += coeff_deriv*(tnplus1 - time_Snplus1)
         end
     end
-    Snplus1.time = tnplus1
+    setfield!(Snplus1, :time, tnplus1)
     if verbose 
         @show Snplus1 
     end
