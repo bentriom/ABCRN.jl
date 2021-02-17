@@ -177,8 +177,7 @@ function _abc_smc(pm::ParametricModel, nbr_particles::Int, tolerance::Float64, a
         old_epsilon = epsilon
 	end
 
-	mat_p = mat_p_old
-    mat_cov = cov(mat_p, ProbabilityWeights(wl_old), 2; corrected=false)
+    mat_cov = cov(mat_p_old, ProbabilityWeights(wl_old), 2; corrected=false)
     if dir_results != nothing
         writedlm(dir_results * "weights_end.csv", wl_old, ',')
         writedlm(dir_results * "mat_p_end.csv", mat_p_old, ',')
@@ -191,7 +190,7 @@ function _abc_smc(pm::ParametricModel, nbr_particles::Int, tolerance::Float64, a
         write(file_cfg, "Number of threads: $(Threads.nthreads())\n")
         close(file_cfg)
     end
-    r = ResultAbc(mat_p, mat_cov, nbr_tot_sim, time() - begin_time, vec_dist, epsilon, wl_old, l_ess)
+    r = ResultAbc(mat_p_old, mat_cov, nbr_tot_sim, time() - begin_time, vec_dist, old_epsilon, wl_old, l_ess)
     return r
 end
 
@@ -285,12 +284,12 @@ function _distributed_abc_smc(pm::ParametricModel, nbr_particles::Int, tolerance
         flush(stdout)
         old_epsilon = epsilon
 	end
-
-    mat_cov = cov(mat_p, ProbabilityWeights(wl_old), 2; corrected=false)
+    
+    mat_cov = cov(mat_p_old, ProbabilityWeights(wl_old), 2; corrected=false)
     save_mat_p_end = true
     if dir_results != nothing
-        writedlm(dir_results * "weights_end.csv", wl_current, ',')
-        writedlm(dir_results * "mat_p_end.csv", mat_p, ',')
+        writedlm(dir_results * "weights_end.csv", wl_old, ',')
+        writedlm(dir_results * "mat_p_end.csv", mat_p_old, ',')
         file_cfg = open(dir_results * "results_abc.out", "w")
         write(file_cfg, "\n")
         write(file_cfg, "About the results: \n")
@@ -300,7 +299,7 @@ function _distributed_abc_smc(pm::ParametricModel, nbr_particles::Int, tolerance
         write(file_cfg, "Number of threads: $(Threads.nthreads())\n")
         close(file_cfg)
     end
-    r = ResultAbc(mat_p, mat_cov, nbr_tot_sim, time() - begin_time, convert(Array, d_vec_dist), epsilon, wl_current, l_ess)
+    r = ResultAbc(mat_p_old, mat_cov, nbr_tot_sim, time() - begin_time, convert(Array, d_vec_dist), old_epsilon, wl_old, l_ess)
     return r
 end
 
