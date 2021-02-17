@@ -15,6 +15,7 @@ ER.buffer_size = 100
 ER.estim_min_states = 8000
 
 bench1_pkg = @benchmark simulate(ER)
+@show minimum(bench1_pkg), mean(bench1_pkg), maximum(bench1_pkg)
 
 rs = @reaction_network begin
   c1, S + E --> SE
@@ -30,6 +31,7 @@ jprob = JumpProblem(rs, dprob, Direct())
 jsol = solve(jprob, SSAStepper())
 
 bench1_catalyst = @benchmark solve(jprob, SSAStepper())
+@show minimum(bench1_catalyst), mean(bench1_catalyst), maximum(bench1_catalyst)
 
 str_latex_bench1 = "
 \\begin{tabular}{|c|c|c|c|c|}
@@ -59,6 +61,7 @@ bench2_pkg = @benchmark begin
     ER.estim_min_states = 8000
     simulate(ER)
 end
+@show minimum(bench2_pkg), mean(bench2_pkg), maximum(bench2_pkg)
 
 bench2_catalyst = @benchmark begin
     rs = @reaction_network begin
@@ -74,6 +77,7 @@ bench2_catalyst = @benchmark begin
     jprob = JumpProblem(rs, dprob, Direct())
     jsol = solve(jprob, SSAStepper())
 end
+@show minimum(bench2_catalyst), mean(bench2_catalyst), maximum(bench2_catalyst)
 
 str_latex_bench2 = "
 \\begin{tabular}{|c|c|c|c|c|}
@@ -89,8 +93,6 @@ Min. time (ms) & \\begin{tabular}[c]{@{}c@{}}Mean\\\\Memory (KB)\\end{tabular} \
     \\hline
 \\end{tabular}"
 
-@show minimum(bench1_pkg), mean(bench1_pkg), maximum(bench1_pkg)
-@show minimum(bench1_catalyst), mean(bench1_catalyst), maximum(bench1_catalyst)
 
 open(path_latex * "bench1.tex", "w+") do io
     write(io, str_latex_bench1)
