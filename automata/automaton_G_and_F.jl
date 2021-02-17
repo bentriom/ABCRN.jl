@@ -67,216 +67,216 @@ function create_automaton_G_and_F(m::ContinuousTimeModel, x1::Float64, x2::Float
 
         # l0G loc
         # l0G => l1G
-        @everywhere $(func_name(:cc, :l0G, :l1G, 1))(S::StateLHA, x::Vector{Int}, p::Vector{Float64}) = true
-        @everywhere $(func_name(:us, :l0G, :l1G, 1))(S::StateLHA, x::Vector{Int}, p::Vector{Float64}) = 
-        (setfield!(S, :loc, Symbol("l1G")); 
-         setindex!(getfield(S, :values), 0, $(idx_var_d));
-         setindex!(getfield(S, :values), x[$(idx_obs_var_G)], $(idx_var_n)); 
-         setindex!(getfield(S, :values), true, $(idx_var_in));
-         setindex!(getfield(S, :values), getfield(Main, $(Meta.quot(sym_isabs_func)))(p, x), $(idx_var_isabs)))
+        @everywhere $(func_name(:cc, :l0G, :l1G, 1))(S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = true
+        @everywhere $(func_name(:us, :l0G, :l1G, 1))(ptr_loc::Vector{Symbol}, S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
+        (ptr_loc[1] = Symbol("l1G"); 
+         setindex!(S_values, 0, $(idx_var_d));
+         setindex!(S_values, x[$(idx_obs_var_G)], $(idx_var_n)); 
+         setindex!(S_values, true, $(idx_var_in));
+         setindex!(S_values, getfield(Main, $(Meta.quot(sym_isabs_func)))(p, x), $(idx_var_isabs)))
 
         # l1G loc
         # l1G => l3G
-        @everywhere $(func_name(:cc, :l1G, :l3G, 1))(S::StateLHA, x::Vector{Int}, p::Vector{Float64}) = 
-        getfield(S, :time) <= $t1 && 
-        getfield(S, :values)[$(idx_var_n)] < $x1 || getfield(S, :values)[$(idx_var_n)] > $x2
-        @everywhere $(func_name(:us, :l1G, :l3G, 1))(S::StateLHA, x::Vector{Int}, p::Vector{Float64}) = 
-        (setfield!(S, :loc, Symbol("l3G")); 
-         setindex!(getfield(S, :values), min(abs($x1 - getfield(S, :values)[$(idx_var_n)]), abs($x2 - getfield(S, :values)[$(idx_var_n)])), $(idx_var_d)); 
-         setindex!(getfield(S, :values), false, $(idx_var_in)))
+        @everywhere $(func_name(:cc, :l1G, :l3G, 1))(S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
+        S_time <= $t1 && 
+        S_values[$(idx_var_n)] < $x1 || S_values[$(idx_var_n)] > $x2
+        @everywhere $(func_name(:us, :l1G, :l3G, 1))(ptr_loc::Vector{Symbol}, S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
+        (ptr_loc[1] = Symbol("l3G"); 
+         setindex!(S_values, min(abs($x1 - S_values[$(idx_var_n)]), abs($x2 - S_values[$(idx_var_n)])), $(idx_var_d)); 
+         setindex!(S_values, false, $(idx_var_in)))
 
-        @everywhere $(func_name(:cc, :l1G, :l3G, 2))(S::StateLHA, x::Vector{Int}, p::Vector{Float64}) = 
-        (getfield(S, :time) <= $t1) && 
-        ($x1 <= getfield(S, :values)[$(idx_var_n)] <= $x2)
-        @everywhere $(func_name(:us, :l1G, :l3G, 2))(S::StateLHA, x::Vector{Int}, p::Vector{Float64}) = 
-        (setfield!(S, :loc, Symbol("l3G")); 
-         setindex!(getfield(S, :values), 0, $(idx_var_d));
-         setindex!(getfield(S, :values), false, $(idx_var_in)))
+        @everywhere $(func_name(:cc, :l1G, :l3G, 2))(S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
+        (S_time <= $t1) && 
+        ($x1 <= S_values[$(idx_var_n)] <= $x2)
+        @everywhere $(func_name(:us, :l1G, :l3G, 2))(ptr_loc::Vector{Symbol}, S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
+        (ptr_loc[1] = Symbol("l3G"); 
+         setindex!(S_values, 0, $(idx_var_d));
+         setindex!(S_values, false, $(idx_var_in)))
 
-        @everywhere $(func_name(:cc, :l1G, :l3G, 3))(S::StateLHA, x::Vector{Int}, p::Vector{Float64}) = 
-        !istrue(getfield(S, :values)[$(idx_var_in)]) && 
-        ($t1 <= getfield(S, :time) <= $t2) && 
-        ($x1 <= getfield(S, :values)[$(idx_var_n)] <= $x2)
-        @everywhere $(func_name(:us, :l1G, :l3G, 3))(S::StateLHA, x::Vector{Int}, p::Vector{Float64}) = 
-        (setfield!(S, :loc, Symbol("l3G")); 
-         setindex!(getfield(S, :values), getfield(S, :values)[$(idx_var_d)] * (getfield(S, :time) - $t1), $(idx_var_d)); 
-         setindex!(getfield(S, :values), 0.0, $(idx_var_tprime)))
+        @everywhere $(func_name(:cc, :l1G, :l3G, 3))(S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
+        !istrue(S_values[$(idx_var_in)]) && 
+        ($t1 <= S_time <= $t2) && 
+        ($x1 <= S_values[$(idx_var_n)] <= $x2)
+        @everywhere $(func_name(:us, :l1G, :l3G, 3))(ptr_loc::Vector{Symbol}, S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
+        (ptr_loc[1] = Symbol("l3G"); 
+         setindex!(S_values, S_values[$(idx_var_d)] * (S_time - $t1), $(idx_var_d)); 
+         setindex!(S_values, 0.0, $(idx_var_tprime)))
 
-        @everywhere $(func_name(:cc, :l1G, :l3G, 4))(S::StateLHA, x::Vector{Int}, p::Vector{Float64}) = 
-        istrue(getfield(S, :values)[$(idx_var_in)]) && 
-        ($t1 <= getfield(S, :time) <= $t2) && 
-        ($x1 <= getfield(S, :values)[$(idx_var_n)] <= $x2)
-        @everywhere $(func_name(:us, :l1G, :l3G, 4))(S::StateLHA, x::Vector{Int}, p::Vector{Float64}) = 
-        (setfield!(S, :loc, Symbol("l3G")); 
-         setindex!(getfield(S, :values), 0.0, $(idx_var_tprime)))
+        @everywhere $(func_name(:cc, :l1G, :l3G, 4))(S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
+        istrue(S_values[$(idx_var_in)]) && 
+        ($t1 <= S_time <= $t2) && 
+        ($x1 <= S_values[$(idx_var_n)] <= $x2)
+        @everywhere $(func_name(:us, :l1G, :l3G, 4))(ptr_loc::Vector{Symbol}, S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
+        (ptr_loc[1] = Symbol("l3G"); 
+         setindex!(S_values, 0.0, $(idx_var_tprime)))
 
         # l1G => l4G
-        @everywhere $(func_name(:cc, :l1G, :l4G, 1))(S::StateLHA, x::Vector{Int}, p::Vector{Float64}) = 
-        !istrue(getfield(S, :values)[$(idx_var_in)]) && 
-        ($t1 <= getfield(S, :time) <= $t2) && 
-        (getfield(S, :values)[$(idx_var_n)] < $x1 || getfield(S, :values)[$(idx_var_n)] > $x2)
-        @everywhere $(func_name(:us, :l1G, :l4G, 1))(S::StateLHA, x::Vector{Int}, p::Vector{Float64}) = 
-        (setfield!(S, :loc, Symbol("l4G")); 
-         setindex!(getfield(S, :values), getfield(S, :values)[$(idx_var_d)] + getfield(S, :values)[$(idx_var_d)] * (getfield(S, :time) - $t1), $(idx_var_d)))
+        @everywhere $(func_name(:cc, :l1G, :l4G, 1))(S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
+        !istrue(S_values[$(idx_var_in)]) && 
+        ($t1 <= S_time <= $t2) && 
+        (S_values[$(idx_var_n)] < $x1 || S_values[$(idx_var_n)] > $x2)
+        @everywhere $(func_name(:us, :l1G, :l4G, 1))(ptr_loc::Vector{Symbol}, S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
+        (ptr_loc[1] = Symbol("l4G"); 
+         setindex!(S_values, S_values[$(idx_var_d)] + S_values[$(idx_var_d)] * (S_time - $t1), $(idx_var_d)))
 
-        @everywhere $(func_name(:cc, :l1G, :l4G, 2))(S::StateLHA, x::Vector{Int}, p::Vector{Float64}) = 
-        istrue(getfield(S, :values)[$(idx_var_in)]) && 
-        ($t1 <= getfield(S, :time) <= $t2) && 
-        (getfield(S, :values)[$(idx_var_n)] < $x1 || getfield(S, :values)[$(idx_var_n)] > $x2)
-        @everywhere $(func_name(:us, :l1G, :l4G, 2))(S::StateLHA, x::Vector{Int}, p::Vector{Float64}) = 
-        (setfield!(S, :loc, Symbol("l4G")))
+        @everywhere $(func_name(:cc, :l1G, :l4G, 2))(S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
+        istrue(S_values[$(idx_var_in)]) && 
+        ($t1 <= S_time <= $t2) && 
+        (S_values[$(idx_var_n)] < $x1 || S_values[$(idx_var_n)] > $x2)
+        @everywhere $(func_name(:us, :l1G, :l4G, 2))(ptr_loc::Vector{Symbol}, S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
+        (ptr_loc[1] = Symbol("l4G"))
 
         # l1G => l2G
         #=
-        @everywhere $(func_name(:cc, :l1G, :l2G, 3))(S::StateLHA, x::Vector{Int}, p::Vector{Float64}) = 
-        istrue(getfield(S, :values)[$(idx_var_isabs)]) && 
-        getfield(S, :time) <= $t1
-        @everywhere $(func_name(:us, :l1G, :l2G, 3))(S::StateLHA, x::Vector{Int}, p::Vector{Float64}) = 
-        (setfield!(S, :loc, Symbol("l2G")); 
-         setindex!(getfield(S, :values), ($t2 - $t1) * min(abs($x1 - getfield(S, :values)[$(idx_var_n)]), abs($x2 - getfield(S, :values)[$(idx_var_n)])), $(idx_var_d)))
+        @everywhere $(func_name(:cc, :l1G, :l2G, 3))(S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
+        istrue(S_values[$(idx_var_isabs)]) && 
+        S_time <= $t1
+        @everywhere $(func_name(:us, :l1G, :l2G, 3))(ptr_loc::Vector{Symbol}, S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
+        (ptr_loc[1] = Symbol("l2G"); 
+         setindex!(S_values, ($t2 - $t1) * min(abs($x1 - S_values[$(idx_var_n)]), abs($x2 - S_values[$(idx_var_n)])), $(idx_var_d)))
         
-         @everywhere $(func_name(:cc, :l1G, :l2G, 4))(S::StateLHA, x::Vector{Int}, p::Vector{Float64}) = 
-        istrue(getfield(S, :values)[$(idx_var_isabs)]) && 
-        ($t1 <= getfield(S, :time) <= $t2)
-        @everywhere $(func_name(:us, :l1G, :l2G, 4))(S::StateLHA, x::Vector{Int}, p::Vector{Float64}) = 
-        (setfield!(S, :loc, Symbol("l2G")); 
-         setindex!(getfield(S, :values), getfield(S, :values)[$(idx_var_d)] + ($t2 - getfield(S, :time)) * min(abs($x1 - getfield(S, :values)[$(idx_var_n)]), abs($x2 - getfield(S, :values)[$(idx_var_n)])), $(idx_var_d)))
+         @everywhere $(func_name(:cc, :l1G, :l2G, 4))(S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
+        istrue(S_values[$(idx_var_isabs)]) && 
+        ($t1 <= S_time <= $t2)
+        @everywhere $(func_name(:us, :l1G, :l2G, 4))(ptr_loc::Vector{Symbol}, S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
+        (ptr_loc[1] = Symbol("l2G"); 
+         setindex!(S_values, S_values[$(idx_var_d)] + ($t2 - S_time) * min(abs($x1 - S_values[$(idx_var_n)]), abs($x2 - S_values[$(idx_var_n)])), $(idx_var_d)))
 
-        @everywhere $(func_name(:cc, :l1G, :l2G, 1))(S::StateLHA, x::Vector{Int}, p::Vector{Float64}) = 
-        istrue(getfield(S, :values)[$(idx_var_in)]) && 
-        getfield(S, :time) >= $t2
-        @everywhere $(func_name(:us, :l1G, :l2G, 1))(S::StateLHA, x::Vector{Int}, p::Vector{Float64}) = 
-        (setfield!(S, :loc, Symbol("l2G")))
+        @everywhere $(func_name(:cc, :l1G, :l2G, 1))(S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
+        istrue(S_values[$(idx_var_in)]) && 
+        S_time >= $t2
+        @everywhere $(func_name(:us, :l1G, :l2G, 1))(ptr_loc::Vector{Symbol}, S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
+        (ptr_loc[1] = Symbol("l2G"))
 
-        @everywhere $(func_name(:cc, :l1G, :l2G, 2))(S::StateLHA, x::Vector{Int}, p::Vector{Float64}) = 
-        !istrue(getfield(S, :values)[$(idx_var_in)]) && 
-        getfield(S, :time) >= $t2
-        @everywhere $(func_name(:us, :l1G, :l2G, 2))(S::StateLHA, x::Vector{Int}, p::Vector{Float64}) = 
-        (setfield!(S, :loc, Symbol("l2G")); 
-         setindex!(getfield(S, :values), getfield(S, :values)[$(idx_var_d)] * ($t2 - $t1), $(idx_var_d)))
+        @everywhere $(func_name(:cc, :l1G, :l2G, 2))(S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
+        !istrue(S_values[$(idx_var_in)]) && 
+        S_time >= $t2
+        @everywhere $(func_name(:us, :l1G, :l2G, 2))(ptr_loc::Vector{Symbol}, S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
+        (ptr_loc[1] = Symbol("l2G"); 
+         setindex!(S_values, S_values[$(idx_var_d)] * ($t2 - $t1), $(idx_var_d)))
         =#
 
         # l3G loc
         # l3G => l1G
-        @everywhere $(func_name(:cc, :l3G, :l1G, 1))(S::StateLHA, x::Vector{Int}, p::Vector{Float64}) = true
-        @everywhere $(func_name(:us, :l3G, :l1G, 1))(S::StateLHA, x::Vector{Int}, p::Vector{Float64}) = 
-        (setfield!(S, :loc, Symbol("l1G")); 
-         setindex!(getfield(S, :values), x[$(idx_obs_var_G)], $(idx_var_n)); 
-         setindex!(getfield(S, :values), getfield(Main, $(Meta.quot(sym_isabs_func)))(p, x), $(idx_var_isabs)))
+        @everywhere $(func_name(:cc, :l3G, :l1G, 1))(S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = true
+        @everywhere $(func_name(:us, :l3G, :l1G, 1))(ptr_loc::Vector{Symbol}, S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
+        (ptr_loc[1] = Symbol("l1G"); 
+         setindex!(S_values, x[$(idx_obs_var_G)], $(idx_var_n)); 
+         setindex!(S_values, getfield(Main, $(Meta.quot(sym_isabs_func)))(p, x), $(idx_var_isabs)))
 
         # l3G => l2G
-        @everywhere $(func_name(:cc, :l3G, :l2G, 2))(S::StateLHA, x::Vector{Int}, p::Vector{Float64}) = 
-        istrue(getfield(S, :values)[$(idx_var_in)]) && 
-        (getfield(S, :time) >= $t2 || istrue(getfield(S, :values)[$(idx_var_isabs)]))
-        @everywhere $(func_name(:us, :l3G, :l2G, 2))(S::StateLHA, x::Vector{Int}, p::Vector{Float64}) = 
-        (setfield!(S, :loc, Symbol("l2G"));
-         setindex!(getfield(S, :values), getfield(S, :values)[$(idx_var_d)] * ($t2 - $t1), $(idx_var_d)))
+        @everywhere $(func_name(:cc, :l3G, :l2G, 2))(S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
+        istrue(S_values[$(idx_var_in)]) && 
+        (S_time >= $t2 || istrue(S_values[$(idx_var_isabs)]))
+        @everywhere $(func_name(:us, :l3G, :l2G, 2))(ptr_loc::Vector{Symbol}, S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
+        (ptr_loc[1] = Symbol("l2G");
+         setindex!(S_values, S_values[$(idx_var_d)] * ($t2 - $t1), $(idx_var_d)))
 
-        @everywhere $(func_name(:cc, :l3G, :l2G, 1))(S::StateLHA, x::Vector{Int}, p::Vector{Float64}) = 
-        !istrue(getfield(S, :values)[$(idx_var_in)]) && 
-        (getfield(S, :time) >= $t2 || istrue(getfield(S, :values)[$(idx_var_isabs)]))
-        @everywhere $(func_name(:us, :l3G, :l2G, 1))(S::StateLHA, x::Vector{Int}, p::Vector{Float64}) = 
-        (setfield!(S, :loc, Symbol("l2G")))
+        @everywhere $(func_name(:cc, :l3G, :l2G, 1))(S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
+        !istrue(S_values[$(idx_var_in)]) && 
+        (S_time >= $t2 || istrue(S_values[$(idx_var_isabs)]))
+        @everywhere $(func_name(:us, :l3G, :l2G, 1))(ptr_loc::Vector{Symbol}, S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
+        (ptr_loc[1] = Symbol("l2G"))
 
         # l4G loc
         # l4G => l1G
-        @everywhere $(func_name(:cc, :l4G, :l1G, 1))(S::StateLHA, x::Vector{Int}, p::Vector{Float64}) = true
-        @everywhere $(func_name(:us, :l4G, :l1G, 1))(S::StateLHA, x::Vector{Int}, p::Vector{Float64}) = 
-        (setfield!(S, :loc, Symbol("l1G")); 
-         setindex!(getfield(S, :values), getfield(S, :values)[$(idx_var_d)] + getfield(S, :values)[$(idx_var_tprime)] * min(abs($x1 - getfield(S, :values)[$(idx_var_n)]), abs($x2 - getfield(S, :values)[$(idx_var_n)])), $(idx_var_d)); 
-         setindex!(getfield(S, :values), 0.0, $(idx_var_tprime));
-         setindex!(getfield(S, :values), x[$(idx_obs_var_G)], $(idx_var_n)); 
-         setindex!(getfield(S, :values), true, $(idx_var_in));
-         setindex!(getfield(S, :values), getfield(Main, $(Meta.quot(sym_isabs_func)))(p, x), $(idx_var_isabs)))
+        @everywhere $(func_name(:cc, :l4G, :l1G, 1))(S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = true
+        @everywhere $(func_name(:us, :l4G, :l1G, 1))(ptr_loc::Vector{Symbol}, S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
+        (ptr_loc[1] = Symbol("l1G"); 
+         setindex!(S_values, S_values[$(idx_var_d)] + S_values[$(idx_var_tprime)] * min(abs($x1 - S_values[$(idx_var_n)]), abs($x2 - S_values[$(idx_var_n)])), $(idx_var_d)); 
+         setindex!(S_values, 0.0, $(idx_var_tprime));
+         setindex!(S_values, x[$(idx_obs_var_G)], $(idx_var_n)); 
+         setindex!(S_values, true, $(idx_var_in));
+         setindex!(S_values, getfield(Main, $(Meta.quot(sym_isabs_func)))(p, x), $(idx_var_isabs)))
 
         # l4G => l2G
-        @everywhere $(func_name(:cc, :l4G, :l2G, 1))(S::StateLHA, x::Vector{Int}, p::Vector{Float64}) = 
-        (istrue(getfield(S, :values)[$(idx_var_isabs)]))
-        @everywhere $(func_name(:us, :l4G, :l2G, 1))(S::StateLHA, x::Vector{Int}, p::Vector{Float64}) = 
-        (setfield!(S, :loc, Symbol("l2G")); 
-         setindex!(getfield(S, :values), getfield(S, :values)[$(idx_var_d)] +  ($t2 - getfield(S, :time)) * min(abs($x1 - getfield(S, :values)[$(idx_var_n)]), abs($x2 - getfield(S, :values)[$(idx_var_n)])), $(idx_var_d));)
+        @everywhere $(func_name(:cc, :l4G, :l2G, 1))(S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
+        (istrue(S_values[$(idx_var_isabs)]))
+        @everywhere $(func_name(:us, :l4G, :l2G, 1))(ptr_loc::Vector{Symbol}, S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
+        (ptr_loc[1] = Symbol("l2G"); 
+         setindex!(S_values, S_values[$(idx_var_d)] +  ($t2 - S_time) * min(abs($x1 - S_values[$(idx_var_n)]), abs($x2 - S_values[$(idx_var_n)])), $(idx_var_d));)
         
-        @everywhere $(func_name(:cc, :l4G, :l2G, 2))(S::StateLHA, x::Vector{Int}, p::Vector{Float64}) = 
-        (getfield(S, :time) >= $t2)
-        @everywhere $(func_name(:us, :l4G, :l2G, 2))(S::StateLHA, x::Vector{Int}, p::Vector{Float64}) = 
-        (setfield!(S, :loc, Symbol("l2G")); 
-         setindex!(getfield(S, :values), getfield(S, :values)[$(idx_var_d)] +  getfield(S, :values)[$(idx_var_tprime)] * min(abs($x1 - getfield(S, :values)[$(idx_var_n)]), abs($x2 - getfield(S, :values)[$(idx_var_n)])), $(idx_var_d));)
+        @everywhere $(func_name(:cc, :l4G, :l2G, 2))(S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
+        (S_time >= $t2)
+        @everywhere $(func_name(:us, :l4G, :l2G, 2))(ptr_loc::Vector{Symbol}, S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
+        (ptr_loc[1] = Symbol("l2G"); 
+         setindex!(S_values, S_values[$(idx_var_d)] +  S_values[$(idx_var_tprime)] * min(abs($x1 - S_values[$(idx_var_n)]), abs($x2 - S_values[$(idx_var_n)])), $(idx_var_d));)
 
 
         # Connection between the two automata: l2G => l1F
-        @everywhere $(func_name(:cc, :l2G, :l1F, 1))(S::StateLHA, x::Vector{Int}, p::Vector{Float64}) = true
-        @everywhere $(func_name(:us, :l2G, :l1F, 1))(S::StateLHA, x::Vector{Int}, p::Vector{Float64}) = 
-        (setfield!(S, :loc, Symbol("l1F")); 
-         setindex!(getfield(S, :values), x[$(idx_obs_var_F)], $(idx_var_n));
-         setindex!(getfield(S, :values), Inf, $(idx_var_dprime));
-         setindex!(getfield(S, :values), getfield(Main, $(Meta.quot(sym_isabs_func)))(p, x), $(idx_var_isabs)))
+        @everywhere $(func_name(:cc, :l2G, :l1F, 1))(S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = true
+        @everywhere $(func_name(:us, :l2G, :l1F, 1))(ptr_loc::Vector{Symbol}, S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
+        (ptr_loc[1] = Symbol("l1F"); 
+         setindex!(S_values, x[$(idx_obs_var_F)], $(idx_var_n));
+         setindex!(S_values, Inf, $(idx_var_dprime));
+         setindex!(S_values, getfield(Main, $(Meta.quot(sym_isabs_func)))(p, x), $(idx_var_isabs)))
 
         # l1F loc : we construct  the edges of the form l1F => (..)
         # l1F => l2F
-        @everywhere $(func_name(:cc, :l1F, :l2F, 1))(S::StateLHA, x::Vector{Int}, p::Vector{Float64}) = 
-        getfield(S, :time) >= $t3 &&
-        getfield(S, :values)[$(idx_var_dprime)] == 0 
-        @everywhere $(func_name(:us, :l1F, :l2F, 1))(S::StateLHA, x::Vector{Int}, p::Vector{Float64}) = 
-        (setfield!(S, :loc, Symbol("l2F"));)
-         #setindex!(getfield(S, :values), 0, $(idx_var_dprime)))
+        @everywhere $(func_name(:cc, :l1F, :l2F, 1))(S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
+        S_time >= $t3 &&
+        S_values[$(idx_var_dprime)] == 0 
+        @everywhere $(func_name(:us, :l1F, :l2F, 1))(ptr_loc::Vector{Symbol}, S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
+        (ptr_loc[1] = Symbol("l2F"));
+         #setindex!(S_values, 0, $(idx_var_dprime)))
 
-        @everywhere $(func_name(:cc, :l1F, :l2F, 2))(S::StateLHA, x::Vector{Int}, p::Vector{Float64}) = 
-        (getfield(S, :time) >= $t4) && 
-        (getfield(S, :values)[$(idx_var_n)] < $x3 || getfield(S, :values)[$(idx_var_n)] > $x4)
-        @everywhere $(func_name(:us, :l1F, :l2F, 2))(S::StateLHA, x::Vector{Int}, p::Vector{Float64}) = 
-        (setfield!(S, :loc, Symbol("l2F"));
-         #setindex!(getfield(S, :values), min(abs(getfield(S, :values)[$(idx_var_n)] - $x3), abs(getfield(S, :values)[$(idx_var_n)] - $x4)), $(idx_var_dprime));
-         setindex!(getfield(S, :values), getfield(S, :values)[$(idx_var_d)] + getfield(S, :values)[$(idx_var_dprime)], $(idx_var_d)))
+        @everywhere $(func_name(:cc, :l1F, :l2F, 2))(S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
+        (S_time >= $t4) && 
+        (S_values[$(idx_var_n)] < $x3 || S_values[$(idx_var_n)] > $x4)
+        @everywhere $(func_name(:us, :l1F, :l2F, 2))(ptr_loc::Vector{Symbol}, S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
+        (ptr_loc[1] = Symbol("l2F");
+         #setindex!(S_values, min(abs(S_values[$(idx_var_n)] - $x3), abs(S_values[$(idx_var_n)] - $x4)), $(idx_var_dprime));
+         setindex!(S_values, S_values[$(idx_var_d)] + S_values[$(idx_var_dprime)], $(idx_var_d)))
         #=
-        @everywhere $(func_name(:cc, :l1F, :l2F, 3))(S::StateLHA, x::Vector{Int}, p::Vector{Float64}) = 
-        istrue(getfield(S, :values)[$(idx_var_isabs)]) && getfield(S, :time) <= $t4
-        @everywhere $(func_name(:us, :l1F, :l2F, 3))(S::StateLHA, x::Vector{Int}, p::Vector{Float64}) = 
-        (setfield!(S, :loc, Symbol("l2F"));
-         setindex!(getfield(S, :values), getfield(S, :values)[$(idx_var_d)] + getfield(S, :values)[$(idx_var_dprime)], $(idx_var_d)))
+        @everywhere $(func_name(:cc, :l1F, :l2F, 3))(S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
+        istrue(S_values[$(idx_var_isabs)]) && S_time <= $t4
+        @everywhere $(func_name(:us, :l1F, :l2F, 3))(ptr_loc::Vector{Symbol}, S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
+        (ptr_loc[1] = Symbol("l2F");
+         setindex!(S_values, S_values[$(idx_var_d)] + S_values[$(idx_var_dprime)], $(idx_var_d)))
 
-        @everywhere $(func_name(:cc, :l1F, :l2F, 4))(S::StateLHA, x::Vector{Int}, p::Vector{Float64}) = 
-        getfield(S, :time) >= $t3 &&
-        getfield(S, :values)[$(idx_var_dprime)] == 0 
-        @everywhere $(func_name(:us, :l1F, :l2F, 4))(S::StateLHA, x::Vector{Int}, p::Vector{Float64}) = 
-        (setfield!(S, :loc, Symbol("l2F")))
+        @everywhere $(func_name(:cc, :l1F, :l2F, 4))(S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
+        S_time >= $t3 &&
+        S_values[$(idx_var_dprime)] == 0 
+        @everywhere $(func_name(:us, :l1F, :l2F, 4))(ptr_loc::Vector{Symbol}, S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
+        (ptr_loc[1] = Symbol("l2F"))
         =#
 
         # l1F => l3F
-        @everywhere $(func_name(:cc, :l1F, :l3F, 1))(S::StateLHA, x::Vector{Int}, p::Vector{Float64}) = 
-        (getfield(S, :time) <= $t3) &&
-        (getfield(S, :values)[$(idx_var_n)] < $x3 || getfield(S, :values)[$(idx_var_n)] > $x4)
-        @everywhere $(func_name(:us, :l1F, :l3F, 1))(S::StateLHA, x::Vector{Int}, p::Vector{Float64}) = 
-        (setfield!(S, :loc, Symbol("l3F"));
-         setindex!(getfield(S, :values), min(sqrt((getfield(S, :time) - $t3)^2 + (getfield(S, :values)[$(idx_var_n)] - $x4)^2), 
-                                             sqrt((getfield(S, :time) - $t3)^2 + (getfield(S, :values)[$(idx_var_n)] - $x3)^2)), $(idx_var_dprime)))
+        @everywhere $(func_name(:cc, :l1F, :l3F, 1))(S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
+        (S_time <= $t3) &&
+        (S_values[$(idx_var_n)] < $x3 || S_values[$(idx_var_n)] > $x4)
+        @everywhere $(func_name(:us, :l1F, :l3F, 1))(ptr_loc::Vector{Symbol}, S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
+        (ptr_loc[1] = Symbol("l3F");
+         setindex!(S_values, min(sqrt((S_time - $t3)^2 + (S_values[$(idx_var_n)] - $x4)^2), 
+                                             sqrt((S_time - $t3)^2 + (S_values[$(idx_var_n)] - $x3)^2)), $(idx_var_dprime)))
 
-        @everywhere $(func_name(:cc, :l1F, :l3F, 2))(S::StateLHA, x::Vector{Int}, p::Vector{Float64}) = 
-        ($x3 <= getfield(S, :values)[$(idx_var_n)] <= $x4)
-        @everywhere $(func_name(:us, :l1F, :l3F, 2))(S::StateLHA, x::Vector{Int}, p::Vector{Float64}) = 
-        (setfield!(S, :loc, Symbol("l3F"));
-         setindex!(getfield(S, :values), 0, $(idx_var_dprime));)
+        @everywhere $(func_name(:cc, :l1F, :l3F, 2))(S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
+        ($x3 <= S_values[$(idx_var_n)] <= $x4)
+        @everywhere $(func_name(:us, :l1F, :l3F, 2))(ptr_loc::Vector{Symbol}, S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
+        (ptr_loc[1] = Symbol("l3F");
+         setindex!(S_values, 0, $(idx_var_dprime));)
 
-        @everywhere $(func_name(:cc, :l1F, :l3F, 3))(S::StateLHA, x::Vector{Int}, p::Vector{Float64}) = 
-        (getfield(S, :time) >= $t3) &&
-        (getfield(S, :values)[$(idx_var_n)] < $x3 || getfield(S, :values)[$(idx_var_n)] > $x4)
-        @everywhere $(func_name(:us, :l1F, :l3F, 3))(S::StateLHA, x::Vector{Int}, p::Vector{Float64}) = 
-        (setfield!(S, :loc, Symbol("l3F"));
-         setindex!(getfield(S, :values), min(getfield(S, :values)[$(idx_var_dprime)], min(abs(getfield(S, :values)[$(idx_var_n)] - $x3), abs(getfield(S, :values)[$(idx_var_n)] - $x4))), $(idx_var_dprime)))
+        @everywhere $(func_name(:cc, :l1F, :l3F, 3))(S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
+        (S_time >= $t3) &&
+        (S_values[$(idx_var_n)] < $x3 || S_values[$(idx_var_n)] > $x4)
+        @everywhere $(func_name(:us, :l1F, :l3F, 3))(ptr_loc::Vector{Symbol}, S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
+        (ptr_loc[1] = Symbol("l3F");
+         setindex!(S_values, min(S_values[$(idx_var_dprime)], min(abs(S_values[$(idx_var_n)] - $x3), abs(S_values[$(idx_var_n)] - $x4))), $(idx_var_dprime)))
 
         # l3F loc
         # l3F => l1F
-        @everywhere $(func_name(:cc, :l3F, :l1F, 1))(S::StateLHA, x::Vector{Int}, p::Vector{Float64}) = true
-        @everywhere $(func_name(:us, :l3F, :l1F, 1))(S::StateLHA, x::Vector{Int}, p::Vector{Float64}) = 
-        (setfield!(S, :loc, Symbol("l1F"));
-         setindex!(getfield(S, :values), x[$(idx_obs_var_F)], $(idx_var_n));
-         setindex!(getfield(S, :values), getfield(Main, $(Meta.quot(sym_isabs_func)))(p, x), $(idx_var_isabs)))
+        @everywhere $(func_name(:cc, :l3F, :l1F, 1))(S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = true
+        @everywhere $(func_name(:us, :l3F, :l1F, 1))(ptr_loc::Vector{Symbol}, S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
+        (ptr_loc[1] = Symbol("l1F");
+         setindex!(S_values, x[$(idx_obs_var_F)], $(idx_var_n));
+         setindex!(S_values, getfield(Main, $(Meta.quot(sym_isabs_func)))(p, x), $(idx_var_isabs)))
 
         # l3F => l2F
-        @everywhere $(func_name(:cc, :l3F, :l2F, 1))(S::StateLHA, x::Vector{Int}, p::Vector{Float64}) = 
-        (getfield(S, :time) >= $t4 || istrue(getfield(S, :values)[$(idx_var_isabs)]))
-        @everywhere $(func_name(:us, :l3F, :l2F, 1))(S::StateLHA, x::Vector{Int}, p::Vector{Float64}) = 
-        (setfield!(S, :loc, Symbol("l2F"));
-         setindex!(getfield(S, :values), getfield(S, :values)[$(idx_var_d)] + getfield(S, :values)[$(idx_var_dprime)], $(idx_var_d)))
+        @everywhere $(func_name(:cc, :l3F, :l2F, 1))(S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
+        (S_time >= $t4 || istrue(S_values[$(idx_var_isabs)]))
+        @everywhere $(func_name(:us, :l3F, :l2F, 1))(ptr_loc::Vector{Symbol}, S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
+        (ptr_loc[1] = Symbol("l2F");
+         setindex!(S_values, S_values[$(idx_var_d)] + S_values[$(idx_var_dprime)], $(idx_var_d)))
     end
     eval(meta_elementary_functions)
 
