@@ -155,7 +155,7 @@ function next_state!(Snplus1::StateLHA, A::LHA,
                      Sn::StateLHA, xn::Vector{Int}, p::Vector{Float64}; verbose::Bool = false)
     # En fait d'apres observation de Cosmos, après qu'on ait lu la transition on devrait stop.
     edge_candidates = Vector{Edge}(undef, 2)
-    first_round::Bool = true
+    #first_round::Bool = true
     detected_event::Bool = false
     turns = 0
        
@@ -167,7 +167,8 @@ function next_state!(Snplus1::StateLHA, A::LHA,
     end
     # In terms of values not reference, Snplus1 == Sn
     # First, we check the asynchronous transitions
-    while first_round || length(edge_candidates) > 0
+    #while first_round || length(edge_candidates) > 0
+    while true
         turns += 1
         #edge_candidates = empty!(edge_candidates)
         current_loc = getfield(Snplus1, :loc)
@@ -179,19 +180,19 @@ function next_state!(Snplus1::StateLHA, A::LHA,
         ind_edge, detected_event = _get_edge_index(edge_candidates, nbr_candidates, detected_event, nothing)
         # Update the state with the chosen one (if it exists)
         # Should be xn here
+        #first_round = false
         if ind_edge > 0
             getfield(edge_candidates[ind_edge], :update_state!)(Snplus1, xn, p)
+        else
+            if verbose println("No edge fired") end
+            break 
         end
-        first_round = false
         if verbose
             @show turns
             @show edge_candidates
             @show ind_edge, detected_event, nbr_candidates
             println("After update")
             @show Snplus1
-        end
-        if (ind_edge == 0) 
-            break 
         end
         # For debug
         #=
@@ -227,8 +228,9 @@ function next_state!(Snplus1::StateLHA, A::LHA,
         @show Snplus1 
     end
     # Now firing an edge according to the event 
-    first_round = true
-    while first_round || length(edge_candidates) > 0
+    #first_round = true
+    #while first_round || length(edge_candidates) > 0
+    while true
         turns += 1
         current_loc = getfield(Snplus1, :loc)
         edges_from_current_loc = getfield(A, :map_edges)[current_loc]
@@ -237,22 +239,33 @@ function next_state!(Snplus1::StateLHA, A::LHA,
         # Search the one we must chose
         ind_edge, detected_event = _get_edge_index(edge_candidates, nbr_candidates, detected_event, tr_nplus1)
         # Update the state with the chosen one (if it exists)
-        if verbose 
-            @show turns
-            @show edge_candidates
-            @show ind_edge, detected_event, nbr_candidates
-        end
+        #first_round = false
         if ind_edge > 0
             getfield(edge_candidates[ind_edge], :update_state!)(Snplus1, xnplus1, p)
         end
-        first_round = false
+        if ind_edge == 0 || detected_event
+            if verbose 
+                if detected_event    
+                    println("Synchronized with $(tr_nplus1)") 
+                    @show turns
+                    @show edge_candidates
+                    @show ind_edge, detected_event, nbr_candidates
+                    println("After update")
+                    @show detected_event
+                    @show Snplus1
+                else
+                    println("No edge fired")
+                end
+            end
+            break 
+        end
         if verbose
+            @show turns
+            @show edge_candidates
+            @show ind_edge, detected_event, nbr_candidates
             println("After update")
             @show detected_event
             @show Snplus1
-        end
-        if (ind_edge == 0 || detected_event) 
-            break 
         end
         # For debug
         #=

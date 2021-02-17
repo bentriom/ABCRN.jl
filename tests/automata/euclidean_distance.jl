@@ -13,7 +13,7 @@ observe_all!(ER)
 test_all = true
 
 # SIR model
-nbr_sim = 20
+nbr_sim = 10
 for i = 1:nbr_sim
     set_param!(SIR, [:ki, :kr], [rand(Uniform(5E-5, 3E-3)), rand(Uniform(5E-3, 0.2))]) 
     let tml_obs, y_obs, sync_SIR, σ, test, test2
