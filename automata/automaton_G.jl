@@ -54,62 +54,62 @@ function create_automaton_G(m::ContinuousTimeModel, x1::Float64, x2::Float64, t1
         # l0 loc
         # l0 => l1
         @everywhere $(func_name(:cc, :l0, :l1, 1))(S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = true
-        @everywhere $(func_name(:us, :l0, :l1, 1))(ptr_loc::Vector{Symbol}, S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
-        (ptr_loc[1] = Symbol("l1"); 
-         setindex!(S_values, 0, $(idx_var_d));
+        @everywhere $(func_name(:us, :l0, :l1, 1))(S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
+        (setindex!(S_values, 0, $(idx_var_d));
          setindex!(S_values, x[$(idx_obs_var)], $(idx_var_n));
          setindex!(S_values, true, $(idx_var_in));
-         setindex!(S_values, getfield(Main, $(Meta.quot(sym_isabs_func)))(p, x), $(idx_var_isabs)))
+         setindex!(S_values, getfield(Main, $(Meta.quot(sym_isabs_func)))(p, x), $(idx_var_isabs));
+		:l1)
 
         # l1 => l3
         @everywhere $(func_name(:cc, :l1, :l3, 1))(S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
         S_time <= $t1 && 
         S_values[$(idx_var_n)] < $x1 || S_values[$(idx_var_n)] > $x2
-        @everywhere $(func_name(:us, :l1, :l3, 1))(ptr_loc::Vector{Symbol}, S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
-        (ptr_loc[1] = Symbol("l3"); 
-         setindex!(S_values, min(abs($x1 - S_values[$(idx_var_n)]), abs($x2 - S_values[$(idx_var_n)])), $(idx_var_d));
-         setindex!(S_values, false, $(idx_var_in)))
+        @everywhere $(func_name(:us, :l1, :l3, 1))(S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
+        (setindex!(S_values, min(abs($x1 - S_values[$(idx_var_n)]), abs($x2 - S_values[$(idx_var_n)])), $(idx_var_d));
+         setindex!(S_values, false, $(idx_var_in));
+		:l3)
 
         @everywhere $(func_name(:cc, :l1, :l3, 2))(S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
         (S_time <= $t1) && 
         ($x1 <= S_values[$(idx_var_n)] <= $x2)
-        @everywhere $(func_name(:us, :l1, :l3, 2))(ptr_loc::Vector{Symbol}, S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
-        (ptr_loc[1] = Symbol("l3"); 
-         setindex!(S_values, 0, $(idx_var_d));
-         setindex!(S_values, false, $(idx_var_in)))
+        @everywhere $(func_name(:us, :l1, :l3, 2))(S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
+        (setindex!(S_values, 0, $(idx_var_d));
+         setindex!(S_values, false, $(idx_var_in));
+		:l3)
 
         @everywhere $(func_name(:cc, :l1, :l3, 3))(S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
         !istrue(S_values[$(idx_var_in)]) && 
         ($t1 <= S_time <= $t2) && 
         ($x1 <= S_values[$(idx_var_n)] <= $x2)
-        @everywhere $(func_name(:us, :l1, :l3, 3))(ptr_loc::Vector{Symbol}, S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
-        (ptr_loc[1] = Symbol("l3"); 
-         setindex!(S_values, S_values[$(idx_var_d)] * (S_time - $t1), $(idx_var_d));
-         setindex!(S_values, 0.0, $(idx_var_tprime)))
+        @everywhere $(func_name(:us, :l1, :l3, 3))(S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
+        (setindex!(S_values, S_values[$(idx_var_d)] * (S_time - $t1), $(idx_var_d));
+         setindex!(S_values, 0.0, $(idx_var_tprime));
+		:l3)
 
         @everywhere $(func_name(:cc, :l1, :l3, 4))(S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
         istrue(S_values[$(idx_var_in)]) && 
         ($t1 <= S_time <= $t2) && 
         ($x1 <= S_values[$(idx_var_n)] <= $x2)
-        @everywhere $(func_name(:us, :l1, :l3, 4))(ptr_loc::Vector{Symbol}, S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
-        (ptr_loc[1] = Symbol("l3"); 
-         setindex!(S_values, 0.0, $(idx_var_tprime)))
+        @everywhere $(func_name(:us, :l1, :l3, 4))(S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
+        (setindex!(S_values, 0.0, $(idx_var_tprime));
+		:l3)
 
         # l1 => l4
         @everywhere $(func_name(:cc, :l1, :l4, 1))(S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
         !istrue(S_values[$(idx_var_in)]) && 
         ($t1 <= S_time <= $t2) && 
         (S_values[$(idx_var_n)] < $x1 || S_values[$(idx_var_n)] > $x2)
-        @everywhere $(func_name(:us, :l1, :l4, 1))(ptr_loc::Vector{Symbol}, S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
-        (ptr_loc[1] = Symbol("l4"); 
-         setindex!(S_values, S_values[$(idx_var_d)] + S_values[$(idx_var_d)] * (S_time - $t1), $(idx_var_d)))
+        @everywhere $(func_name(:us, :l1, :l4, 1))(S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
+        (setindex!(S_values, S_values[$(idx_var_d)] + S_values[$(idx_var_d)] * (S_time - $t1), $(idx_var_d));
+		:l4)
 
         @everywhere $(func_name(:cc, :l1, :l4, 2))(S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
         istrue(S_values[$(idx_var_in)]) && 
         ($t1 <= S_time <= $t2) && 
         (S_values[$(idx_var_n)] < $x1 || S_values[$(idx_var_n)] > $x2)
-        @everywhere $(func_name(:us, :l1, :l4, 2))(ptr_loc::Vector{Symbol}, S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
-        (ptr_loc[1] = Symbol("l4"))
+        @everywhere $(func_name(:us, :l1, :l4, 2))(S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
+        (:l4)
 
 
         # l1 => l2
@@ -117,76 +117,76 @@ function create_automaton_G(m::ContinuousTimeModel, x1::Float64, x2::Float64, t1
         @everywhere $(func_name(:cc, :l1, :l2, 1))(S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
         istrue(S_values[$(idx_var_in)]) && 
         S_time >= $t2
-        @everywhere $(func_name(:us, :l1, :l2, 1))(ptr_loc::Vector{Symbol}, S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
-        (ptr_loc[1] = Symbol("l2"))
+        @everywhere $(func_name(:us, :l1, :l2, 1))(S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
+        (:l2)
 
         @everywhere $(func_name(:cc, :l1, :l2, 2))(S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
         !istrue(S_values[$(idx_var_in)]) && 
         S_time >= $t2
-        @everywhere $(func_name(:us, :l1, :l2, 2))(ptr_loc::Vector{Symbol}, S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
-        (ptr_loc[1] = Symbol("l2"); 
-         setindex!(S_values, S_values[$(idx_var_d)] * ($t2 - $t1), $(idx_var_d)))
+        @everywhere $(func_name(:us, :l1, :l2, 2))(S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
+        (setindex!(S_values, S_values[$(idx_var_d)] * ($t2 - $t1), $(idx_var_d));
+		:l2)
 
         @everywhere $(func_name(:cc, :l1, :l2, 3))(S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
         istrue(S_values[$(idx_var_isabs)]) && 
         S_time <= $t1
-        @everywhere $(func_name(:us, :l1, :l2, 3))(ptr_loc::Vector{Symbol}, S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
-        (ptr_loc[1] = Symbol("l2"); 
-         setindex!(S_values, ($t2 - $t1) * min(abs($x1 - S_values[$(idx_var_n)]), abs($x2 - S_values[$(idx_var_n)])), $(idx_var_d)))
+        @everywhere $(func_name(:us, :l1, :l2, 3))(S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
+        (setindex!(S_values, ($t2 - $t1) * min(abs($x1 - S_values[$(idx_var_n)]), abs($x2 - S_values[$(idx_var_n)])), $(idx_var_d));
+		:l2)
 
         @everywhere $(func_name(:cc, :l1, :l2, 4))(S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
         istrue(S_values[$(idx_var_isabs)]) && 
         ($t1 <= S_time <= $t2)
-        @everywhere $(func_name(:us, :l1, :l2, 4))(ptr_loc::Vector{Symbol}, S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
-        (ptr_loc[1] = Symbol("l2"); 
-         setindex!(S_values, S_values[$(idx_var_d)] + ($t2 - S_time) * min(abs($x1 - S_values[$(idx_var_n)]), abs($x2 - S_values[$(idx_var_n)])), $(idx_var_d)))
+        @everywhere $(func_name(:us, :l1, :l2, 4))(S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
+        (setindex!(S_values, S_values[$(idx_var_d)] + ($t2 - S_time) * min(abs($x1 - S_values[$(idx_var_n)]), abs($x2 - S_values[$(idx_var_n)])), $(idx_var_d));
+		:l2)
         =#
 
         # l3 => l1
         @everywhere $(func_name(:cc, :l3, :l1, 1))(S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = true
-        @everywhere $(func_name(:us, :l3, :l1, 1))(ptr_loc::Vector{Symbol}, S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
-        (ptr_loc[1] = Symbol("l1"); 
-         setindex!(S_values, x[$(idx_obs_var)], $(idx_var_n));
-         setindex!(S_values, getfield(Main, $(Meta.quot(sym_isabs_func)))(p, x), $(idx_var_isabs)))
+        @everywhere $(func_name(:us, :l3, :l1, 1))(S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
+        (setindex!(S_values, x[$(idx_obs_var)], $(idx_var_n));
+         setindex!(S_values, getfield(Main, $(Meta.quot(sym_isabs_func)))(p, x), $(idx_var_isabs));
+		:l1)
 
         # l4 => l1
         @everywhere $(func_name(:cc, :l4, :l1, 1))(S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = true
-        @everywhere $(func_name(:us, :l4, :l1, 1))(ptr_loc::Vector{Symbol}, S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
-        (ptr_loc[1] = Symbol("l1"); 
-         setindex!(S_values, S_values[$(idx_var_d)] + S_values[$(idx_var_tprime)] * min(abs($x1 - S_values[$(idx_var_n)]), abs($x2 - S_values[$(idx_var_n)])), $(idx_var_d));
+        @everywhere $(func_name(:us, :l4, :l1, 1))(S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
+        (setindex!(S_values, S_values[$(idx_var_d)] + S_values[$(idx_var_tprime)] * min(abs($x1 - S_values[$(idx_var_n)]), abs($x2 - S_values[$(idx_var_n)])), $(idx_var_d));
          setindex!(S_values, 0.0, $(idx_var_tprime));
          setindex!(S_values, x[$(idx_obs_var)], $(idx_var_n));
          setindex!(S_values, true, $(idx_var_in));
-         setindex!(S_values, getfield(Main, $(Meta.quot(sym_isabs_func)))(p, x), $(idx_var_isabs)))
+         setindex!(S_values, getfield(Main, $(Meta.quot(sym_isabs_func)))(p, x), $(idx_var_isabs));
+		:l1)
 
         # l3 => l2
         @everywhere $(func_name(:cc, :l3, :l2, 2))(S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
         istrue(S_values[$(idx_var_in)]) && 
         (S_time >= $t2 || istrue(S_values[$(idx_var_isabs)]))
-        @everywhere $(func_name(:us, :l3, :l2, 2))(ptr_loc::Vector{Symbol}, S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
-        (ptr_loc[1] = Symbol("l2");
-         setindex!(S_values, S_values[$(idx_var_d)] * ($t2 - $t1), $(idx_var_d)))
+        @everywhere $(func_name(:us, :l3, :l2, 2))(S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
+        (setindex!(S_values, S_values[$(idx_var_d)] * ($t2 - $t1), $(idx_var_d));
+		:l2)
 
         @everywhere $(func_name(:cc, :l3, :l2, 1))(S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
         !istrue(S_values[$(idx_var_in)]) && 
         (S_time >= $t2 || istrue(S_values[$(idx_var_isabs)]))
-        @everywhere $(func_name(:us, :l3, :l2, 1))(ptr_loc::Vector{Symbol}, S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
-        (ptr_loc[1] = Symbol("l2"))
+        @everywhere $(func_name(:us, :l3, :l2, 1))(S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
+        (:l2)
 
         # l4 => l2
         @everywhere $(func_name(:cc, :l4, :l2, 1))(S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
         (istrue(S_values[$(idx_var_isabs)]))
-        @everywhere $(func_name(:us, :l4, :l2, 1))(ptr_loc::Vector{Symbol}, S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
-        (ptr_loc[1] = Symbol("l2"); 
-         setindex!(S_values, S_values[$(idx_var_d)] + ($t2 - S_time) * min(abs($x1 - S_values[$(idx_var_n)]), abs($x2 - S_values[$(idx_var_n)])), $(idx_var_d));
-         setindex!(S_values, 0.0, $(idx_var_tprime)))
+        @everywhere $(func_name(:us, :l4, :l2, 1))(S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
+        (setindex!(S_values, S_values[$(idx_var_d)] + ($t2 - S_time) * min(abs($x1 - S_values[$(idx_var_n)]), abs($x2 - S_values[$(idx_var_n)])), $(idx_var_d));
+         setindex!(S_values, 0.0, $(idx_var_tprime));
+		:l2)
 
         @everywhere $(func_name(:cc, :l4, :l2, 2))(S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
         (S_time >= $t2)
-        @everywhere $(func_name(:us, :l4, :l2, 2))(ptr_loc::Vector{Symbol}, S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
-        (ptr_loc[1] = Symbol("l2"); 
-         setindex!(S_values, S_values[$(idx_var_d)] + S_values[$(idx_var_tprime)] * min(abs($x1 - S_values[$(idx_var_n)]), abs($x2 - S_values[$(idx_var_n)])), $(idx_var_d));
-         setindex!(S_values, 0.0, $(idx_var_tprime)))
+        @everywhere $(func_name(:us, :l4, :l2, 2))(S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
+        (setindex!(S_values, S_values[$(idx_var_d)] + S_values[$(idx_var_tprime)] * min(abs($x1 - S_values[$(idx_var_n)]), abs($x2 - S_values[$(idx_var_n)])), $(idx_var_d));
+         setindex!(S_values, 0.0, $(idx_var_tprime));
+		:l2)
  
     end
     eval(meta_elementary_functions)

@@ -70,7 +70,7 @@ function Base.copyto!(Sdest::StateLHA, Ssrc::StateLHA)
     Sdest.A = Ssrc.A
     Sdest.loc = Ssrc.loc
     for i = eachindex(Sdest.values)
-        Sdest.values[i] = Ssrc.values[i]
+        @inbounds Sdest.values[i] = Ssrc.values[i]
     end
     Sdest.time = Ssrc.time
 end
@@ -96,7 +96,7 @@ end
 # are not greater than 2
 function _push_edge!(edge_candidates::Vector{Edge}, edge::Edge, nbr_candidates::Int)
     if nbr_candidates < 2
-        edge_candidates[nbr_candidates+1] = edge
+        @inbounds edge_candidates[nbr_candidates+1] = edge
     else
         push!(edge_candidates, edge)
     end
@@ -110,8 +110,9 @@ function _find_edge_candidates!(edge_candidates::Vector{Edge},
                                 only_asynchronous::Bool)
     nbr_candidates = 0
     for target_loc in keys(edges_from_current_loc)
+        if !Λ[target_loc](x) continue end
         for edge in edges_from_current_loc[target_loc]
-            if Λ[target_loc](x) && getfield(edge, :check_constraints)(S_time, S_values, x, p)
+            if getfield(edge, :check_constraints)(S_time, S_values, x, p)
                 if getfield(edge, :transitions) == nothing
                     _push_edge!(edge_candidates, edge, nbr_candidates)
                     nbr_candidates += 1
@@ -159,8 +160,11 @@ function next_state!(Snplus1::StateLHA, A::LHA,
     turns = 0
     current_values = getfield(Snplus1, :values)
     current_time = getfield(Snplus1, :time)
-    ptr_current_loc = [getfield(Snplus1, :loc)]
-    
+    current_loc = getfield(Snplus1, :loc)
+    Λ = getfield(A, :Λ)
+    flow = getfield(A, :flow)
+    map_edges = getfield(A, :map_edges)
+
     if verbose 
         println("##### Begin next_state!")
         @show xnplus1, tnplus1, tr_nplus1
@@ -171,9 +175,9 @@ function next_state!(Snplus1::StateLHA, A::LHA,
     while true
         turns += 1
         #edge_candidates = empty!(edge_candidates) 
-        edges_from_current_loc = getfield(A, :map_edges)[ptr_current_loc[1]]
+        edges_from_current_loc = map_edges[current_loc]
         # Save all edges that satisfies transition predicate (asynchronous ones)
-        nbr_candidates = _find_edge_candidates!(edge_candidates, edges_from_current_loc, getfield(A, :Λ), 
+        nbr_candidates = _find_edge_candidates!(edge_candidates, edges_from_current_loc, Λ, 
                                                 current_time, current_values, xn, p, true)
         # Search the one we must chose, here the event is nothing because 
         # we're not processing yet the next event
@@ -182,7 +186,7 @@ function next_state!(Snplus1::StateLHA, A::LHA,
         # Should be xn here
         #first_round = false
         if ind_edge > 0
-            getfield(edge_candidates[ind_edge], :update_state!)(ptr_current_loc, current_time, current_values, xn, p)
+            current_loc = getfield(edge_candidates[ind_edge], :update_state!)(current_time, current_values, xn, p)
         else
             if verbose println("No edge fired") end
             break 
@@ -191,7 +195,7 @@ function next_state!(Snplus1::StateLHA, A::LHA,
             @show turns
             @show edge_candidates
             @show ind_edge, detected_event, nbr_candidates
-            @show ptr_current_loc[1]
+            @show current_loc
             @show current_time
             @show current_values
             if turns == 500
@@ -218,29 +222,29 @@ function next_state!(Snplus1::StateLHA, A::LHA,
     end
     # Now time flies according to the flow
     for i in eachindex(current_values)
-        @inbounds coeff_deriv = (getfield(A, :flow)[ptr_current_loc[1]])[i]
+        @inbounds coeff_deriv = flow[current_loc][i]
         if coeff_deriv > 0
             @inbounds current_values[i] += coeff_deriv*(tnplus1 - current_time)
         end
     end
     current_time = tnplus1
     if verbose 
-        @show ptr_current_loc[1]
+        @show current_loc
         @show current_time
         @show current_values
     end
     # Now firing an edge according to the event 
     while true
         turns += 1
-        edges_from_current_loc = getfield(A, :map_edges)[ptr_current_loc[1]]
+        edges_from_current_loc = map_edges[current_loc]
         # Save all edges that satisfies transition predicate (synchronous ones)
-        nbr_candidates = _find_edge_candidates!(edge_candidates, edges_from_current_loc, getfield(A, :Λ), 
+        nbr_candidates = _find_edge_candidates!(edge_candidates, edges_from_current_loc, Λ, 
                                                 current_time, current_values, xnplus1, p, false)
         # Search the one we must chose
         ind_edge, detected_event = _get_edge_index(edge_candidates, nbr_candidates, detected_event, tr_nplus1)
         # Update the state with the chosen one (if it exists)
         if ind_edge > 0
-            getfield(edge_candidates[ind_edge], :update_state!)(ptr_current_loc, current_time, current_values, xnplus1, p)
+            current_loc = getfield(edge_candidates[ind_edge], :update_state!)(current_time, current_values, xnplus1, p)
         end
         if ind_edge == 0 || detected_event
             if verbose 
@@ -250,7 +254,7 @@ function next_state!(Snplus1::StateLHA, A::LHA,
                     @show edge_candidates
                     @show ind_edge, detected_event, nbr_candidates
                     @show detected_event
-                    @show ptr_current_loc[1]
+                    @show current_loc
                     @show current_time
                     @show current_values
                 else
@@ -264,7 +268,7 @@ function next_state!(Snplus1::StateLHA, A::LHA,
             @show edge_candidates
             @show ind_edge, detected_event, nbr_candidates
             @show detected_event
-            @show ptr_current_loc[1]
+            @show current_loc
             @show current_time
             @show current_values
             if turns == 500
@@ -286,7 +290,7 @@ function next_state!(Snplus1::StateLHA, A::LHA,
         end
         =#
     end
-    setfield!(Snplus1, :loc, ptr_current_loc[1])
+    setfield!(Snplus1, :loc, current_loc)
     setfield!(Snplus1, :time, current_time)
     if verbose 
         @show Snplus1

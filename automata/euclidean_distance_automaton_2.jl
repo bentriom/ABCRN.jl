@@ -28,13 +28,13 @@ function create_euclidean_distance_automaton_2(m::ContinuousTimeModel, timeline:
     for loc in locations
         flow[loc] = vector_flow
     end
-    
+
     ## Edges
     map_edges = Dict{Location, Dict{Location, Vector{Edge}}}()
     for loc in locations 
         map_edges[loc] = Dict{Location, Vector{Edge}}()
     end
-   
+
     idx_obs_var = getfield(m, :map_var_idx)[sym_obs]
     to_idx(var::Symbol) = map_var_automaton_idx[var] 
     nbr_rand = rand(1:1000)
@@ -47,24 +47,25 @@ function create_euclidean_distance_automaton_2(m::ContinuousTimeModel, timeline:
         # l0 loc
         # l0 => l1
         @everywhere $(func_name(:cc, :l0, :l1, 1))(S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = true
-        @everywhere $(func_name(:us, :l0, :l1, 1))(ptr_loc::Vector{Symbol}, S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
-        (ptr_loc[1] = Symbol("l1"); 
-         setindex!(S_values, x[$(idx_obs_var)], $(to_idx(:n)));
-         setindex!(S_values, 0.0, $(to_idx(:d))))
-       
+        @everywhere $(func_name(:us, :l0, :l1, 1))(S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
+        (setindex!(S_values, x[$(idx_obs_var)], $(to_idx(:n)));
+         setindex!(S_values, 0.0, $(to_idx(:d)));
+         :l1)
+
         # lnbr_obs => lfinal
         @everywhere $(func_name(:cc, loc_nbr_obs, :lfinal, 1))(S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
         S_values[$(to_idx(:t))] >= $(timeline[nbr_observations])
-        @everywhere $(func_name(:us, loc_nbr_obs, :lfinal, 1))(ptr_loc::Vector{Symbol}, S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
-        (ptr_loc[1] = Symbol("lfinal"); 
-         setindex!(S_values, S_values[$(to_idx(:d))] + (S_values[$(to_idx(:n))]-$(observations[nbr_observations]))^2, 
-                                         $(to_idx(:d)));
-         setindex!(S_values, sqrt(S_values[$(to_idx(:d))]), $(to_idx(:d))))
+        @everywhere $(func_name(:us, loc_nbr_obs, :lfinal, 1))(S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
+        (setindex!(S_values, S_values[$(to_idx(:d))] + (S_values[$(to_idx(:n))]-$(observations[nbr_observations]))^2, 
+                   $(to_idx(:d)));
+         setindex!(S_values, sqrt(S_values[$(to_idx(:d))]), $(to_idx(:d)));
+         :lfinal)
 
         # lnbr_obs => lnbr_obs
         @everywhere $(func_name(:cc, loc_nbr_obs, loc_nbr_obs, 1))(S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = true 
-        @everywhere $(func_name(:us, loc_nbr_obs, loc_nbr_obs, 1))(ptr_loc::Vector{Symbol}, S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
-        (setindex!(S_values, x[$(idx_obs_var)], $(to_idx(:n))))
+        @everywhere $(func_name(:us, loc_nbr_obs, loc_nbr_obs, 1))(S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
+        (setindex!(S_values, x[$(idx_obs_var)], $(to_idx(:n)));
+         $(Meta.quot(loc_nbr_obs)))
     end
     eval(meta_elementary_functions)
     # l0 loc
@@ -88,14 +89,15 @@ function create_euclidean_distance_automaton_2(m::ContinuousTimeModel, timeline:
             # Defined below 
             @everywhere $(func_name(:cc, loci, locip1, 1))(S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) =
             S_values[$(to_idx(:t))] >= $(timeline[i])
-            @everywhere $(func_name(:us, loci, locip1, 1))(ptr_loc::Vector{Symbol}, S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) =
-            (ptr_loc[1] = $(Meta.quot(locip1)); 
-             setindex!(S_values, S_values[$(to_idx(:d))] + (S_values[$(to_idx(:n))]-$(observations[i]))^2, 
-                                             $(to_idx(:d))))
+            @everywhere $(func_name(:us, loci, locip1, 1))(S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) =
+            (setindex!(S_values, S_values[$(to_idx(:d))] + (S_values[$(to_idx(:n))]-$(observations[i]))^2, 
+                       $(to_idx(:d)));
+             $(Meta.quot(locip1)))
 
             @everywhere $(func_name(:cc, loci, loci, 1))(S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = true 
-            @everywhere $(func_name(:us, loci, loci, 1))(ptr_loc::Vector{Symbol}, S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
-            (setindex!(S_values, x[$(idx_obs_var)], $(to_idx(:n))))
+            @everywhere $(func_name(:us, loci, loci, 1))(S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
+            (setindex!(S_values, x[$(idx_obs_var)], $(to_idx(:n)));
+             $(Meta.quot(loci)))
         end
         eval(meta_elementary_functions_loci)
 
@@ -106,7 +108,7 @@ function create_euclidean_distance_automaton_2(m::ContinuousTimeModel, timeline:
         edge1 = Edge([:ALL], getfield(Main, func_name(:cc, loci, loci, 1)), getfield(Main, func_name(:us, loci, loci, 1)))
         map_edges[loci][loci] = [edge1]
     end
-    
+
     ## Constants
     constants = Dict{Symbol,Float64}(:nbr_obs => nbr_observations)
 
