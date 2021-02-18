@@ -11,8 +11,8 @@ function _init_abc_automaton!(mat_p_old::Matrix{Float64}, vec_dist::Vector{Float
             S = volatile_simulate(pm, vec_p)
             vec_dist[i] = S[sym_var_aut]
         else
-            σ = simulate(pm, vec_p)
-            vec_dist[i] = func_dist(σ, l_obs)
+            l_sim = [simulate(pm, vec_p) for i = 1:length(l_obs)]
+            vec_dist[i] = func_dist(l_sim, l_obs)
         end
     end
 end
@@ -104,8 +104,8 @@ function _update_param!(mat_p::Matrix{Float64}, vec_dist::Vector{Float64},
             S = volatile_simulate(pm, vec_p_prime)
             dist_sim = S[sym_var_aut]
         else
-            σ = simulate(pm, vec_p)
-            dist_sim = func_dist(σ, l_obs)
+            l_sim = [simulate(pm, vec_p_prime) for i = 1:length(l_obs)]
+            dist_sim = func_dist(l_sim, l_obs)
         end
         nbr_sim += 1
     end
