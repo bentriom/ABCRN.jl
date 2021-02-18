@@ -90,7 +90,7 @@ function ContinuousTimeModel(dim_state::Int, dim_params::Int, map_var_idx::Dict{
                              map_param_idx::Dict{ParameterModel,Int}, transitions::Vector{<:Transition},
                              p::Vector{Float64}, x0::Vector{Int}, t0::Float64, 
                              f!::Function, isabsorbing::Function; 
-                             g::Vector{VariableModel} = keys(map_var_idx), time_bound::Float64 = Inf, 
+                             g::Vector{VariableModel} = [var for var in keys(map_var_idx)], time_bound::Float64 = Inf, 
                              buffer_size::Int = 10, estim_min_states::Int = 50, name::String = "Unnamed")
     dim_obs_state = length(g)
     transitions = convert(Vector{Transition}, transitions)
