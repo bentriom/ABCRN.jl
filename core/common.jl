@@ -39,7 +39,7 @@ struct Trajectory <: AbstractTrajectory
 end
 
 struct Edge
-    transitions::Union{Nothing,Vector{Transition}}
+    transitions::Union{Nothing,Vector{Symbol}}
     check_constraints::Function
     update_state!::Function
 end

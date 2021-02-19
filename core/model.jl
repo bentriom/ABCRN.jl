@@ -139,6 +139,7 @@ function simulate(product::SynchronizedModel; p::Union{Nothing,AbstractVector{Fl
     S0 = init_state(A, x0, t0)
     buffer_size = getfield(m, :buffer_size)
     estim_min_states = getfield(m, :estim_min_states)
+    edge_candidates = Vector{Edge}(undef, 2)
     # First alloc
     full_values = Vector{Vector{Int}}(undef, getfield(m, :dim_state))
     for i = eachindex(full_values) full_values[i] = zeros(Int, estim_min_states) end
@@ -153,7 +154,7 @@ function simulate(product::SynchronizedModel; p::Union{Nothing,AbstractVector{Fl
     xn = copy(x0)
     tn = copy(t0) 
     Sn = copy(S0)
-    next_state!(Sn, A, x0, t0, nothing, S0, x0, p_sim; verbose = verbose)
+    next_state!(Sn, A, x0, t0, nothing, S0, x0, p_sim, edge_candidates; verbose = verbose)
     isabsorbing::Bool = getfield(m, :isabsorbing)(p_sim,xn)
     isacceptedLHA::Bool = isaccepted(Sn)
     # Alloc of vectors where we stock n+1 values
@@ -169,7 +170,7 @@ function simulate(product::SynchronizedModel; p::Union{Nothing,AbstractVector{Fl
             _finish_bounded_trajectory!(values, times, transitions, time_bound)
         end
         if isabsorbing && !isacceptedLHA
-            next_state!(Snplus1, A, xn, time_bound, nothing, Sn, xn, p_sim; verbose = verbose)
+            next_state!(Snplus1, A, xn, time_bound, nothing, Sn, xn, p_sim, edge_candidates; verbose = verbose)
             copyto!(Sn, Snplus1)
         end
         return SynchronizedTrajectory(Sn, product, values, times, transitions)
@@ -183,7 +184,7 @@ function simulate(product::SynchronizedModel; p::Union{Nothing,AbstractVector{Fl
             break
         end
         n += 1
-        next_state!(Snplus1, A, vec_x, l_t[1], l_tr[1], Sn, xn, p_sim; verbose = verbose)
+        next_state!(Snplus1, A, vec_x, l_t[1], l_tr[1], Sn, xn, p_sim, edge_candidates; verbose = verbose)
         copyto!(xn, vec_x)
         tn = l_t[1]
         tr_n = l_tr[1]
@@ -202,7 +203,7 @@ function simulate(product::SynchronizedModel; p::Union{Nothing,AbstractVector{Fl
             _finish_bounded_trajectory!(values, times, transitions, time_bound)
         end
         if isabsorbing && !isacceptedLHA
-            next_state!(Snplus1, A, xn, time_bound, nothing, Sn, xn, p_sim; verbose = verbose)
+            next_state!(Snplus1, A, xn, time_bound, nothing, Sn, xn, p_sim, edge_candidates; verbose = verbose)
             copyto!(Sn, Snplus1)
         end
         return SynchronizedTrajectory(Sn, product, values, times, transitions)
@@ -226,7 +227,7 @@ function simulate(product::SynchronizedModel; p::Union{Nothing,AbstractVector{Fl
                 i -= 1
                 break
             end
-            next_state!(Snplus1, A, vec_x, l_t[1], l_tr[1], Sn, xn, p_sim; verbose = verbose)
+            next_state!(Snplus1, A, vec_x, l_t[1], l_tr[1], Sn, xn, p_sim, edge_candidates; verbose = verbose)
             copyto!(xn, vec_x)
             tn = l_t[1]
             tr_n = l_tr[1]
@@ -252,7 +253,7 @@ function simulate(product::SynchronizedModel; p::Union{Nothing,AbstractVector{Fl
         _finish_bounded_trajectory!(values, times, transitions, time_bound)
     end
     if isabsorbing && !isacceptedLHA
-        next_state!(Snplus1, A, xn, time_bound, nothing, Sn, xn, p_sim; verbose = verbose)
+        next_state!(Snplus1, A, xn, time_bound, nothing, Sn, xn, p_sim, edge_candidates; verbose = verbose)
         copyto!(Sn, Snplus1)
     end
     return SynchronizedTrajectory(Sn, product, values, times, transitions)
@@ -276,12 +277,13 @@ function volatile_simulate(product::SynchronizedModel;
     t0 = getfield(m, :t0)
     time_bound = getfield(m, :time_bound)
     S0 = init_state(A, x0, t0)
+    edge_candidates = Vector{Edge}(undef, 2)
     # Values at time n
     n = 1
     xn = copy(x0)
     tn = copy(t0) 
     Sn = copy(S0)
-    next_state!(Sn, A, x0, t0, nothing, S0, x0, p_sim; verbose = verbose)
+    next_state!(Sn, A, x0, t0, nothing, S0, x0, p_sim, edge_candidates; verbose = verbose)
     isabsorbing::Bool = getfield(m, :isabsorbing)(p_sim,xn)
     isacceptedLHA::Bool = isaccepted(Sn)
     # Alloc of vectors where we stock n+1 values
@@ -292,7 +294,7 @@ function volatile_simulate(product::SynchronizedModel;
     # If x0 is absorbing
     if isabsorbing || isacceptedLHA 
         if !isacceptedLHA
-            next_state!(Snplus1, A, xn, time_bound, nothing, Sn, xn, p_sim; verbose = verbose)
+            next_state!(Snplus1, A, xn, time_bound, nothing, Sn, xn, p_sim, edge_candidates; verbose = verbose)
             copyto!(Sn, Snplus1)
         end
         return Sn
@@ -307,7 +309,7 @@ function volatile_simulate(product::SynchronizedModel;
             isabsorbing = true
             break
         end
-        next_state!(Snplus1, A, vec_x, l_t[1], l_tr[1], Sn, xn, p_sim; verbose = verbose)
+        next_state!(Snplus1, A, vec_x, l_t[1], l_tr[1], Sn, xn, p_sim, edge_candidates; verbose = verbose)
         copyto!(xn, vec_x)
         tn = l_t[1]
         tr_n = l_tr[1]
@@ -316,7 +318,7 @@ function volatile_simulate(product::SynchronizedModel;
         n += 1
     end
     if isabsorbing && !isacceptedLHA
-        next_state!(Snplus1, A, xn, time_bound, nothing, Sn, xn, p_sim; verbose = verbose)
+        next_state!(Snplus1, A, xn, time_bound, nothing, Sn, xn, p_sim, edge_candidates; verbose = verbose)
         copyto!(Sn, Snplus1)
     end
     return Sn
@@ -343,8 +345,13 @@ A volatile version of `simulate(pm::ParametricModel, p_prior::AbstractVector{Flo
 The model in pm should be of type SynchronizedModel (`typeof(pm.m) <: SynchronizedModel`).
 It returns `S::StateLHA`, not a trajectory.
 """
-function volatile_simulate(pm::ParametricModel, p_prior::AbstractVector{Float64})
+function volatile_simulate(pm::ParametricModel, p_prior::AbstractVector{Float64};
+                           epsilon::Float64)
     @assert typeof(pm.m) <: SynchronizedModel
+    # ABC related automata
+    if pm.m.name in ["ABC euclidean distance"]
+        nothing
+    end
     full_p = copy(get_proba_model(pm).p)
     full_p[pm._param_idx] = p_prior
     

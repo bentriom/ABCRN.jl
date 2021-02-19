@@ -92,8 +92,7 @@ function init_state(A::LHA, x0::Vector{Int}, t0::Float64)
     return S0
 end
 
-# A push! method implementend by myself because I know in most cases the edge candidates
-# are not greater than 2
+# A push! method implementend by myself because of preallocation of edge_candidates
 function _push_edge!(edge_candidates::Vector{Edge}, edge::Edge, nbr_candidates::Int)
     if nbr_candidates < 2
         @inbounds edge_candidates[nbr_candidates+1] = edge
@@ -153,9 +152,9 @@ end
 
 function next_state!(Snplus1::StateLHA, A::LHA, 
                      xnplus1::Vector{Int}, tnplus1::Float64, tr_nplus1::Transition, 
-                     Sn::StateLHA, xn::Vector{Int}, p::Vector{Float64}; verbose::Bool = false)
+                     Sn::StateLHA, xn::Vector{Int}, p::Vector{Float64},
+                     edge_candidates::Vector{Edge}; verbose::Bool = false)
     # En fait d'apres observation de Cosmos, après qu'on ait lu la transition on devrait stop.
-    edge_candidates = Vector{Edge}(undef, 2)
     detected_event::Bool = false
     turns = 0
     current_values = getfield(Snplus1, :values)
@@ -308,10 +307,11 @@ function read_trajectory(A::LHA, σ::AbstractTrajectory; verbose = false)
     l_tr = transitions(σ)
     Sn = init_state(A_new, σ[1], l_t[1])
     Snplus1 = copy(Sn)
+    edge_candidates = Vector{Edge}(undef, 2)
     if verbose println("Init: ") end
     if verbose @show Sn end
     for n in 2:length_states(σ)
-        next_state!(Snplus1, A_new, σ[n], l_t[n], l_tr[n], Sn, σ[n-1], p_sim; verbose = verbose)
+        next_state!(Snplus1, A_new, σ[n], l_t[n], l_tr[n], Sn, σ[n-1], p_sim, edge_candidates; verbose = verbose)
         copyto!(Sn, Snplus1)
         if Snplus1.loc in A_new.locations_final 
             break 

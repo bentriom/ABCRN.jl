@@ -93,10 +93,11 @@ function plot_periodic_trajectory(A::LHA, σ::SynchronizedTrajectory, sym_obs::S
     idx_n = [1]
     values_n = [Sn[:n]]
     values_tp = [Sn[:tp]]
+    edge_candidates = Vector{Edge}(undef, 2)
     if verbose println("Init: ") end
     if verbose @show Sn end
     for n in 2:nbr_states
-        next_state!(Snplus1, A, σ[n], l_t[n], l_tr[n], Sn, σ[n-1], p_sim; verbose = verbose)
+        next_state!(Snplus1, A, σ[n], l_t[n], l_tr[n], Sn, σ[n-1], p_sim, edge_candidates; verbose = verbose)
         if Snplus1[:n] != values_n[end]
             push!(idx_n, n)
             push!(values_n, Snplus1[:n])
