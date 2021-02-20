@@ -9,7 +9,7 @@ l_tr_SIR_tauleap = [:U]
 p_SIR_tauleap = [0.0012, 0.05, 5.0]
 x0_SIR_tauleap = [95, 5, 0]
 t0_SIR_tauleap = 0.0
-@everywhere function SIR_tauleap_f!(xnplus1::Vector{Int}, l_t::Vector{Float64}, l_tr::Vector{Transition},
+@everywhere function SIRTauleap_f!(xnplus1::Vector{Int}, l_t::Vector{Float64}, l_tr::Vector{Transition},
                                     xn::Vector{Int}, tn::Float64, p::Vector{Float64})
     @inbounds tau = p[3]
     @inbounds a1 = p[1] * xn[1] * xn[2]
@@ -31,18 +31,21 @@ t0_SIR_tauleap = 0.0
     l_t[1] = tn + tau
     l_tr[1] = :U
 end
-@everywhere isabsorbing_SIR_tauleap(p::Vector{Float64}, xn::Vector{Int}) = (p[1]*xn[1]*xn[2] + p[2]*xn[2]) === 0.0
+@everywhere isabsorbing_SIRTauleap(p::Vector{Float64}, xn::Vector{Int}) = (p[1]*xn[1]*xn[2] + p[2]*xn[2]) === 0.0
 g_SIR_tauleap = [:I]
 
-SIR_tauleap = ContinuousTimeModel(d,k,dict_var_SIR_tauleap,dict_p_SIR_tauleap,l_tr_SIR_tauleap,
-                                  p_SIR_tauleap,x0_SIR_tauleap,t0_SIR_tauleap,
-                                  getfield(Main, :SIR_tauleap_f!), getfield(Main, :isabsorbing_SIR_tauleap); g=g_SIR_tauleap, name="SIR tauleap pkg")
+@everywhere @eval $(MarkovProcesses.generate_code_model_type_def(:SIRTauleapModel))
+@everywhere @eval $(MarkovProcesses.generate_code_model_type_constructor(:SIRTauleapModel))
+@everywhere @eval $(MarkovProcesses.generate_code_simulation(:SIRTauleapModel, :SIRTauleap_f!, :isabsorbing_SIRTauleap))
+
+SIR_tauleap = SIRTauleapModel(d, k, dict_var_SIR_tauleap, dict_p_SIR_tauleap, l_tr_SIR_tauleap,
+                              p_SIR_tauleap, x0_SIR_tauleap, t0_SIR_tauleap, 
+                              :SIRTauleap_f!, :isabsorbing_SIRTauleap; g=g_SIR_tauleap)
+
 function create_SIR_tauleap(new_p::Vector{Float64})
     SIR_tauleap_new = deepcopy(SIR_tauleap)
     @assert length(SIR_tauleap_new.p) == length(new_p)
     set_param!(SIR_tauleap_new, new_p)
     return SIR_tauleap_new
 end
-
-export SIR_tauleap, create_SIR_tauleap
 

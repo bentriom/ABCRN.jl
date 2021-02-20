@@ -3,6 +3,7 @@ import Distributions: Distribution, Univariate, Continuous, UnivariateDistributi
                       MultivariateDistribution, product_distribution
 
 abstract type Model end 
+abstract type ContinuousTimeModel <: Model end
 abstract type AbstractTrajectory end
 
 const VariableModel = Symbol
@@ -11,24 +12,27 @@ const Transition = Union{Symbol,Nothing}
 const Location = Symbol
 const VariableAutomaton = Symbol
 
-mutable struct ContinuousTimeModel <: Model
-    name::String
-    dim_state::Int # state space dim
-    dim_params::Int # parameter space dim
-    map_var_idx::Dict{VariableModel,Int} # maps variable str to index in the state space
-    _map_obs_var_idx::Dict{VariableModel,Int} # maps variable str to index in the observed state space
-    map_param_idx::Dict{ParameterModel,Int} # maps parameter str to index in the parameter space
-    transitions::Vector{Transition}
-    p::Vector{Float64}
-    x0::Vector{Int}
-    t0::Float64
-    f!::Function
-    g::Vector{VariableModel} # of dimension dim_obs_state
-    _g_idx::Vector{Int} # of dimension dim_obs_state
-    isabsorbing::Function
-    time_bound::Float64
-    buffer_size::Int
-    estim_min_states::Int
+function generate_code_model_type_def(model_name::Symbol)
+    return quote
+        mutable struct $(model_name) <: ContinuousTimeModel
+            dim_state::Int # state space dim
+            dim_params::Int # parameter space dim
+            map_var_idx::Dict{VariableModel,Int} # maps variable str to index in the state space
+            _map_obs_var_idx::Dict{VariableModel,Int} # maps variable str to index in the observed state space
+            map_param_idx::Dict{ParameterModel,Int} # maps parameter str to index in the parameter space
+            transitions::Vector{Transition}
+            p::Vector{Float64}
+            x0::Vector{Int}
+            t0::Float64
+            f!::Symbol
+            g::Vector{VariableModel} # of dimension dim_obs_state
+            _g_idx::Vector{Int} # of dimension dim_obs_state
+            isabsorbing::Symbol
+            time_bound::Float64
+            buffer_size::Int
+            estim_min_states::Int
+        end
+    end
 end
 
 struct Trajectory <: AbstractTrajectory
@@ -38,11 +42,14 @@ struct Trajectory <: AbstractTrajectory
     transitions::Vector{Transition}
 end
 
+#=
 struct Edge
     transitions::Union{Nothing,Vector{Symbol}}
     check_constraints::Function
     update_state!::Function
 end
+=#
+abstract type Edge end
 
 struct LHA
     name::String
@@ -86,31 +93,34 @@ struct ParametricModel
 end
 
 # Constructors
-function ContinuousTimeModel(dim_state::Int, dim_params::Int, map_var_idx::Dict{VariableModel,Int}, 
-                             map_param_idx::Dict{ParameterModel,Int}, transitions::Vector{<:Transition},
-                             p::Vector{Float64}, x0::Vector{Int}, t0::Float64, 
-                             f!::Function, isabsorbing::Function; 
-                             g::Vector{VariableModel} = [var for var in keys(map_var_idx)], time_bound::Float64 = Inf, 
-                             buffer_size::Int = 10, estim_min_states::Int = 50, name::String = "Unnamed")
-    dim_obs_state = length(g)
-    transitions = convert(Vector{Transition}, transitions)
-    _map_obs_var_idx = Dict()
-    _g_idx = Vector{Int}(undef, dim_obs_state)
-    for i = 1:dim_obs_state
-        _g_idx[i] = map_var_idx[g[i]] # = ( (g[i] = i-th obs var)::VariableModel => idx in state space )
-        _map_obs_var_idx[g[i]] = i
+function generate_code_model_type_constructor(model_name::Symbol)
+    return quote
+        function $(model_name)(dim_state::Int, dim_params::Int, map_var_idx::Dict{VariableModel,Int}, 
+                               map_param_idx::Dict{ParameterModel,Int}, transitions::Vector{<:Transition},
+                               p::Vector{Float64}, x0::Vector{Int}, t0::Float64,
+                               f!::Symbol, isabsorbing::Symbol;
+                               g::Vector{VariableModel} = [var for var in keys(map_var_idx)], time_bound::Float64 = Inf, 
+                               buffer_size::Int = 10, estim_min_states::Int = 50)
+            dim_obs_state = length(g)
+            transitions = convert(Vector{Transition}, transitions)
+            _map_obs_var_idx = Dict()
+            _g_idx = Vector{Int}(undef, dim_obs_state)
+            for i = 1:dim_obs_state
+                _g_idx[i] = map_var_idx[g[i]] # = ( (g[i] = i-th obs var)::VariableModel => idx in state space )
+                _map_obs_var_idx[g[i]] = i
+            end
+            if length(methods(getfield(Main, f!))) >= 2
+                @warn "You have possibly redefined a function Model.f! used in a previously instantiated model."
+            end
+            if length(methods(getfield(Main, isabsorbing))) >= 2
+                @warn "You have possibly redefined a function Model.isabsorbing used in a previously instantiated model."
+            end
+            new_model = $(model_name)(dim_state, dim_params, map_var_idx, _map_obs_var_idx, map_param_idx, transitions, 
+                                      p, x0, t0, f!, g, _g_idx, isabsorbing, time_bound, buffer_size, estim_min_states)
+            @assert check_consistency(new_model)
+            return new_model
+        end
     end
-  
-    if length(methods(f!)) >= 2
-        @warn "You have possibly redefined a function Model.f! used in a previously instantiated model."
-    end
-    if length(methods(isabsorbing)) >= 2
-        @warn "You have possibly redefined a function Model.isabsorbing used in a previously instantiated model."
-    end
-    new_model = ContinuousTimeModel(name, dim_state, dim_params, map_var_idx, _map_obs_var_idx, map_param_idx, transitions, 
-                                    p, x0, t0, f!, g, _g_idx, isabsorbing, time_bound, buffer_size, estim_min_states)
-    @assert check_consistency(new_model)
-    return new_model
 end
 
 LHA(A::LHA, map_var::Dict{VariableModel,Int}) = LHA(A.name, A.transitions, A.locations, A.Λ, 

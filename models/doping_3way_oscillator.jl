@@ -12,5 +12,3 @@ set_x0!(doping_3way_oscillator, [:A,:B,:C,:DA,:DB,:DC], [333,333,333,10,10,10])
 set_param!(doping_3way_oscillator, [:rA,:rB,:rC], [1.0, 1.0, 1.0])
 set_time_bound!(doping_3way_oscillator, 0.2)
 
-export doping_3way_oscillator
-

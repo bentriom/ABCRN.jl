@@ -197,8 +197,7 @@ function check_consistency(σ::AbstractTrajectory)
 end
 
 function Base.show(io::IO, σ::Trajectory)
-    print(io, "Trajectory\n")
-    print(io, "- Model name: $((σ.m).name) \n")
+    print(io, "Trajectory of $(σ.m)\n")
     print(io, "- Variable trajectories:\n")
     for obs_var in σ.m.g
         print(io, "* $obs_var: $(σ[obs_var])\n")

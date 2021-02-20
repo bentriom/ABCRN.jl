@@ -72,7 +72,6 @@ fill_params!(dict_params::Dict{ParameterModel,Int}, l_dim_params::Vector{Int},
              propensity::Real, list_species::Vector) = nothing
 
 macro network_model(expr_network,expr_name...)
-    model_name = isempty(expr_name) ? "Unnamed macro generated" : expr_name[1]
     transitions = Transition[]
     dict_species = Dict{VariableModel,Int}()
     dict_params = Dict{ParameterModel,Int}()
@@ -142,12 +141,18 @@ macro network_model(expr_network,expr_name...)
         =#
     end
     dim_params = l_dim_params[1]
-    # Let's write some lines that creates the function f! (step of a simulation) for this biochemical network
-    nbr_rand = rand(1:1000)
+    
+    # Creation of names variables
+    model_name = isempty(expr_name) ? "Network" : expr_name[1]
+    model_name = Symbol(replace(model_name, ' ' => '_') * "Model")
+    id = Dates.format(Dates.now(), "YmHMs")
     nbr_reactions = length(list_expr_reactions)
-    basename_func = "$(replace(model_name, ' '=>'_'))_$(nbr_rand)"
+    basename_func = "$(model_name)_$(id)"
     basename_func = replace(basename_func, '-'=>'_')
-    expr_model_f! = "function $(basename_func)_f!(xnplus1::Vector{Int}, l_t::Vector{Float64}, l_tr::Vector{Transition}, xn::Vector{Int}, tn::Float64, p::Vector{Float64})\n\t"
+    
+    # Writing of f!
+    symbol_func_f! = Symbol("$(basename_func)_f!")
+    str_expr_model_f! = "function $(symbol_func_f!)(xnplus1::Vector{Int}, l_t::Vector{Float64}, l_tr::Vector{Transition}, xn::Vector{Int}, tn::Float64, p::Vector{Float64})\n\t"
     # Computation of nu and propensity functions in f!
     str_l_a = "l_a = ("
     str_test_isabsorbing = "@inbounds("
@@ -156,7 +161,7 @@ macro network_model(expr_network,expr_name...)
         local isreaction = @capture(expr_reaction, TR_: (reactants_ => products_, propensity_))
         # Writing of propensities function
         str_propensity = get_str_propensity(propensity, dict_species, dict_params)
-        expr_model_f! *= "@inbounds a$(i) = " * str_propensity * "\n\t"
+        str_expr_model_f! *= "@inbounds a$(i) = " * str_propensity * "\n\t"
         # Anticipating the write of the function isabsorbing
         str_test_isabsorbing *= str_propensity * "+"
         # Update the nu of the i-th reaction 
@@ -187,52 +192,65 @@ macro network_model(expr_network,expr_name...)
                 nu[dict_species[sym_species]] += mult
             end
         end
-        expr_model_f! *= "nu_$i = $(Tuple(nu))\n\t"
+        str_expr_model_f! *= "nu_$i = $(Tuple(nu))\n\t"
         # Anticipating the line l_a = (..)
         str_l_a *= "a$(i), "
     end
     str_test_isabsorbing = str_test_isabsorbing[1:(end-1)] * ")"
     str_l_a = str_l_a[1:(end-2)] * ")\n\t"
-    expr_model_f! *= str_l_a
-    expr_model_f! *= "asum = sum(l_a)\n\t"
-    expr_model_f! *= "if asum == 0.0\n\t\t"
-    expr_model_f! *= "copyto!(xnplus1, xn)\n\t\t"
-    expr_model_f! *= "return nothing\n\t"
-    expr_model_f! *= "end\n\t"
+    str_expr_model_f! *= str_l_a
+    str_expr_model_f! *= "asum = sum(l_a)\n\t"
+    str_expr_model_f! *= "if asum == 0.0\n\t\t"
+    str_expr_model_f! *= "copyto!(xnplus1, xn)\n\t\t"
+    str_expr_model_f! *= "return nothing\n\t"
+    str_expr_model_f! *= "end\n\t"
     # Computation of array of transitions
-    expr_model_f! *= "l_nu = (" * reduce(*, ["nu_$i, " for i = 1:nbr_reactions])[1:(end-2)] * ")\n\t"
-    expr_model_f! *= "l_sym_R = $(Tuple(transitions))\n\t"
+    str_expr_model_f! *= "l_nu = (" * reduce(*, ["nu_$i, " for i = 1:nbr_reactions])[1:(end-2)] * ")\n\t"
+    str_expr_model_f! *= "l_sym_R = $(Tuple(transitions))\n\t"
     # Simulation of the reaction
-    expr_model_f! *= "u1 = rand()\n\t"
-    expr_model_f! *= "u2 = rand()\n\t"
-    expr_model_f! *= "tau = - log(u1) / asum\n\t"
-    expr_model_f! *= "b_inf = 0.0\n\t" 
-    expr_model_f! *= "b_sup = a1\n\t" 
-    expr_model_f! *= "reaction = 0\n\n\t" 
-    expr_model_f! *= "for i = 1:$(nbr_reactions)\n\t\t"
-    expr_model_f! *= "if b_inf < asum*u2 < b_sup\n\t\t\t"
-    expr_model_f! *= "reaction = i\n\t\t\t"
-    expr_model_f! *= "break\n\t\t"
-    expr_model_f! *= "end\n\t\t"
-    expr_model_f! *= "@inbounds b_inf += l_a[i]\n\t\t"
-    expr_model_f! *= "@inbounds b_sup += l_a[i+1]\n\t"
-    expr_model_f! *= "end\n\t"
-    expr_model_f! *= "nu = l_nu[reaction]\n\t"
-    expr_model_f! *= "for i = 1:$(dim_state)\n\t\t"
-    expr_model_f! *= "@inbounds xnplus1[i] = xn[i]+nu[i]\n\t"
-    expr_model_f! *= "end\n\t"
-    expr_model_f! *= "@inbounds l_t[1] = tn + tau\n\t"
-    expr_model_f! *= "@inbounds l_tr[1] = l_sym_R[reaction]\n"
-    expr_model_f! *= "end\n"
-    expr_model_isabsorbing = "isabsorbing_$(basename_func)(p::Vector{Float64},xn::Vector{Int}) = $(str_test_isabsorbing) === 0.0"
-    @everywhere eval(Meta.parse($expr_model_f!))
-    @everywhere eval(Meta.parse($expr_model_isabsorbing))
-    symbol_func_f! = Symbol("$(basename_func)_f!")
+    str_expr_model_f! *= "u1 = rand()\n\t"
+    str_expr_model_f! *= "u2 = rand()\n\t"
+    str_expr_model_f! *= "tau = - log(u1) / asum\n\t"
+    str_expr_model_f! *= "b_inf = 0.0\n\t" 
+    str_expr_model_f! *= "b_sup = a1\n\t" 
+    str_expr_model_f! *= "reaction = 0\n\n\t" 
+    str_expr_model_f! *= "for i = 1:$(nbr_reactions)\n\t\t"
+    str_expr_model_f! *= "if b_inf < asum*u2 < b_sup\n\t\t\t"
+    str_expr_model_f! *= "reaction = i\n\t\t\t"
+    str_expr_model_f! *= "break\n\t\t"
+    str_expr_model_f! *= "end\n\t\t"
+    str_expr_model_f! *= "@inbounds b_inf += l_a[i]\n\t\t"
+    str_expr_model_f! *= "@inbounds b_sup += l_a[i+1]\n\t"
+    str_expr_model_f! *= "end\n\t"
+    str_expr_model_f! *= "nu = l_nu[reaction]\n\t"
+    str_expr_model_f! *= "for i = 1:$(dim_state)\n\t\t"
+    str_expr_model_f! *= "@inbounds xnplus1[i] = xn[i]+nu[i]\n\t"
+    str_expr_model_f! *= "end\n\t"
+    str_expr_model_f! *= "@inbounds l_t[1] = tn + tau\n\t"
+    str_expr_model_f! *= "@inbounds l_tr[1] = l_sym_R[reaction]\n"
+    str_expr_model_f! *= "end\n"
+   
+    # Writing of isabsorbing
     symbol_func_isabsorbing = Symbol("isabsorbing_$(basename_func)")
+    str_expr_model_isabsorbing = "$(symbol_func_isabsorbing)(p::Vector{Float64},xn::Vector{Int}) = $(str_test_isabsorbing) === 0.0"
+ 
+    # Creation of code
+    expr_model_f! = Meta.parse(str_expr_model_f!)
+    expr_model_isabsorbing = Meta.parse(str_expr_model_isabsorbing)
+
     map_idx_var_model = Dict(value => key for (key, value) in dict_species)
     model_g = [map_idx_var_model[i] for i = 1:length(list_species)]
-    return :(ContinuousTimeModel($dim_state, $dim_params, $dict_species, $dict_params, $transitions, 
-                                 $(zeros(dim_params)), $(zeros(Int, dim_state)), 0.0, $(getfield(Main, symbol_func_f!)), $(getfield(Main, symbol_func_isabsorbing));
-                                 g = $model_g, name=$model_name))
+
+    return quote
+        @everywhere @eval $(MarkovProcesses.generate_code_model_type_def(model_name))
+        @everywhere @eval $(MarkovProcesses.generate_code_model_type_constructor(model_name))
+        @everywhere @eval $(MarkovProcesses.generate_code_simulation(model_name, symbol_func_f!, symbol_func_isabsorbing))
+        @everywhere @eval $expr_model_f!
+        @everywhere @eval $expr_model_isabsorbing
+
+        getfield(Main, $(Meta.quot(model_name)))($dim_state, $dim_params, $dict_species, $dict_params, $transitions,
+                                                 $(zeros(dim_params)), $(zeros(Int, dim_state)), 0.0, 
+                                                 $(Meta.quot(symbol_func_f!)), $(Meta.quot(symbol_func_isabsorbing)); g = $model_g)
+    end
 end
 

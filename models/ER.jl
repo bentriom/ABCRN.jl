@@ -50,7 +50,12 @@ end
     @inbounds(p[1]*xn[1]*xn[2] + (p[2]+p[3])*xn[3] === 0.0)
 g_ER = [:P]
 
-ER = ContinuousTimeModel(d,k,dict_var_ER,dict_p_ER,l_tr_ER,p_ER,x0_ER,t0_ER, getfield(Main, :ER_f!), getfield(Main, :isabsorbing_ER); g=g_ER,name="ER SSA pkg")
+@everywhere @eval $(MarkovProcesses.generate_code_model_type_def(:ERModel))
+@everywhere @eval $(MarkovProcesses.generate_code_model_type_constructor(:ERModel))
+@everywhere @eval $(MarkovProcesses.generate_code_simulation(:ERModel, :ER_f!, :isabsorbing_ER))
+
+ER = ERModel(d, k, dict_var_ER, dict_p_ER, l_tr_ER, p_ER, x0_ER, t0_ER,
+             :ER_f!, :isabsorbing_ER; g=g_ER)
 
 function create_ER(new_p::Vector{Float64})
     ER_new = deepcopy(ER)
@@ -58,6 +63,4 @@ function create_ER(new_p::Vector{Float64})
     set_param!(ER_new, new_p)
     return ER_new
 end
-
-export ER, create_ER
 

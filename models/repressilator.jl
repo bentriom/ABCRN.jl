@@ -18,8 +18,6 @@ set_observed_var!(repressilator, [:mRNA1, :mRNA2, :mRNA3, :P1, :P2, :P3])
 set_x0!(repressilator, [:mRNA1, :mRNA2, :mRNA3], fill(0, 3))
 set_x0!(repressilator, [:P1, :P2, :P3], [5, 0, 15])
 set_param!(repressilator, :n, 2.0)
-set_param!(repressilator, [:α, :α0, :β], [4400.0, 2.0, 4.0])
-set_time_bound!(repressilator, 15.0)
-
-export repressilator
+set_param!(repressilator, [:α, :α0, :β, :n], [400.0, 0.0, 2.0, 2.0])
+set_time_bound!(repressilator, 200.0)
 

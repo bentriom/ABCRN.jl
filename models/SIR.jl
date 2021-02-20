@@ -17,7 +17,6 @@ t0_SIR = 0.0
         copyto!(xnplus1, xn)
         return nothing
     end
-    # column-major order
     nu_1 = (-1, 1, 0)
     nu_2 = (0, -1, 1)
     l_nu = (nu_1, nu_2)
@@ -48,7 +47,12 @@ end
 @everywhere isabsorbing_SIR(p::Vector{Float64}, xn::Vector{Int}) = (p[1]*xn[1]*xn[2] + p[2]*xn[2]) === 0.0
 g_SIR = [:I]
 
-SIR = ContinuousTimeModel(d,k,dict_var,dict_p,l_tr_SIR,p_SIR,x0_SIR,t0_SIR, getfield(Main, :SIR_f!), getfield(Main, :isabsorbing_SIR); g=g_SIR, name="SIR SSA pkg")
+@everywhere @eval $(MarkovProcesses.generate_code_model_type_def(:SIRModel))
+@everywhere @eval $(MarkovProcesses.generate_code_model_type_constructor(:SIRModel))
+@everywhere @eval $(MarkovProcesses.generate_code_simulation(:SIRModel, :SIR_f!, :isabsorbing_SIR))
+
+SIR = SIRModel(d, k, dict_var, dict_p, l_tr_SIR, p_SIR, x0_SIR, t0_SIR,
+               :SIR_f!, :isabsorbing_SIR; g=g_SIR)
 
 function create_SIR(new_p::Vector{Float64})
     SIR_new = deepcopy(SIR)
@@ -56,6 +60,4 @@ function create_SIR(new_p::Vector{Float64})
     set_param!(SIR_new, new_p)
     return SIR_new
 end
-
-export SIR, create_SIR
 

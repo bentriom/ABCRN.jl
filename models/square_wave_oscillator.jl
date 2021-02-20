@@ -7,7 +7,7 @@ l_tr_square = [:Tu, :t1, :t2, :t3]
 p_square = [1, 0, 0, 0, 0, 0, 5.0]
 x0_square = [1, 0, 1]
 t0_square = 0.0
-function square_wave_f!(xnplus1::Vector{Int}, l_t::Vector{Float64}, l_tr::Vector{Transition},
+function SquareWave_f!(xnplus1::Vector{Int}, l_t::Vector{Float64}, l_tr::Vector{Transition},
                         xn::Vector{Int}, tn::Float64, p::Vector{Float64})
     if p[1] == 0 && p[3] == 0 && p[5] == 0
         copyto!(xnplus1, xn)
@@ -56,12 +56,15 @@ function square_wave_f!(xnplus1::Vector{Int}, l_t::Vector{Float64}, l_tr::Vector
         l_tr[1] = possible_transitions[transition]
     end
 end
-isabsorbing_square_wave(p::Vector{Float64}, xn::Vector{Int}) = (p[1] == 0 && p[3] == 0 && p[5] == 0)
+isabsorbing_SquareWave(p::Vector{Float64}, xn::Vector{Int}) = (p[1] == 0 && p[3] == 0 && p[5] == 0)
 g_square_wave = [:A, :HIGH, :LOW]
 
-square_wave_oscillator = ContinuousTimeModel(d, k, dict_var_square, dict_params_square, l_tr_square, 
-                                             p_square, x0_square, t0_square, square_wave_f!, isabsorbing_square_wave; 
-                                             g=g_square_wave, name="square wave oscillator pkg", time_bound = 105.0)
+@everywhere @eval $(MarkovProcesses.generate_code_model_type_def(:SquareWaveModel))
+@everywhere @eval $(MarkovProcesses.generate_code_model_type_constructor(:SquareWaveModel))
+@everywhere @eval $(MarkovProcesses.generate_code_simulation(:SquareWaveModel, :SquareWave_f!, :isabsorbing_SquareWave))
 
-export square_wave_oscillator
+square_wave_oscillator = SquareWaveModel(d, k, dict_var_square, dict_params_square, l_tr_square, 
+                                         p_square, x0_square, t0_square,
+                                         :SquareWave_f!, :isabsorbing_SquareWave; 
+                                         g=g_square_wave, time_bound = 105.0)
 
