@@ -132,28 +132,41 @@ function generate_code_simulation(model_name::Symbol, f!::Symbol, isabsorbing::S
     end
 end
 
-function generate_synchronized_simulation_code()
+function simulate(product::SynchronizedModel; 
+                  p::Union{Nothing,AbstractVector{Float64}} = nothing, verbose::Bool = false)
+    m = getfield(product, :m)
+    A = getfield(product, :automaton)
+    p_sim = getfield(m, :p)
+    if p != nothing
+        p_sim = p
+    end
+    return simulate(m, A, product, p_sim, verbose)
+end
+
+function volatile_simulate(product::SynchronizedModel; 
+                           p::Union{Nothing,AbstractVector{Float64}} = nothing, verbose::Bool = false)
+    m = product.m
+    A = product.automaton
+    p_sim = getfield(m, :p)
+    if p != nothing
+        p_sim = p
+    end
+    return volatile_simulate(m, A, p_sim, verbose)
+end
+
+function generate_code_synchronized_simulation(lha_name::Symbol, edge_type::Symbol, f!::Symbol, isabsorbing::Symbol)
     
     return quote
-        import MarkovProcesses: simulate
+        import MarkovProcesses: simulate, volatile_simulate
         
-        function simulate(product::SynchronizedModel; p::Union{Nothing,AbstractVector{Float64}} = nothing,
-                          verbose::Bool = false)
-            m = getfield(product, :m)
-            A = getfield(product, :automaton)
-            p_sim = getfield(m, :p)
-            func_f! = getfield(m, :f!)
-            func_isabsorbing = getfield(m, :isabsorbing)
-            if p != nothing
-                p_sim = p
-            end
+        function simulate(m::ContinuousTimeModel, A::$(lha_name), product::SynchronizedModel,
+                          p_sim::AbstractVector{Float64}, verbose::Bool)
             x0 = getfield(m, :x0)
             t0 = getfield(m, :t0)
             time_bound = getfield(m, :time_bound)
-            S0 = init_state(A, x0, t0)
             buffer_size = getfield(m, :buffer_size)
             estim_min_states = getfield(m, :estim_min_states)
-            edge_candidates = Vector{Edge}(undef, 2)
+            edge_candidates = Vector{$(edge_type)}(undef, 2)
             # First alloc
             full_values = Vector{Vector{Int}}(undef, getfield(m, :dim_state))
             for i = eachindex(full_values) full_values[i] = zeros(Int, estim_min_states) end
@@ -163,19 +176,22 @@ function generate_synchronized_simulation_code()
             for i = eachindex(full_values) full_values[i][1] = x0[i] end
             times[1] = t0
             transitions[1] = nothing
+            S = init_state(A, x0, t0)
+            ptr_loc_state = [S.loc]
+            values_state = S.values
+            ptr_time_state = [S.time]
             # Values at time n
             n = 1
             xn = copy(x0)
             tn = copy(t0) 
-            Sn = copy(S0)
-            next_state!(Sn, A, x0, t0, nothing, S0, x0, p_sim, edge_candidates; verbose = verbose)
-            isabsorbing::Bool = func_isabsorbing(p_sim,xn)
-            isacceptedLHA::Bool = isaccepted(Sn)
+            next_state!(A, ptr_loc_state, values_state, ptr_time_state, 
+                        x0, t0, nothing, x0, p_sim, edge_candidates; verbose = verbose)
+            isabsorbing::Bool = $(isabsorbing)(p_sim,xn)
+            isacceptedLHA::Bool = isaccepted(ptr_loc_state[1], A)
             # Alloc of vectors where we stock n+1 values
             vec_x = zeros(Int, getfield(m, :dim_state))
             l_t = Float64[0.0]
             l_tr = Transition[nothing]
-            Snplus1 = deepcopy(Sn)
             # If x0 is absorbing
             if isabsorbing || isacceptedLHA 
                 MarkovProcesses._resize_trajectory!(full_values, times, transitions, 1)
@@ -184,27 +200,28 @@ function generate_synchronized_simulation_code()
                     MarkovProcesses._finish_bounded_trajectory!(values, times, transitions, time_bound)
                 end
                 if isabsorbing && !isacceptedLHA
-                    next_state!(Snplus1, A, xn, time_bound, nothing, Sn, xn, p_sim, edge_candidates; verbose = verbose)
-                    copyto!(Sn, Snplus1)
+                    next_state!(A, ptr_loc_state, values_state, ptr_time_state, 
+                                xn, time_bound, nothing, xn, p_sim, edge_candidates; verbose = verbose)
                 end
-                return SynchronizedTrajectory(Sn, product, values, times, transitions)
+                setfield!(S, :loc, ptr_loc_state[1])
+                setfield!(S, :time, ptr_time_state[1])
+                return SynchronizedTrajectory(S, product, values, times, transitions)
             end
             # First we fill the allocated array
             for i = 2:estim_min_states
-                func_f!(vec_x, l_t, l_tr, xn, tn, p_sim)
+                $(f!)(vec_x, l_t, l_tr, xn, tn, p_sim)
                 if l_t[1] > time_bound || vec_x == xn
                     tn = l_t[1]
                     isabsorbing = (vec_x == xn)
                     break
                 end
                 n += 1
-                next_state!(Snplus1, A, vec_x, l_t[1], l_tr[1], Sn, xn, p_sim, edge_candidates; verbose = verbose)
+                next_state!(A, ptr_loc_state, values_state, ptr_time_state, vec_x, l_t[1], l_tr[1], xn, p_sim, edge_candidates; verbose = verbose)
                 copyto!(xn, vec_x)
                 tn = l_t[1]
                 tr_n = l_tr[1]
                 MarkovProcesses._update_values!(full_values, times, transitions, xn, tn, tr_n, i)
-                copyto!(Sn, Snplus1)
-                isacceptedLHA = isaccepted(Snplus1)
+                isacceptedLHA = isaccepted(ptr_loc_state[1], A)
                 if isabsorbing || isacceptedLHA 
                     break
                 end
@@ -217,10 +234,12 @@ function generate_synchronized_simulation_code()
                     MarkovProcesses._finish_bounded_trajectory!(values, times, transitions, time_bound)
                 end
                 if isabsorbing && !isacceptedLHA
-                    next_state!(Snplus1, A, xn, time_bound, nothing, Sn, xn, p_sim, edge_candidates; verbose = verbose)
-                    copyto!(Sn, Snplus1)
+                    next_state!(A, ptr_loc_state, values_state, ptr_time_state, 
+                                xn, time_bound, nothing, xn, p_sim, edge_candidates; verbose = verbose)
                 end
-                return SynchronizedTrajectory(Sn, product, values, times, transitions)
+                setfield!(S, :loc, ptr_loc_state[1])
+                setfield!(S, :time, ptr_time_state[1])
+                return SynchronizedTrajectory(S, product, values, times, transitions)
             end
             # Otherwise, buffering system
             size_tmp = 0
@@ -230,7 +249,7 @@ function generate_synchronized_simulation_code()
                 i = 0
                 while i < buffer_size
                     i += 1
-                    func_f!(vec_x, l_t, l_tr, xn, tn, p_sim)
+                    $(f!)(vec_x, l_t, l_tr, xn, tn, p_sim)
                     if l_t[1] > time_bound
                         tn = l_t[1]
                         i -= 1
@@ -241,14 +260,13 @@ function generate_synchronized_simulation_code()
                         i -= 1
                         break
                     end
-                    next_state!(Snplus1, A, vec_x, l_t[1], l_tr[1], Sn, xn, p_sim, edge_candidates; verbose = verbose)
+                    next_state!(A, ptr_loc_state, values_state, ptr_time_state, vec_x, l_t[1], l_tr[1], xn, p_sim, edge_candidates; verbose = verbose)
                     copyto!(xn, vec_x)
                     tn = l_t[1]
                     tr_n = l_tr[1]
                     MarkovProcesses._update_values!(full_values, times, transitions, 
-                                    xn, tn, tr_n, estim_min_states+size_tmp+i)
-                    copyto!(Sn, Snplus1)
-                    isacceptedLHA = isaccepted(Snplus1)
+                                                    xn, tn, tr_n, estim_min_states+size_tmp+i)
+                    isacceptedLHA = isaccepted(ptr_loc_state[1], A)
                     if isabsorbing || isacceptedLHA
                         break
                     end
@@ -261,17 +279,20 @@ function generate_synchronized_simulation_code()
                 n += i
             end
             values = full_values[getfield(m, :_g_idx)]
-            if isbounded(m) && !isaccepted(Sn)
+            if isbounded(m) && !isaccepted(ptr_loc_state[1], A)
                 # Add last value: the convention is the last transition is nothing,
                 # the trajectory is bounded
                 MarkovProcesses._finish_bounded_trajectory!(values, times, transitions, time_bound)
             end
             if isabsorbing && !isacceptedLHA
-                next_state!(Snplus1, A, xn, time_bound, nothing, Sn, xn, p_sim, edge_candidates; verbose = verbose)
-                copyto!(Sn, Snplus1)
+                next_state!(A, ptr_loc_state, values_state, ptr_time_state, 
+                            xn, time_bound, nothing, xn, p_sim, edge_candidates; verbose = verbose)
             end
-            return SynchronizedTrajectory(Sn, product, values, times, transitions)
+            setfield!(S, :loc, ptr_loc_state[1])
+            setfield!(S, :time, ptr_time_state[1])
+            return SynchronizedTrajectory(S, product, values, times, transitions)
         end
+        
         """
         `volatile_simulate(sm::SynchronizedModel; p, verbose)`
 
@@ -279,44 +300,39 @@ function generate_synchronized_simulation_code()
         in order to improve performance.
         It returns the last state of the simulation `S::StateLHA` not a trajectory `σ::SynchronizedTrajectory`.
         """
-        function volatile_simulate(product::SynchronizedModel; 
-                                   p::Union{Nothing,AbstractVector{Float64}} = nothing, verbose::Bool = false)
-            m = product.m
-            A = product.automaton
-            p_sim = getfield(m, :p)
-            func_f! = getfield(m, :f!)
-            func_isabsorbing = getfield(m, :isabsorbing)
-            if p != nothing
-                p_sim = p
-            end
+        function volatile_simulate(m::ContinuousTimeModel, A::$(lha_name), p_sim::AbstractVector{Float64}, verbose::Bool)
             x0 = getfield(m, :x0)
             t0 = getfield(m, :t0)
             time_bound = getfield(m, :time_bound)
-            S0 = init_state(A, x0, t0)
-            edge_candidates = Vector{Edge}(undef, 2)
+            S = init_state(A, x0, t0)
+            ptr_loc_state = [S.loc]
+            values_state = S.values
+            ptr_time_state = [S.time]
+            edge_candidates = Vector{$(edge_type)}(undef, 2)
             # Values at time n
             n = 1
             xn = copy(x0)
             tn = copy(t0) 
-            Sn = copy(S0)
-            next_state!(Sn, A, x0, t0, nothing, S0, x0, p_sim, edge_candidates; verbose = verbose)
-            isabsorbing::Bool = func_isabsorbing(p_sim,xn)
-            isacceptedLHA::Bool = isaccepted(Sn)
+            next_state!(A, ptr_loc_state, values_state, ptr_time_state, 
+                        x0, t0, nothing, x0, p_sim, edge_candidates; verbose = verbose)
+            isabsorbing::Bool = $(isabsorbing)(p_sim,xn)
+            isacceptedLHA::Bool = isaccepted(ptr_loc_state[1], A)
             # Alloc of vectors where we stock n+1 values
             vec_x = zeros(Int, getfield(m, :dim_state))
             l_t = Float64[0.0]
             l_tr = Transition[nothing]
-            Snplus1 = deepcopy(Sn)
             # If x0 is absorbing
             if isabsorbing || isacceptedLHA 
                 if !isacceptedLHA
-                    next_state!(Snplus1, A, xn, time_bound, nothing, Sn, xn, p_sim, edge_candidates; verbose = verbose)
-                    copyto!(Sn, Snplus1)
+                    next_state!(A, ptr_loc_state, values_state, ptr_time_state, 
+                                xn, time_bound, nothing, xn, p_sim, edge_candidates; verbose = verbose)
                 end
-                return Sn
+                setfield!(S, :loc, ptr_loc_state[1])
+                setfield!(S, :time, ptr_time_state[1])
+                return S
             end
             while !isabsorbing && tn <= time_bound && !isacceptedLHA
-                func_f!(vec_x, l_t, l_tr, xn, tn, p_sim)
+                $(f!)(vec_x, l_t, l_tr, xn, tn, p_sim)
                 if l_t[1] > time_bound
                     tn = l_t[1]
                     break
@@ -325,19 +341,21 @@ function generate_synchronized_simulation_code()
                     isabsorbing = true
                     break
                 end
-                next_state!(Snplus1, A, vec_x, l_t[1], l_tr[1], Sn, xn, p_sim, edge_candidates; verbose = verbose)
+                next_state!(A, ptr_loc_state, values_state, ptr_time_state, 
+                            vec_x, l_t[1], l_tr[1], xn, p_sim, edge_candidates; verbose = verbose)
                 copyto!(xn, vec_x)
                 tn = l_t[1]
                 tr_n = l_tr[1]
-                copyto!(Sn, Snplus1)
-                isacceptedLHA = isaccepted(Snplus1)
+                isacceptedLHA = isaccepted(ptr_loc_state[1], A)
                 n += 1
             end
             if isabsorbing && !isacceptedLHA
-                next_state!(Snplus1, A, xn, time_bound, nothing, Sn, xn, p_sim, edge_candidates; verbose = verbose)
-                copyto!(Sn, Snplus1)
+                next_state!(A, ptr_loc_state, values_state, ptr_time_state, 
+                            xn, time_bound, nothing, xn, p_sim, edge_candidates; verbose = verbose)
             end
-            return Sn
+            setfield!(S, :loc, ptr_loc_state[1])
+            setfield!(S, :time, ptr_time_state[1])
+            return S
         end
     end
 end
@@ -471,7 +489,7 @@ function check_consistency(m::ContinuousTimeModel)
     @assert length(m.g) <= m.dim_state
     @assert length(m._g_idx) == length(m.g)
     @assert m.buffer_size >= 0
-    @assert typeof(getfield(Main, m.isabsorbing)(m.p, m.x0)) == Bool
+    #@assert typeof(getfield(Main, m.isabsorbing)(m.p, m.x0)) == Bool
     return true
 end
 
