@@ -4,30 +4,30 @@ import Distributions: insupport, pdf
 
 function _resize_trajectory!(values::Vector{Vector{Int}}, times::Vector{Float64}, 
                              transitions::Vector{Transition}, size::Int)
-    for i = eachindex(values) resize!(@inbounds(values[i]), size) end
+    for i = eachindex(values) resize!((values[i]), size) end
     resize!(times, size)
     resize!(transitions, size)
 end
 
 function _finish_bounded_trajectory!(values::Vector{Vector{Int}}, times::Vector{Float64}, 
                                     transitions::Vector{Transition}, time_bound::Float64)
-    for i = eachindex(values) push!(@inbounds(values[i]), @inbounds(values[i][end])) end
+    for i = eachindex(values) push!((values[i]), (values[i][end])) end
     push!(times, time_bound)
     push!(transitions, nothing)
 end
 
 function _update_values!(values::Vector{Vector{Int}}, times::Vector{Float64}, transitions::Vector{Transition},
                          xn::Vector{Int}, tn::Float64, tr_n::Transition, idx::Int)
-    for k = eachindex(values) @inbounds(values[k][idx] = xn[k]) end
-    @inbounds(times[idx] = tn)
-    @inbounds(transitions[idx] = tr_n)
+    for k = eachindex(values) values[k][idx] = xn[k] end
+    (times[idx] = tn)
+    (transitions[idx] = tr_n)
 end
 
 function generate_code_simulation(model_name::Symbol, f!::Symbol, isabsorbing::Symbol)
 
     return quote
         import MarkovProcesses: simulate
-
+        
         """
         `simulate(m)`
 
@@ -132,34 +132,13 @@ function generate_code_simulation(model_name::Symbol, f!::Symbol, isabsorbing::S
     end
 end
 
-function simulate(product::SynchronizedModel; 
-                  p::Union{Nothing,AbstractVector{Float64}} = nothing, verbose::Bool = false)
-    m = getfield(product, :m)
-    A = getfield(product, :automaton)
-    p_sim = getfield(m, :p)
-    if p != nothing
-        p_sim = p
-    end
-    return simulate(m, A, product, p_sim, verbose)
-end
-
-function volatile_simulate(product::SynchronizedModel; 
-                           p::Union{Nothing,AbstractVector{Float64}} = nothing, verbose::Bool = false)
-    m = product.m
-    A = product.automaton
-    p_sim = getfield(m, :p)
-    if p != nothing
-        p_sim = p
-    end
-    return volatile_simulate(m, A, p_sim, verbose)
-end
-
-function generate_code_synchronized_simulation(lha_name::Symbol, edge_type::Symbol, f!::Symbol, isabsorbing::Symbol)
+function generate_code_synchronized_simulation(model_name::Symbol, lha_name::Symbol, 
+                                               edge_type::Symbol, f!::Symbol, isabsorbing::Symbol)
     
     return quote
         import MarkovProcesses: simulate, volatile_simulate
-        
-        function simulate(m::ContinuousTimeModel, A::$(lha_name), product::SynchronizedModel,
+
+        function simulate(m::$(model_name), A::$(lha_name), product::SynchronizedModel,
                           p_sim::AbstractVector{Float64}, verbose::Bool)
             x0 = getfield(m, :x0)
             t0 = getfield(m, :t0)
@@ -293,14 +272,7 @@ function generate_code_synchronized_simulation(lha_name::Symbol, edge_type::Symb
             return SynchronizedTrajectory(S, product, values, times, transitions)
         end
         
-        """
-        `volatile_simulate(sm::SynchronizedModel; p, verbose)`
-
-        Simulates a model synchronized with an automaton but does not store the values of the simulation
-        in order to improve performance.
-        It returns the last state of the simulation `S::StateLHA` not a trajectory `σ::SynchronizedTrajectory`.
-        """
-        function volatile_simulate(m::ContinuousTimeModel, A::$(lha_name), p_sim::AbstractVector{Float64}, verbose::Bool)
+        function volatile_simulate(m::$(model_name), A::$(lha_name), p_sim::AbstractVector{Float64}, verbose::Bool)
             x0 = getfield(m, :x0)
             t0 = getfield(m, :t0)
             time_bound = getfield(m, :time_bound)
@@ -361,6 +333,38 @@ function generate_code_synchronized_simulation(lha_name::Symbol, edge_type::Symb
 end
 
 """
+`volatile_simulate(sm::SynchronizedModel; p, verbose)`
+
+Simulates a model synchronized with an automaton but does not store the values of the simulation
+in order to improve performance.
+It returns the last state of the simulation `S::StateLHA` not a trajectory `σ::SynchronizedTrajectory`.
+"""
+function volatile_simulate(product::SynchronizedModel; 
+    p::Union{Nothing,AbstractVector{Float64}} = nothing, verbose::Bool = false)
+    m = product.m
+    A = product.automaton
+    p_sim = getfield(m, :p)
+    if p != nothing
+        p_sim = p
+    end
+    S = volatile_simulate(m, A, p_sim, verbose)
+    return S
+end
+
+function simulate(product::SynchronizedModel; 
+    p::Union{Nothing,AbstractVector{Float64}} = nothing, verbose::Bool = false)
+    m = getfield(product, :m)
+    A = getfield(product, :automaton)
+    p_sim = getfield(m, :p)
+    if p != nothing
+        p_sim = p
+    end
+    σ = simulate(m, A, product, p_sim, verbose)
+    return σ
+end
+
+
+"""
     `simulate(pm::ParametricModel, p_prior::AbstractVector{Float64})
 
 Simulates the model contained in pm with p_prior values.
@@ -384,7 +388,7 @@ function volatile_simulate(pm::ParametricModel, p_prior::AbstractVector{Float64}
                            epsilon::Float64)
     @assert typeof(pm.m) <: SynchronizedModel
     # ABC related automata
-    if pm.m.name in ["ABC euclidean distance"]
+    if typeof(pm.m.A) in <: EuclideanDistanceABCAutomaton
         nothing
     end
     full_p = copy(get_proba_model(pm).p)
@@ -446,7 +450,7 @@ end
 
 number_simulations_smc_chernoff(approx::Float64, conf::Float64) = log(2/(1-conf)) / (2*approx^2)
 function smc_chernoff(sm::SynchronizedModel; approx::Float64 = 0.01, confidence::Float64 = 0.99)
-    @assert sm.automaton.name in ["F property", "G property", "G and F property"] 
+    @assert typeof(sm.automaton) <: Union{AutomatonF,AutomatonG,AutomatonGandF}
     nbr_sim = number_simulations_smc_chernoff(approx, confidence) 
     nbr_sim = convert(Int, trunc(nbr_sim)+1)
     return probability_var_value_lha(sm, nbr_sim)

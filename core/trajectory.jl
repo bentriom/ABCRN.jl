@@ -210,7 +210,7 @@ function Base.show(io::IO, σ::SynchronizedTrajectory)
     print(io, "End LHA state:\n")
     print(io, σ.state_lha_end)
     print(io, "\n")
-    print(io, "- Model name: $(σ.m.name) \n")
+    print(io, "- Model: $(typeof(σ.m)) \n")
     print(io, "- Variable trajectories:\n")
     for obs_var in σ.m.g
         print(io, "* $obs_var: $(σ[obs_var])\n")

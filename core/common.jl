@@ -2,6 +2,7 @@
 
 abstract type Model end 
 abstract type ContinuousTimeModel <: Model end
+abstract type SynchronizedModel <: Model end
 abstract type AbstractTrajectory end
 
 abstract type LHA end
@@ -67,9 +68,17 @@ mutable struct StateLHA
     time::Float64
 end
 
-mutable struct SynchronizedModel <: Model
-    m::ContinuousTimeModel
-    automaton::LHA
+function generate_code_synchronized_model_type_def(model_name::Symbol, lha_name::Symbol)
+    synchronized_model_name = Symbol("$(model_name)SynchronizedWith$(lha_name)")
+    return quote
+        mutable struct $(synchronized_model_name) <: SynchronizedModel
+            m::$(model_name)
+            automaton::$(lha_name)
+        end
+
+        Base.:*(m::$(model_name), A::$(lha_name)) = $(synchronized_model_name)(m, A)
+        Base.:*(A::$(lha_name), m::$(model_name)) = $(synchronized_model_name)(m, A)
+    end
 end
 
 struct SynchronizedTrajectory <: AbstractTrajectory
@@ -121,9 +130,6 @@ end
 LHA(A::LHA, map_var::Dict{VariableModel,Int}) = 
 getfield(Main, Symbol(typeof(A)))(A.transitions, A.locations, A.Λ, A.locations_init, A.locations_final, 
                                   A.map_var_automaton_idx, A.flow, A.map_edges, A.constants, map_var)
-
-Base.:*(m::ContinuousTimeModel, A::LHA) = SynchronizedModel(m, A)
-Base.:*(A::LHA, m::ContinuousTimeModel) = SynchronizedModel(m, A)
 
 function ParametricModel(am::Model, priors::Tuple{ParameterModel,UnivariateDistribution}...)
     m = get_proba_model(am)

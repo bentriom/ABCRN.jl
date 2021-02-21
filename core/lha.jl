@@ -66,7 +66,7 @@ function Base.copyto!(Sdest::StateLHA, Ssrc::StateLHA)
     Sdest.A = Ssrc.A
     Sdest.loc = Ssrc.loc
     for i = eachindex(Sdest.values)
-        @inbounds Sdest.values[i] = Ssrc.values[i]
+         Sdest.values[i] = Ssrc.values[i]
     end
     Sdest.time = Ssrc.time
 end
@@ -96,7 +96,7 @@ function generate_code_next_state(lha_name::Symbol, edge_type::Symbol,
         # A push! method implementend by myself because of preallocation of edge_candidates
         function _push_edge!(edge_candidates::Vector{<:$(edge_type)}, edge::$(edge_type), nbr_candidates::Int)
             if nbr_candidates < length(edge_candidates)
-                @inbounds edge_candidates[nbr_candidates+1] = edge
+                 edge_candidates[nbr_candidates+1] = edge
             else
                 push!(edge_candidates, edge)
             end
@@ -218,9 +218,9 @@ function generate_code_next_state(lha_name::Symbol, edge_type::Symbol,
             end
             # Now time flies according to the flow
             for i in eachindex(values_state)
-                @inbounds coeff_deriv = flow[ptr_loc_state[1]][i]
+                 coeff_deriv = flow[ptr_loc_state[1]][i]
                 if coeff_deriv > 0
-                     @inbounds values_state[i] += coeff_deriv*(tnplus1 - ptr_time_state[1])
+                      values_state[i] += coeff_deriv*(tnplus1 - ptr_time_state[1])
                 end
             end
             ptr_time_state[1] = tnplus1
