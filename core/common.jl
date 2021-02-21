@@ -1,10 +1,11 @@
 
-import Distributions: Distribution, Univariate, Continuous, UnivariateDistribution, 
-                      MultivariateDistribution, product_distribution
 
 abstract type Model end 
 abstract type ContinuousTimeModel <: Model end
 abstract type AbstractTrajectory end
+
+abstract type LHA end
+abstract type Edge end
 
 const VariableModel = Symbol
 const ParameterModel = Symbol
@@ -42,27 +43,21 @@ struct Trajectory <: AbstractTrajectory
     transitions::Vector{Transition}
 end
 
-#=
-struct Edge
-    transitions::Union{Nothing,Vector{Symbol}}
-    check_constraints::Function
-    update_state!::Function
-end
-=#
-abstract type Edge end
-
-struct LHA
-    name::String
-    transitions::Vector{Transition}
-    locations::Vector{Location} 
-    Λ::Dict{Location,Function}
-    locations_init::Vector{Location}
-    locations_final::Vector{Location}
-    map_var_automaton_idx::Dict{VariableAutomaton,Int} # nvar keys : str_var => idx in values
-    flow::Dict{Location,Vector{Float64}} # output of length nvar
-    map_edges::Dict{Location, Dict{Location,Vector{Edge}}}
-    constants::Dict{Symbol,Float64}
-    map_var_model_idx::Dict{VariableModel,Int} # of dim d (of a model)
+function generate_code_lha_type_def(lha_name::Symbol, edge_type::Symbol)
+    return quote
+        struct $(lha_name) <: LHA
+            transitions::Vector{Transition}
+            locations::Vector{Location} 
+            Λ::Dict{Location,Function}
+            locations_init::Vector{Location}
+            locations_final::Vector{Location}
+            map_var_automaton_idx::Dict{VariableAutomaton,Int} # nvar keys : str_var => idx in values
+            flow::Dict{Location,Vector{Float64}} # output of length nvar
+            map_edges::Dict{Location, Dict{Location,Vector{$(edge_type)}}}
+            constants::Dict{Symbol,Float64}
+            map_var_model_idx::Dict{VariableModel,Int} # of dim d (of a model)
+        end
+    end
 end
 
 mutable struct StateLHA
@@ -123,9 +118,9 @@ function generate_code_model_type_constructor(model_name::Symbol)
     end
 end
 
-LHA(A::LHA, map_var::Dict{VariableModel,Int}) = LHA(A.name, A.transitions, A.locations, A.Λ, 
-                                                    A.locations_init, A.locations_final, A.map_var_automaton_idx, A.flow,
-                                                    A.map_edges, A.constants, map_var)
+LHA(A::LHA, map_var::Dict{VariableModel,Int}) = 
+getfield(Main, Symbol(typeof(A)))(A.transitions, A.locations, A.Λ, A.locations_init, A.locations_final, 
+                                  A.map_var_automaton_idx, A.flow, A.map_edges, A.constants, map_var)
 
 Base.:*(m::ContinuousTimeModel, A::LHA) = SynchronizedModel(m, A)
 Base.:*(A::LHA, m::ContinuousTimeModel) = SynchronizedModel(m, A)

@@ -15,6 +15,7 @@ ER.buffer_size = 100
 ER.estim_min_states = 8000
 
 bench1_pkg = @benchmark simulate(ER)
+@btime simulate(ER)
 @show minimum(bench1_pkg), mean(bench1_pkg), maximum(bench1_pkg)
 
 rs = @reaction_network begin
@@ -31,6 +32,7 @@ jprob = JumpProblem(rs, dprob, Direct())
 jsol = solve(jprob, SSAStepper())
 
 bench1_catalyst = @benchmark solve(jprob, SSAStepper())
+@btime solve(jprob, SSAStepper())
 @show minimum(bench1_catalyst), mean(bench1_catalyst), maximum(bench1_catalyst)
 
 str_latex_bench1 = "

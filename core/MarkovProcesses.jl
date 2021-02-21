@@ -1,14 +1,18 @@
 module MarkovProcesses
 
+## Imports
 import Base: +, -, *
 import Base: copy, getfield, getindex, getproperty, lastindex
 import Base: setindex!, setproperty!, fill!, copyto!
 
-import Distributed: @everywhere, @distributed
-import Distributions: Distribution, Product, Uniform, Normal
 import Dates
+import Distributed: @everywhere, @distributed
+import Distributions: Product, Uniform, Normal
+import Distributions: Distribution, Univariate, Continuous, UnivariateDistribution, 
+                      MultivariateDistribution, product_distribution
 import StaticArrays: SVector
 
+## Exports
 export Distribution, Product, Uniform, Normal
 
 # Common types and constructors

@@ -145,7 +145,7 @@ macro network_model(expr_network,expr_name...)
     # Creation of names variables
     model_name = isempty(expr_name) ? "Network" : expr_name[1]
     model_name = Symbol(replace(model_name, ' ' => '_') * "Model")
-    id = Dates.format(Dates.now(), "YmHMs")
+    id = MarkovProcesses.newid()
     nbr_reactions = length(list_expr_reactions)
     basename_func = "$(model_name)_$(id)"
     basename_func = replace(basename_func, '-'=>'_')
