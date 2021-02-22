@@ -25,7 +25,7 @@ export LHA, StateLHA, Edge, Location, VariableAutomaton
 export +, -, δ, dist_lp, euclidean_distance
 export get_obs_var, length_states, length_obs_var
 export get_state_from_time, get_var_from_time, vectorize
-export isbounded, times, transitions
+export isbounded, states, times, transitions
 export check_consistency, issteadystate, isaccepted
 
 # LHA related methods

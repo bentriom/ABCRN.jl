@@ -1,4 +1,8 @@
 
+# Creation of the automaton types
+@everywhere @eval abstract type EdgeAutomatonGandF <: Edge end
+@everywhere @eval $(MarkovProcesses.generate_code_lha_type_def(:AutomatonGandF, :EdgeAutomatonGandF))
+
 function create_automaton_G_and_F(m::ContinuousTimeModel, x1::Float64, x2::Float64, t1::Float64, t2::Float64, sym_obs_G::VariableModel,
                                   x3::Float64, x4::Float64, t3::Float64, t4::Float64, sym_obs_F::VariableModel)
     # Requirements for the automaton
@@ -8,6 +12,13 @@ function create_automaton_G_and_F(m::ContinuousTimeModel, x1::Float64, x2::Float
     @assert (x3 <= x4) "x3 > x3 impossible for G and F automaton."
     @assert (t3 <= t4) "t3 > t4 impossible for G and F automaton."
     @assert (t2 <= t3) "t3 > t2 impossible for G and F automaton."
+
+    # Automaton types and functions
+    model_name = Symbol(typeof(m))
+    lha_name = :AutomatonGandF
+    edge_type = :EdgeAutomatonGandF
+    check_constraints = Symbol("check_constraints_$(lha_name)")
+    update_state! = Symbol("update_state_$(lha_name)!")
 
     # Locations
     locations = [:l0G, :l1G, :l2G, :l3G, :l4G,
@@ -41,328 +52,354 @@ function create_automaton_G_and_F(m::ContinuousTimeModel, x1::Float64, x2::Float
                                           :l3F => [0.0,0.0,0.0,0.0,0.0,0.0])
 
     ## Edges
-    map_edges = Dict{Location, Dict{Location, Vector{Edge}}}()
-    for loc in locations 
-        map_edges[loc] = Dict{Location, Vector{Edge}}()
-    end
-
     idx_obs_var_F = getfield(m, :map_var_idx)[sym_obs_F]
     idx_obs_var_G = getfield(m, :map_var_idx)[sym_obs_G]
-    idx_var_n = map_var_automaton_idx[:n] 
-    idx_var_d = map_var_automaton_idx[:d] 
-    idx_var_dprime = map_var_automaton_idx[:dprime] 
-    idx_var_isabs = map_var_automaton_idx[:isabs] 
-    idx_var_in = map_var_automaton_idx[:in] 
-    idx_var_tprime = map_var_automaton_idx[:tprime]
+    to_idx(var::Symbol) = map_var_automaton_idx[var]
 
-    nbr_rand = rand(1:1000)
-    basename_func = "$(replace(m.name, ' '=>'_'))_$(nbr_rand)"
-    basename_func = replace(basename_func, '-'=>'_')
-    sym_isabs_func = Symbol(m.isabsorbing)
-    func_name(type_func::Symbol, from_loc::Location, to_loc::Location, edge_number::Int) = 
-    Symbol("$(type_func)_aut_F_$(basename_func)_$(from_loc)$(to_loc)_$(edge_number)$(type_func == :us ? "!" : "")")
-    meta_elementary_functions = quote
-        @everywhere istrue(val::Float64) = convert(Bool, val)
+    id = MarkovProcesses.newid()
+    basename_func = "$(model_name)_$(id)"
+    edge_name(from_loc::Location, to_loc::Location, edge_number::Int) = 
+    Symbol("Edge_$(lha_name)_$(basename_func)_$(from_loc)$(to_loc)_$(edge_number)")
+
+    ## check_constraints & update_state!
+    @everywhere @eval begin
+        istrue(val::Float64) = convert(Bool, val)
         ## Edges check constraint and update state functions
 
         # l0G loc
         # l0G => l1G
-        @everywhere $(func_name(:cc, :l0G, :l1G, 1))(S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = true
-        @everywhere $(func_name(:us, :l0G, :l1G, 1))(S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
-        (setindex!(S_values, 0, $(idx_var_d));
-         setindex!(S_values, x[$(idx_obs_var_G)], $(idx_var_n));
-         setindex!(S_values, true, $(idx_var_in));
-         setindex!(S_values, getfield(Main, $(Meta.quot(sym_isabs_func)))(p, x), $(idx_var_isabs));
+        @everywhere struct $(edge_name(:l0G, :l1G, 1)) <: $(edge_type) transitions::Union{Nothing,Vector{Symbol}} end
+        $(check_constraints)(edge::$(edge_name(:l0G, :l1G, 1)), S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = true
+        @everywhere $(update_state!)(edge::$(edge_name(:l0G, :l1G, 1)), S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
+        (S_values[$(to_idx(:d))] = 0;
+         S_values[$(to_idx(:n))] = x[$(idx_obs_var_G)];
+         S_values[$(to_idx(:in))] = true;
+         S_values[$(to_idx(:isabs))] = $(m.isabsorbing)(p, x);
          :l1G)
 
         # l1G loc
         # l1G => l3G
-        @everywhere $(func_name(:cc, :l1G, :l3G, 1))(S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
+        @everywhere struct $(edge_name(:l1G, :l3G, 1)) <: $(edge_type) transitions::Union{Nothing,Vector{Symbol}} end
+        $(check_constraints)(edge::$(edge_name(:l1G, :l3G, 1)), S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
         S_time <= $t1 && 
-        S_values[$(idx_var_n)] < $x1 || S_values[$(idx_var_n)] > $x2
-        @everywhere $(func_name(:us, :l1G, :l3G, 1))(S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
-        (setindex!(S_values, min(abs($x1 - S_values[$(idx_var_n)]), abs($x2 - S_values[$(idx_var_n)])), $(idx_var_d));
-         setindex!(S_values, false, $(idx_var_in));
+        S_values[$(to_idx(:n))] < $x1 || S_values[$(to_idx(:n))] > $x2
+        @everywhere $(update_state!)(edge::$(edge_name(:l1G, :l3G, 1)), S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
+        (S_values[$(to_idx(:d))] = min(abs($x1 - S_values[$(to_idx(:n))]), abs($x2 - S_values[$(to_idx(:n))]));
+         S_values[$(to_idx(:in))] = false;
          :l3G)
 
-        @everywhere $(func_name(:cc, :l1G, :l3G, 2))(S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
+        @everywhere struct $(edge_name(:l1G, :l3G, 2)) <: $(edge_type) transitions::Union{Nothing,Vector{Symbol}} end
+        $(check_constraints)(edge::$(edge_name(:l1G, :l3G, 2)), S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
         (S_time <= $t1) && 
-        ($x1 <= S_values[$(idx_var_n)] <= $x2)
-        @everywhere $(func_name(:us, :l1G, :l3G, 2))(S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
-        (setindex!(S_values, 0, $(idx_var_d));
-         setindex!(S_values, false, $(idx_var_in));
+        ($x1 <= S_values[$(to_idx(:n))] <= $x2)
+        @everywhere $(update_state!)(edge::$(edge_name(:l1G, :l3G, 2)), S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
+        (S_values[$(to_idx(:d))] = 0;
+         S_values[$(to_idx(:in))] = false;
          :l3G)
 
-        @everywhere $(func_name(:cc, :l1G, :l3G, 3))(S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
-        !istrue(S_values[$(idx_var_in)]) && 
+        @everywhere struct $(edge_name(:l1G, :l3G, 3)) <: $(edge_type) transitions::Union{Nothing,Vector{Symbol}} end
+        $(check_constraints)(edge::$(edge_name(:l1G, :l3G, 3)), S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
+        !istrue(S_values[$(to_idx(:in))]) && 
         ($t1 <= S_time <= $t2) && 
-        ($x1 <= S_values[$(idx_var_n)] <= $x2)
-        @everywhere $(func_name(:us, :l1G, :l3G, 3))(S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
-        (setindex!(S_values, S_values[$(idx_var_d)] * (S_time - $t1), $(idx_var_d));
-         setindex!(S_values, 0.0, $(idx_var_tprime));
+        ($x1 <= S_values[$(to_idx(:n))] <= $x2)
+        @everywhere $(update_state!)(edge::$(edge_name(:l1G, :l3G, 3)), S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
+        (S_values[$(to_idx(:d))] = S_values[$(to_idx(:d))] * (S_time - $t1);
+         S_values[$(to_idx(:tprime))] = 0.0;
          :l3G)
 
-        @everywhere $(func_name(:cc, :l1G, :l3G, 4))(S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
-        istrue(S_values[$(idx_var_in)]) && 
+        @everywhere struct $(edge_name(:l1G, :l3G, 4)) <: $(edge_type) transitions::Union{Nothing,Vector{Symbol}} end
+        $(check_constraints)(edge::$(edge_name(:l1G, :l3G, 4)), S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
+        istrue(S_values[$(to_idx(:in))]) && 
         ($t1 <= S_time <= $t2) && 
-        ($x1 <= S_values[$(idx_var_n)] <= $x2)
-        @everywhere $(func_name(:us, :l1G, :l3G, 4))(S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
-        (setindex!(S_values, 0.0, $(idx_var_tprime));
+        ($x1 <= S_values[$(to_idx(:n))] <= $x2)
+        @everywhere $(update_state!)(edge::$(edge_name(:l1G, :l3G, 4)), S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
+        (S_values[$(to_idx(:tprime))] = 0.0;
          :l3G)
 
         # l1G => l4G
-        @everywhere $(func_name(:cc, :l1G, :l4G, 1))(S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
-        !istrue(S_values[$(idx_var_in)]) && 
+        @everywhere struct $(edge_name(:l1G, :l4G, 1)) <: $(edge_type) transitions::Union{Nothing,Vector{Symbol}} end
+        $(check_constraints)(edge::$(edge_name(:l1G, :l4G, 1)), S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
+        !istrue(S_values[$(to_idx(:in))]) && 
         ($t1 <= S_time <= $t2) && 
-        (S_values[$(idx_var_n)] < $x1 || S_values[$(idx_var_n)] > $x2)
-        @everywhere $(func_name(:us, :l1G, :l4G, 1))(S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
-        (setindex!(S_values, S_values[$(idx_var_d)] + S_values[$(idx_var_d)] * (S_time - $t1), $(idx_var_d));
+        (S_values[$(to_idx(:n))] < $x1 || S_values[$(to_idx(:n))] > $x2)
+        @everywhere $(update_state!)(edge::$(edge_name(:l1G, :l4G, 1)), S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
+        (S_values[$(to_idx(:d))] = S_values[$(to_idx(:d))] + S_values[$(to_idx(:d))] * (S_time - $t1);
          :l4G)
 
-        @everywhere $(func_name(:cc, :l1G, :l4G, 2))(S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
-        istrue(S_values[$(idx_var_in)]) && 
+        @everywhere struct $(edge_name(:l1G, :l4G, 2)) <: $(edge_type) transitions::Union{Nothing,Vector{Symbol}} end
+        $(check_constraints)(edge::$(edge_name(:l1G, :l4G, 2)), S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
+        istrue(S_values[$(to_idx(:in))]) && 
         ($t1 <= S_time <= $t2) && 
-        (S_values[$(idx_var_n)] < $x1 || S_values[$(idx_var_n)] > $x2)
-        @everywhere $(func_name(:us, :l1G, :l4G, 2))(S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
+        (S_values[$(to_idx(:n))] < $x1 || S_values[$(to_idx(:n))] > $x2)
+        @everywhere $(update_state!)(edge::$(edge_name(:l1G, :l4G, 2)), S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
         (:l4G)
 
         # l1G => l2G
         #=
-        @everywhere $(func_name(:cc, :l1G, :l2G, 3))(S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
-        istrue(S_values[$(idx_var_isabs)]) && 
+        @everywhere struct $(edge_name(:l1G, :l2G, 3)) <: $(edge_type) transitions::Union{Nothing,Vector{Symbol}} end
+        $(check_constraints)(edge::$(edge_name(:l1G, :l2G, 3)), S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
+        istrue(S_values[$(to_idx(:isabs))]) && 
         S_time <= $t1
-        @everywhere $(func_name(:us, :l1G, :l2G, 3))(S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
-        (setindex!(S_values, ($t2 - $t1) * min(abs($x1 - S_values[$(idx_var_n)]), abs($x2 - S_values[$(idx_var_n)])), $(idx_var_d));
+        @everywhere $(update_state!)(edge::$(edge_name(:l1G, :l2G, 3)), S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
+        (S_values[$(to_idx(:d))] = ($t2 - $t1) * min(abs($x1 - S_values[$(to_idx(:n))]), abs($x2 - S_values[$(to_idx(:n))]));
         :l2G)
 
-        @everywhere $(func_name(:cc, :l1G, :l2G, 4))(S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
-        istrue(S_values[$(idx_var_isabs)]) && 
+        @everywhere struct $(edge_name(:l1G, :l2G, 4)) <: $(edge_type) transitions::Union{Nothing,Vector{Symbol}} end
+        $(check_constraints)(edge::$(edge_name(:l1G, :l2G, 4)), S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
+        istrue(S_values[$(to_idx(:isabs))]) && 
         ($t1 <= S_time <= $t2)
-        @everywhere $(func_name(:us, :l1G, :l2G, 4))(S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
-        (setindex!(S_values, S_values[$(idx_var_d)] + ($t2 - S_time) * min(abs($x1 - S_values[$(idx_var_n)]), abs($x2 - S_values[$(idx_var_n)])), $(idx_var_d));
+        @everywhere $(update_state!)(edge::$(edge_name(:l1G, :l2G, 4)), S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
+        (S_values[$(to_idx(:d))] = S_values[$(to_idx(:d))] + ($t2 - S_time) * min(abs($x1 - S_values[$(to_idx(:n))]), abs($x2 - S_values[$(to_idx(:n))]));
         :l2G)
 
-        @everywhere $(func_name(:cc, :l1G, :l2G, 1))(S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
-        istrue(S_values[$(idx_var_in)]) && 
+        @everywhere struct $(edge_name(:l1G, :l2G, 1)) <: $(edge_type) transitions::Union{Nothing,Vector{Symbol}} end
+        $(check_constraints)(edge::$(edge_name(:l1G, :l2G, 1)), S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
+        istrue(S_values[$(to_idx(:in))]) && 
         S_time >= $t2
-        @everywhere $(func_name(:us, :l1G, :l2G, 1))(S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
+        @everywhere $(update_state!)(edge::$(edge_name(:l1G, :l2G, 1)), S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
         (:l2G)
 
-        @everywhere $(func_name(:cc, :l1G, :l2G, 2))(S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
-        !istrue(S_values[$(idx_var_in)]) && 
+        @everywhere struct $(edge_name(:l1G, :l2G, 2)) <: $(edge_type) transitions::Union{Nothing,Vector{Symbol}} end
+        $(check_constraints)(edge::$(edge_name(:l1G, :l2G, 2)), S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
+        !istrue(S_values[$(to_idx(:in))]) && 
         S_time >= $t2
-        @everywhere $(func_name(:us, :l1G, :l2G, 2))(S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
-        (setindex!(S_values, S_values[$(idx_var_d)] * ($t2 - $t1), $(idx_var_d));
+        @everywhere $(update_state!)(edge::$(edge_name(:l1G, :l2G, 2)), S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
+        (S_values[$(to_idx(:d))] = S_values[$(to_idx(:d))] * ($t2 - $t1);
         :l2G)
         =#
 
         # l3G loc
         # l3G => l1G
-        @everywhere $(func_name(:cc, :l3G, :l1G, 1))(S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = true
-        @everywhere $(func_name(:us, :l3G, :l1G, 1))(S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
-        (setindex!(S_values, x[$(idx_obs_var_G)], $(idx_var_n));
-         setindex!(S_values, getfield(Main, $(Meta.quot(sym_isabs_func)))(p, x), $(idx_var_isabs));
+        @everywhere struct $(edge_name(:l3G, :l1G, 1)) <: $(edge_type) transitions::Union{Nothing,Vector{Symbol}} end
+        $(check_constraints)(edge::$(edge_name(:l3G, :l1G, 1)), S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = true
+        @everywhere $(update_state!)(edge::$(edge_name(:l3G, :l1G, 1)), S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
+        (S_values[$(to_idx(:n))] = x[$(idx_obs_var_G)];
+         S_values[$(to_idx(:isabs))] = $(m.isabsorbing)(p, x);
          :l1G)
 
         # l3G => l2G
-        @everywhere $(func_name(:cc, :l3G, :l2G, 2))(S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
-        istrue(S_values[$(idx_var_in)]) && 
-        (S_time >= $t2 || istrue(S_values[$(idx_var_isabs)]))
-        @everywhere $(func_name(:us, :l3G, :l2G, 2))(S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
-        (setindex!(S_values, S_values[$(idx_var_d)] * ($t2 - $t1), $(idx_var_d));
+        @everywhere struct $(edge_name(:l3G, :l2G, 2)) <: $(edge_type) transitions::Union{Nothing,Vector{Symbol}} end
+        $(check_constraints)(edge::$(edge_name(:l3G, :l2G, 2)), S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
+        istrue(S_values[$(to_idx(:in))]) && 
+        (S_time >= $t2 || istrue(S_values[$(to_idx(:isabs))]))
+        @everywhere $(update_state!)(edge::$(edge_name(:l3G, :l2G, 2)), S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
+        (S_values[$(to_idx(:d))] = S_values[$(to_idx(:d))] * ($t2 - $t1);
          :l2G)
 
-        @everywhere $(func_name(:cc, :l3G, :l2G, 1))(S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
-        !istrue(S_values[$(idx_var_in)]) && 
-        (S_time >= $t2 || istrue(S_values[$(idx_var_isabs)]))
-        @everywhere $(func_name(:us, :l3G, :l2G, 1))(S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
+        @everywhere struct $(edge_name(:l3G, :l2G, 1)) <: $(edge_type) transitions::Union{Nothing,Vector{Symbol}} end
+        $(check_constraints)(edge::$(edge_name(:l3G, :l2G, 1)), S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
+        !istrue(S_values[$(to_idx(:in))]) && 
+        (S_time >= $t2 || istrue(S_values[$(to_idx(:isabs))]))
+        @everywhere $(update_state!)(edge::$(edge_name(:l3G, :l2G, 1)), S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
         (:l2G)
 
         # l4G loc
         # l4G => l1G
-        @everywhere $(func_name(:cc, :l4G, :l1G, 1))(S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = true
-        @everywhere $(func_name(:us, :l4G, :l1G, 1))(S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
-        (setindex!(S_values, S_values[$(idx_var_d)] + S_values[$(idx_var_tprime)] * min(abs($x1 - S_values[$(idx_var_n)]), abs($x2 - S_values[$(idx_var_n)])), $(idx_var_d));
-         setindex!(S_values, 0.0, $(idx_var_tprime));
-         setindex!(S_values, x[$(idx_obs_var_G)], $(idx_var_n));
-         setindex!(S_values, true, $(idx_var_in));
-         setindex!(S_values, getfield(Main, $(Meta.quot(sym_isabs_func)))(p, x), $(idx_var_isabs));
+        @everywhere struct $(edge_name(:l4G, :l1G, 1)) <: $(edge_type) transitions::Union{Nothing,Vector{Symbol}} end
+        $(check_constraints)(edge::$(edge_name(:l4G, :l1G, 1)), S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = true
+        @everywhere $(update_state!)(edge::$(edge_name(:l4G, :l1G, 1)), S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
+        (S_values[$(to_idx(:d))] = S_values[$(to_idx(:d))] + S_values[$(to_idx(:tprime))] * min(abs($x1 - S_values[$(to_idx(:n))]), abs($x2 - S_values[$(to_idx(:n))]));
+         S_values[$(to_idx(:tprime))] = 0.0;
+         S_values[$(to_idx(:n))] = x[$(idx_obs_var_G)];
+         S_values[$(to_idx(:in))] = true;
+         S_values[$(to_idx(:isabs))] = $(m.isabsorbing)(p, x);
          :l1G)
 
         # l4G => l2G
-        @everywhere $(func_name(:cc, :l4G, :l2G, 1))(S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
-        (istrue(S_values[$(idx_var_isabs)]))
-        @everywhere $(func_name(:us, :l4G, :l2G, 1))(S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
-        (setindex!(S_values, S_values[$(idx_var_d)] +  ($t2 - S_time) * min(abs($x1 - S_values[$(idx_var_n)]), abs($x2 - S_values[$(idx_var_n)])), $(idx_var_d));
+        @everywhere struct $(edge_name(:l4G, :l2G, 1)) <: $(edge_type) transitions::Union{Nothing,Vector{Symbol}} end
+        $(check_constraints)(edge::$(edge_name(:l4G, :l2G, 1)), S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
+        (istrue(S_values[$(to_idx(:isabs))]))
+        @everywhere $(update_state!)(edge::$(edge_name(:l4G, :l2G, 1)), S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
+        (S_values[$(to_idx(:d))] = S_values[$(to_idx(:d))] +  ($t2 - S_time) * min(abs($x1 - S_values[$(to_idx(:n))]), abs($x2 - S_values[$(to_idx(:n))]));
          :l2G)
 
-        @everywhere $(func_name(:cc, :l4G, :l2G, 2))(S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
+        @everywhere struct $(edge_name(:l4G, :l2G, 2)) <: $(edge_type) transitions::Union{Nothing,Vector{Symbol}} end
+        $(check_constraints)(edge::$(edge_name(:l4G, :l2G, 2)), S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
         (S_time >= $t2)
-        @everywhere $(func_name(:us, :l4G, :l2G, 2))(S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
-        (setindex!(S_values, S_values[$(idx_var_d)] +  S_values[$(idx_var_tprime)] * min(abs($x1 - S_values[$(idx_var_n)]), abs($x2 - S_values[$(idx_var_n)])), $(idx_var_d));
+        @everywhere $(update_state!)(edge::$(edge_name(:l4G, :l2G, 2)), S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
+        (S_values[$(to_idx(:d))] = S_values[$(to_idx(:d))] +  S_values[$(to_idx(:tprime))] * min(abs($x1 - S_values[$(to_idx(:n))]), abs($x2 - S_values[$(to_idx(:n))]));
          :l2G)
 
 
         # Connection between the two automata: l2G => l1F
-        @everywhere $(func_name(:cc, :l2G, :l1F, 1))(S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = true
-        @everywhere $(func_name(:us, :l2G, :l1F, 1))(S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
-        (setindex!(S_values, x[$(idx_obs_var_F)], $(idx_var_n));
-         setindex!(S_values, Inf, $(idx_var_dprime));
-         setindex!(S_values, getfield(Main, $(Meta.quot(sym_isabs_func)))(p, x), $(idx_var_isabs));
+        @everywhere struct $(edge_name(:l2G, :l1F, 1)) <: $(edge_type) transitions::Union{Nothing,Vector{Symbol}} end
+        $(check_constraints)(edge::$(edge_name(:l2G, :l1F, 1)), S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = true
+        @everywhere $(update_state!)(edge::$(edge_name(:l2G, :l1F, 1)), S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
+        (S_values[$(to_idx(:n))] = x[$(idx_obs_var_F)];
+         S_values[$(to_idx(:dprime))] = Inf;
+         S_values[$(to_idx(:isabs))] = $(m.isabsorbing)(p, x);
          :l1F)
 
         # l1F loc : we construct  the edges of the form l1F => (..)
         # l1F => l2F
-        @everywhere $(func_name(:cc, :l1F, :l2F, 1))(S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
+        @everywhere struct $(edge_name(:l1F, :l2F, 1)) <: $(edge_type) transitions::Union{Nothing,Vector{Symbol}} end
+        $(check_constraints)(edge::$(edge_name(:l1F, :l2F, 1)), S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
         S_time >= $t3 &&
-        S_values[$(idx_var_dprime)] == 0 
-        @everywhere $(func_name(:us, :l1F, :l2F, 1))(S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
-        (#setindex!(S_values, 0, $(idx_var_dprime));
+        S_values[$(to_idx(:dprime))] == 0 
+        @everywhere $(update_state!)(edge::$(edge_name(:l1F, :l2F, 1)), S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
+        (#S_values[$(to_idx(:dprime))] = 0;
          :l2F)
 
-        @everywhere $(func_name(:cc, :l1F, :l2F, 2))(S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
+        @everywhere struct $(edge_name(:l1F, :l2F, 2)) <: $(edge_type) transitions::Union{Nothing,Vector{Symbol}} end
+        $(check_constraints)(edge::$(edge_name(:l1F, :l2F, 2)), S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
         (S_time >= $t4) && 
-        (S_values[$(idx_var_n)] < $x3 || S_values[$(idx_var_n)] > $x4)
-        @everywhere $(func_name(:us, :l1F, :l2F, 2))(S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
-        (#setindex!(S_values, min(abs(S_values[$(idx_var_n)] - $x3), abs(S_values[$(idx_var_n)] - $x4)), $(idx_var_dprime));
-         setindex!(S_values, S_values[$(idx_var_d)] + S_values[$(idx_var_dprime)], $(idx_var_d));
+        (S_values[$(to_idx(:n))] < $x3 || S_values[$(to_idx(:n))] > $x4)
+        @everywhere $(update_state!)(edge::$(edge_name(:l1F, :l2F, 2)), S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
+        (#S_values[$(to_idx(:dprime))] = min(abs(S_values[$(to_idx(:n))] - $x3), abs(S_values[$(to_idx(:n))] - $x4));
+         S_values[$(to_idx(:d))] = S_values[$(to_idx(:d))] + S_values[$(to_idx(:dprime))];
          :l2F)
         #=
-        @everywhere $(func_name(:cc, :l1F, :l2F, 3))(S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
-        istrue(S_values[$(idx_var_isabs)]) && S_time <= $t4
-        @everywhere $(func_name(:us, :l1F, :l2F, 3))(S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
-        (setindex!(S_values, S_values[$(idx_var_d)] + S_values[$(idx_var_dprime)], $(idx_var_d));
+        @everywhere struct $(edge_name(:l1F, :l2F, 3)) <: $(edge_type) transitions::Union{Nothing,Vector{Symbol}} end
+        $(check_constraints)(edge::$(edge_name(:l1F, :l2F, 3)), S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
+        istrue(S_values[$(to_idx(:isabs))]) && S_time <= $t4
+        @everywhere $(update_state!)(edge::$(edge_name(:l1F, :l2F, 3)), S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
+        (S_values[$(to_idx(:d))] = S_values[$(to_idx(:d))] + S_values[$(to_idx(:dprime))];
         :l2F)
 
-        @everywhere $(func_name(:cc, :l1F, :l2F, 4))(S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
+        @everywhere struct $(edge_name(:l1F, :l2F, 4)) <: $(edge_type) transitions::Union{Nothing,Vector{Symbol}} end
+        $(check_constraints)(edge::$(edge_name(:l1F, :l2F, 4)), S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
         S_time >= $t3 &&
-        S_values[$(idx_var_dprime)] == 0 
-        @everywhere $(func_name(:us, :l1F, :l2F, 4))(S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
+        S_values[$(to_idx(:dprime))] == 0 
+        @everywhere $(update_state!)(edge::$(edge_name(:l1F, :l2F, 4)), S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
         (:l2F)
         =#
 
         # l1F => l3F
-        @everywhere $(func_name(:cc, :l1F, :l3F, 1))(S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
+        @everywhere struct $(edge_name(:l1F, :l3F, 1)) <: $(edge_type) transitions::Union{Nothing,Vector{Symbol}} end
+        $(check_constraints)(edge::$(edge_name(:l1F, :l3F, 1)), S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
         (S_time <= $t3) &&
-        (S_values[$(idx_var_n)] < $x3 || S_values[$(idx_var_n)] > $x4)
-        @everywhere $(func_name(:us, :l1F, :l3F, 1))(S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
-        (setindex!(S_values, min(sqrt((S_time - $t3)^2 + (S_values[$(idx_var_n)] - $x4)^2), 
-                                 sqrt((S_time - $t3)^2 + (S_values[$(idx_var_n)] - $x3)^2)), $(idx_var_dprime));
-        :l3F)
-
-        @everywhere $(func_name(:cc, :l1F, :l3F, 2))(S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
-        ($x3 <= S_values[$(idx_var_n)] <= $x4)
-        @everywhere $(func_name(:us, :l1F, :l3F, 2))(S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
-        (setindex!(S_values, 0, $(idx_var_dprime));
+        (S_values[$(to_idx(:n))] < $x3 || S_values[$(to_idx(:n))] > $x4)
+        @everywhere $(update_state!)(edge::$(edge_name(:l1F, :l3F, 1)), S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
+        (S_values[$(to_idx(:dprime))] = min(sqrt((S_time - $t3)^2 + (S_values[$(to_idx(:n))] - $x4)^2), 
+                                            sqrt((S_time - $t3)^2 + (S_values[$(to_idx(:n))] - $x3)^2));
          :l3F)
 
-        @everywhere $(func_name(:cc, :l1F, :l3F, 3))(S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
+        @everywhere struct $(edge_name(:l1F, :l3F, 2)) <: $(edge_type) transitions::Union{Nothing,Vector{Symbol}} end
+        $(check_constraints)(edge::$(edge_name(:l1F, :l3F, 2)), S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
+        ($x3 <= S_values[$(to_idx(:n))] <= $x4)
+        @everywhere $(update_state!)(edge::$(edge_name(:l1F, :l3F, 2)), S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
+        (S_values[$(to_idx(:dprime))] = 0;
+         :l3F)
+
+        @everywhere struct $(edge_name(:l1F, :l3F, 3)) <: $(edge_type) transitions::Union{Nothing,Vector{Symbol}} end
+        $(check_constraints)(edge::$(edge_name(:l1F, :l3F, 3)), S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
         (S_time >= $t3) &&
-        (S_values[$(idx_var_n)] < $x3 || S_values[$(idx_var_n)] > $x4)
-        @everywhere $(func_name(:us, :l1F, :l3F, 3))(S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
-        (setindex!(S_values, min(S_values[$(idx_var_dprime)], min(abs(S_values[$(idx_var_n)] - $x3), abs(S_values[$(idx_var_n)] - $x4))), $(idx_var_dprime));
+        (S_values[$(to_idx(:n))] < $x3 || S_values[$(to_idx(:n))] > $x4)
+        @everywhere $(update_state!)(edge::$(edge_name(:l1F, :l3F, 3)), S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
+        (S_values[$(to_idx(:dprime))] = min(S_values[$(to_idx(:dprime))], min(abs(S_values[$(to_idx(:n))] - $x3), abs(S_values[$(to_idx(:n))] - $x4)));
          :l3F)
 
         # l3F loc
         # l3F => l1F
-        @everywhere $(func_name(:cc, :l3F, :l1F, 1))(S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = true
-        @everywhere $(func_name(:us, :l3F, :l1F, 1))(S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
-        (setindex!(S_values, x[$(idx_obs_var_F)], $(idx_var_n));
-         setindex!(S_values, getfield(Main, $(Meta.quot(sym_isabs_func)))(p, x), $(idx_var_isabs));
+        @everywhere struct $(edge_name(:l3F, :l1F, 1)) <: $(edge_type) transitions::Union{Nothing,Vector{Symbol}} end
+        $(check_constraints)(edge::$(edge_name(:l3F, :l1F, 1)), S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = true
+        @everywhere $(update_state!)(edge::$(edge_name(:l3F, :l1F, 1)), S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
+        (S_values[$(to_idx(:n))] = x[$(idx_obs_var_F)];
+         S_values[$(to_idx(:isabs))] = $(m.isabsorbing)(p, x);
          :l1F)
 
         # l3F => l2F
-        @everywhere $(func_name(:cc, :l3F, :l2F, 1))(S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
-        (S_time >= $t4 || istrue(S_values[$(idx_var_isabs)]))
-        @everywhere $(func_name(:us, :l3F, :l2F, 1))(S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
-        (setindex!(S_values, S_values[$(idx_var_d)] + S_values[$(idx_var_dprime)], $(idx_var_d));
+        @everywhere struct $(edge_name(:l3F, :l2F, 1)) <: $(edge_type) transitions::Union{Nothing,Vector{Symbol}} end
+        $(check_constraints)(edge::$(edge_name(:l3F, :l2F, 1)), S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
+        (S_time >= $t4 || istrue(S_values[$(to_idx(:isabs))]))
+        @everywhere $(update_state!)(edge::$(edge_name(:l3F, :l2F, 1)), S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
+        (S_values[$(to_idx(:d))] = S_values[$(to_idx(:d))] + S_values[$(to_idx(:dprime))];
          :l2F)
     end
-    eval(meta_elementary_functions)
 
-    # l0G loc
-    # l0G => l1G
-    edge1 = Edge(nothing, getfield(Main, func_name(:cc, :l0G, :l1G, 1)), getfield(Main, func_name(:us, :l0G, :l1G, 1)))
-    map_edges[:l0G][:l1G] = [edge1]
+    @eval begin
+        map_edges = Dict{Location, Dict{Location, Vector{$(edge_type)}}}()
+        for loc in $(locations)
+            map_edges[loc] = Dict{Location, Vector{$(edge_type)}}()
+        end
 
-    # l1G => l3G
-    edge1 = Edge(nothing, getfield(Main, func_name(:cc, :l1G, :l3G, 1)), getfield(Main, func_name(:us, :l1G, :l3G, 1)))
-    edge2 = Edge(nothing, getfield(Main, func_name(:cc, :l1G, :l3G, 2)), getfield(Main, func_name(:us, :l1G, :l3G, 2)))
-    edge3 = Edge(nothing, getfield(Main, func_name(:cc, :l1G, :l3G, 3)), getfield(Main, func_name(:us, :l1G, :l3G, 3)))
-    edge4 = Edge(nothing, getfield(Main, func_name(:cc, :l1G, :l3G, 4)), getfield(Main, func_name(:us, :l1G, :l3G, 4)))
-    map_edges[:l1G][:l3G] = [edge1, edge2, edge3, edge4]
+        # l0G loc
+        # l0G => l1G
+        edge1 = $(edge_name(:l0G, :l1G, 1))(nothing)
+        map_edges[:l0G][:l1G] = [edge1]
 
-    # l1G => l4G
-    edge1 = Edge(nothing, getfield(Main, func_name(:cc, :l1G, :l4G, 1)), getfield(Main, func_name(:us, :l1G, :l4G, 1)))
-    edge2 = Edge(nothing, getfield(Main, func_name(:cc, :l1G, :l4G, 2)), getfield(Main, func_name(:us, :l1G, :l4G, 2)))
-    map_edges[:l1G][:l4G] = [edge1, edge2]
+        # l1G => l3G
+        edge1 = $(edge_name(:l1G, :l3G, 1))(nothing)
+        edge2 = $(edge_name(:l1G, :l3G, 2))(nothing)
+        edge3 = $(edge_name(:l1G, :l3G, 3))(nothing)
+        edge4 = $(edge_name(:l1G, :l3G, 4))(nothing)
+        map_edges[:l1G][:l3G] = [edge1, edge2, edge3, edge4]
 
-    # l1G => l2G
-    #=
-    edge1 = Edge(nothing, getfield(Main, func_name(:cc, :l1G, :l2G, 1)), getfield(Main, func_name(:us, :l1G, :l2G, 1)))
-    edge2 = Edge(nothing, getfield(Main, func_name(:cc, :l1G, :l2G, 2)), getfield(Main, func_name(:us, :l1G, :l2G, 2)))
-    edge3 = Edge(nothing, getfield(Main, func_name(:cc, :l1G, :l2G, 3)), getfield(Main, func_name(:us, :l1G, :l2G, 3)))
-    edge4 = Edge(nothing, getfield(Main, func_name(:cc, :l1G, :l2G, 4)), getfield(Main, func_name(:us, :l1G, :l2G, 4)))
-    map_edges[:l1G][:l2G] = [edge3, edge4, edge1, edge2]
-    =#
+        # l1G => l4G
+        edge1 = $(edge_name(:l1G, :l4G, 1))(nothing)
+        edge2 = $(edge_name(:l1G, :l4G, 2))(nothing)
+        map_edges[:l1G][:l4G] = [edge1, edge2]
 
-    # l3G loc
-    # l3G => l1G
-    edge1 = Edge([:ALL], getfield(Main, func_name(:cc, :l3G, :l1G, 1)), getfield(Main, func_name(:us, :l3G, :l1G, 1)))
-    map_edges[:l3G][:l1G] = [edge1]
+        # l1G => l2G
+        #=
+        edge1 = $(edge_name(:l1G, :l2G, 1))(nothing)
+        edge2 = $(edge_name(:l1G, :l2G, 2))(nothing)
+        edge3 = $(edge_name(:l1G, :l2G, 3))(nothing)
+        edge4 = $(edge_name(:l1G, :l2G, 4))(nothing)
+        map_edges[:l1G][:l2G] = [edge3, edge4, edge1, edge2]
+        =#
 
-    # l3G => l2G
-    edge1 = Edge(nothing, getfield(Main, func_name(:cc, :l3G, :l2G, 1)), getfield(Main, func_name(:us, :l3G, :l2G, 1)))
-    edge2 = Edge(nothing, getfield(Main, func_name(:cc, :l3G, :l2G, 2)), getfield(Main, func_name(:us, :l3G, :l2G, 2)))
-    map_edges[:l3G][:l2G] = [edge1, edge2]
+        # l3G loc
+        # l3G => l1G
+        edge1 = $(edge_name(:l3G, :l1G, 1))([:ALL])
+        map_edges[:l3G][:l1G] = [edge1]
 
-    # l4 loc
-    # l4G => l1G
-    edge1 = Edge([:ALL], getfield(Main, func_name(:cc, :l4G, :l1G, 1)), getfield(Main, func_name(:us, :l4G, :l1G, 1)))
-    map_edges[:l4G][:l1G] = [edge1]
+        # l3G => l2G
+        edge1 = $(edge_name(:l3G, :l2G, 1))(nothing)
+        edge2 = $(edge_name(:l3G, :l2G, 2))(nothing)
+        map_edges[:l3G][:l2G] = [edge1, edge2]
 
-    # l4G => l2G
-    edge1 = Edge(nothing, getfield(Main, func_name(:cc, :l4G, :l2G, 1)), getfield(Main, func_name(:us, :l4G, :l2G, 1)))
-    edge2 = Edge(nothing, getfield(Main, func_name(:cc, :l4G, :l2G, 2)), getfield(Main, func_name(:us, :l4G, :l2G, 2)))
-    map_edges[:l4G][:l2G] = [edge1,edge2]
+        # l4 loc
+        # l4G => l1G
+        edge1 = $(edge_name(:l4G, :l1G, 1))([:ALL])
+        map_edges[:l4G][:l1G] = [edge1]
 
-    # l2G loc
-    # l2G => l1F : Transition from autF to autG
-    edge1 = Edge(nothing, getfield(Main, func_name(:cc, :l2G, :l1F, 1)), getfield(Main, func_name(:us, :l2G, :l1F, 1)))
-    map_edges[:l2G][:l1F] = [edge1]
+        # l4G => l2G
+        edge1 = $(edge_name(:l4G, :l2G, 1))(nothing)
+        edge2 = $(edge_name(:l4G, :l2G, 2))(nothing)
+        map_edges[:l4G][:l2G] = [edge1,edge2]
 
-    # l1F loc
-    # l1F => l3F
-    edge1 = Edge(nothing, getfield(Main, func_name(:cc, :l1F, :l2F, 1)), getfield(Main, func_name(:us, :l1F, :l2F, 1)))
-    edge2 = Edge(nothing, getfield(Main, func_name(:cc, :l1F, :l2F, 2)), getfield(Main, func_name(:us, :l1F, :l2F, 2)))
-    map_edges[:l1F][:l2F] = [edge1, edge2]
-    #edge3 = Edge(nothing, getfield(Main, func_name(:cc, :l1F, :l2F, 3)), getfield(Main, func_name(:us, :l1F, :l2F, 3)))
-    #edge4 = Edge(nothing, getfield(Main, func_name(:cc, :l1F, :l2F, 4)), getfield(Main, func_name(:us, :l1F, :l2F, 4)))
-    #map_edges[:l1F][:l2F] = [edge1, edge4, edge3, edge2]
+        # l2G loc
+        # l2G => l1F : Transition from autF to autG
+        edge1 = $(edge_name(:l2G, :l1F, 1))(nothing)
+        map_edges[:l2G][:l1F] = [edge1]
 
-    # l1F => l3F
-    edge1 = Edge(nothing, getfield(Main, func_name(:cc, :l1F, :l3F, 1)), getfield(Main, func_name(:us, :l1F, :l3F, 1)))
-    edge2 = Edge(nothing, getfield(Main, func_name(:cc, :l1F, :l3F, 2)), getfield(Main, func_name(:us, :l1F, :l3F, 2)))
-    edge3 = Edge(nothing, getfield(Main, func_name(:cc, :l1F, :l3F, 3)), getfield(Main, func_name(:us, :l1F, :l3F, 3)))
-    map_edges[:l1F][:l3F] = [edge1, edge2, edge3]
+        # l1F loc
+        # l1F => l3F
+        edge1 = $(edge_name(:l1F, :l2F, 1))(nothing)
+        edge2 = $(edge_name(:l1F, :l2F, 2))(nothing)
+        map_edges[:l1F][:l2F] = [edge1, edge2]
+        #edge3 = $(edge_name(:l1F, :l2F, 3))(nothing)
+        #edge4 = $(edge_name(:l1F, :l2F, 4))(nothing)
+        #map_edges[:l1F][:l2F] = [edge1, edge4, edge3, edge2]
 
-    # l3F loc
-    # l3F => l1F
-    edge1 = Edge([:ALL], getfield(Main, func_name(:cc, :l3F, :l1F, 1)), getfield(Main, func_name(:us, :l3F, :l1F, 1)))
-    map_edges[:l3F][:l1F] = [edge1]
+        # l1F => l3F
+        edge1 = $(edge_name(:l1F, :l3F, 1))(nothing)
+        edge2 = $(edge_name(:l1F, :l3F, 2))(nothing)
+        edge3 = $(edge_name(:l1F, :l3F, 3))(nothing)
+        map_edges[:l1F][:l3F] = [edge1, edge2, edge3]
 
-    # l3F => l2F
-    edge1 = Edge(nothing, getfield(Main, func_name(:cc, :l3F, :l2F, 1)), getfield(Main, func_name(:us, :l3F, :l2F, 1)))    
-    map_edges[:l3F][:l2F] = [edge1]
+        # l3F loc
+        # l3F => l1F
+        edge1 = $(edge_name(:l3F, :l1F, 1))([:ALL])
+        map_edges[:l3F][:l1F] = [edge1]
+
+        # l3F => l2F
+        edge1 = $(edge_name(:l3F, :l2F, 1))(nothing)    
+        map_edges[:l3F][:l2F] = [edge1]
+    end
 
     ## Constants
     constants = Dict{Symbol,Float64}(:x1 => x1,  :x2 => x2, :t1 => t1, :t2 => t2,
                                      :x3 => x3,  :x4 => x4, :t3 => t3, :t4 => t4)
 
-    A = LHA("G and F property", m.transitions, locations, Λ_F, locations_init, locations_final, 
-            map_var_automaton_idx, flow, map_edges, constants, m.map_var_idx)
+    # Updating types and simulation methods
+    @everywhere @eval $(MarkovProcesses.generate_code_synchronized_model_type_def(model_name, lha_name))
+    @everywhere @eval $(MarkovProcesses.generate_code_next_state(lha_name, edge_type, check_constraints, update_state!))
+    @everywhere @eval $(MarkovProcesses.generate_code_synchronized_simulation(model_name, lha_name, edge_type, m.f!, m.isabsorbing))
+
+    A = AutomatonGandF(m.transitions, locations, Λ_F, locations_init, locations_final, 
+                       map_var_automaton_idx, flow, map_edges, constants, m.map_var_idx)
     return A
 end
-
-export create_automaton_G_and_F
 

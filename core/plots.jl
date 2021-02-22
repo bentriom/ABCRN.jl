@@ -22,7 +22,7 @@ function plot(σ::AbstractTrajectory, vars::VariableModel...; plot_transitions::
     end
     
     # Plots
-    p = plot(title = "Trajectory of $(σ.m.name) model", palette = :lightrainbow, legend = :outertopright, background_color_legend=:transparent, dpi = 480)
+    p = plot(title = "Trajectory of $(Symbol(typeof(σ.m))) model", palette = :lightrainbow, legend = :outertopright, background_color_legend=:transparent, dpi = 480)
     for var in to_plot
         @assert var in get_obs_var(σ) "Variable $var is not observed." 
         plot!(p, times(σ), σ[var], 
@@ -55,24 +55,18 @@ end
 
 function plot!(A::LHA; label::String = "")
     label_region = (label == "") ? "Region LHA" : label
-    if A.name in ["F property", "G property"]
-        if haskey(A.constants, :x1) && haskey(A.constants, :x2) && haskey(A.constants, :t1) && haskey(A.constants, :t2) 
-            x1, x2, t1, t2 = A.constants[:x1], A.constants[:x2], A.constants[:t1], A.constants[:t2] 
-            plot!(Shape([(t1,x1), (t1,x2), (t2,x2), (t2,x1), (t1,x1)]), opacity = 0.5, label = label_region)
-        end
+    if (@isdefined(AutomatonF) && (typeof(A) <: AutomatonF)) || (@isdefined(AutomatonG) && (typeof(A) <: AutomatonG))
+        x1, x2, t1, t2 = A.constants[:x1], A.constants[:x2], A.constants[:t1], A.constants[:t2] 
+        plot!(Shape([(t1,x1), (t1,x2), (t2,x2), (t2,x1), (t1,x1)]), opacity = 0.5, label = label_region)
     end
-    if A.name in ["G and F property"]    
-        if haskey(A.constants, :x1) && haskey(A.constants, :x2) && haskey(A.constants, :t1) && haskey(A.constants, :t2) 
-            x1, x2, t1, t2 = A.constants[:x1], A.constants[:x2], A.constants[:t1], A.constants[:t2] 
-            plot!(Shape([(t1,x1), (t1,x2), (t2,x2), (t2,x1), (t1,x1)]), opacity = 0.5, label = label_region)
-        end
-        if haskey(A.constants, :x3) && haskey(A.constants, :x4) && haskey(A.constants, :t3) && haskey(A.constants, :t4) 
-            x3, x4, t3, t4 = A.constants[:x3], A.constants[:x4], A.constants[:t3], A.constants[:t4] 
-            plot!(Shape([(t3,x3), (t3,x4), (t4,x4), (t4,x3), (t3,x3)]), opacity = 0.5, label = label_region)
-        end
+    if @isdefined(AutomatonGandF) && typeof(A) <: AutomatonGandF
+        x1, x2, t1, t2 = A.constants[:x1], A.constants[:x2], A.constants[:t1], A.constants[:t2] 
+        plot!(Shape([(t1,x1), (t1,x2), (t2,x2), (t2,x1), (t1,x1)]), opacity = 0.5, label = label_region)
+        x3, x4, t3, t4 = A.constants[:x3], A.constants[:x4], A.constants[:t3], A.constants[:t4] 
+        plot!(Shape([(t3,x3), (t3,x4), (t4,x4), (t4,x3), (t3,x3)]), opacity = 0.5, label = label_region)
     end
     label_region = (label == "") ? "L, H" : label
-    if A.name == "Period"
+    if @isdefined(PeriodAutomaton) && typeof(A) <: PeriodAutomaton
         hline!([A.constants[:L], A.constants[:H]], label = label_region, linestyle = :dot)
     end
 end
@@ -81,35 +75,38 @@ end
 function plot_periodic_trajectory(A::LHA, σ::SynchronizedTrajectory, sym_obs::Symbol; 
                                   verbose = false, annot_size = 6, show_tp = false, filename::String = "")
     @assert sym_obs in get_obs_var(σ) "Variable is not observed in the model"
-    @assert A.name in ["Period"]
+    @assert typeof(A) <: PeriodAutomaton "The automaton is not a period automaton"
+    @assert σ.m._g_idx == 1:σ.m.dim_state "All the variables must be observed. Call observe_all!(model) before."
     p_sim = (σ.m).p
     l_t = times(σ)
     l_tr = transitions(σ)
-    Sn = init_state(A, σ[1], l_t[1])
-    Snplus1 = deepcopy(Sn)
+    S0 = init_state(A, σ[1], l_t[1])
+    ptr_loc = [S0.loc]
+    ptr_time = [S0.time]
+    values = S0.values
     nbr_states = length_states(σ)
     locations_trajectory = Vector{Location}(undef, nbr_states)
-    locations_trajectory[1] = Sn.loc
+    locations_trajectory[1] = S0.loc
     idx_n = [1]
-    values_n = [Sn[:n]]
-    values_tp = [Sn[:tp]]
-    edge_candidates = Vector{Edge}(undef, 2)
+    values_n = [MarkovProcesses.get_state_lha_value(A, values, :n)]
+    values_tp = [MarkovProcesses.get_state_lha_value(A, values, :tp)]
+    edge_candidates = Vector{EdgePeriodAutomaton}(undef, 2)
     if verbose println("Init: ") end
-    if verbose @show Sn end
-    for n in 2:nbr_states
-        next_state!(Snplus1, A, σ[n], l_t[n], l_tr[n], Sn, σ[n-1], p_sim, edge_candidates; verbose = verbose)
-        if Snplus1[:n] != values_n[end]
-            push!(idx_n, n)
-            push!(values_n, Snplus1[:n])
-            push!(values_tp, Sn[:tp])
+    for k in 2:nbr_states
+        tp_k = MarkovProcesses.get_state_lha_value(A, values, :tp)
+        next_state!(A, ptr_loc, values, ptr_time, σ[k], l_t[k], l_tr[k], σ[k-1], p_sim, edge_candidates; verbose = verbose)
+        n_kplus1 = MarkovProcesses.get_state_lha_value(A, values, :n)
+        if n_kplus1 != values_n[end]
+            push!(idx_n, k)
+            push!(values_n, n_kplus1)
+            push!(values_tp, tp_k)
         end
-        copyto!(Sn, Snplus1)
-        locations_trajectory[n] = Sn.loc
-        if Snplus1.loc in A.locations_final 
-            break 
+        locations_trajectory[k] = ptr_loc[1]
+        if ptr_loc[1] in A.locations_final 
+            break
         end
     end
-    p = plot(title = "Oscillatory trajectory of $(σ.m.name) model", palette = :lightrainbow,
+    p = plot(title = "Oscillatory trajectory of $(Symbol(typeof(σ.m))) model", palette = :lightrainbow,
              background_color_legend=:transparent, dpi = 480, legend = :outertopright) #legendfontsize, legend
     colors_loc = Dict(:l0 => :silver, :l0prime => :silver, :final => :black,
                       :low => :skyblue2, :mid => :orange, :high => :red)

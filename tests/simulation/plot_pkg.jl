@@ -7,3 +7,5 @@ load_model("SIR")
 load_plots()
 plot(σ; plot_transitions = true)
 
+return true
+

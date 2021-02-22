@@ -104,7 +104,7 @@ SIR.x0 = new_x0_SIR
 ER.x0 = new_x0_ER
 σ = simulate(SIR)
 σ2 = simulate(ER)
-test_all = test_all && SIR.isabsorbing(SIR.p,new_x0_SIR) && ER.isabsorbing(ER.p,new_x0_ER) &&
+test_all = test_all && getfield(Main, SIR.isabsorbing)(SIR.p,new_x0_SIR) && getfield(Main, ER.isabsorbing)(ER.p,new_x0_ER) &&
                     length_states(σ) == 1 && length_states(σ2) == 1 &&
                     check_consistency(σ) && check_consistency(σ2)
 
@@ -112,7 +112,7 @@ SIR.time_bound = 1.0
 ER.time_bound = 0.01
 σ = simulate(SIR)
 σ2 = simulate(ER)
-test_all = test_all && SIR.isabsorbing(SIR.p,new_x0_SIR) && ER.isabsorbing(ER.p,new_x0_ER) &&
+test_all = test_all && getfield(Main, SIR.isabsorbing)(SIR.p,new_x0_SIR) && getfield(Main, ER.isabsorbing)(ER.p,new_x0_ER) &&
                     length_states(σ) == 2 && length_states(σ2) == 2 &&
                     check_consistency(σ) && check_consistency(σ2)
 

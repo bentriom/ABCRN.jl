@@ -12,7 +12,7 @@ repressilator = @network_model begin
     degr4: (P1 => 0, P1)
     degr5: (P2 => 0, P2)
     degr6: (P3 => 0, P3)
-end "Repressilator pkg"
+end "RepressilatorPkg"
 
 set_observed_var!(repressilator, [:mRNA1, :mRNA2, :mRNA3, :P1, :P2, :P3])
 set_x0!(repressilator, [:mRNA1, :mRNA2, :mRNA3], fill(0, 3))

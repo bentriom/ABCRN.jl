@@ -10,6 +10,7 @@ load_model("ER")
 observe_all!(SIR)
 observe_all!(ER)
 
+MAKE_SECOND_AUTOMATON_TESTS = false
 test_all = true
 
 # SIR model
@@ -30,16 +31,20 @@ for i = 1:nbr_sim
             global sync_model = sync_SIR
             break
         end
-        sync_SIR = SIR * create_euclidean_distance_automaton_2(SIR, tml_obs, y_obs, :I)
-        σ = simulate(sync_SIR)
-        test2 = euclidean_distance(σ, :I, tml_obs, y_obs) == σ.state_lha_end[:d]
-        if !test2
-            @show test2, euclidean_distance(σ, :I, tml_obs, y_obs), σ.state_lha_end[:d]
-            global err = σ
-            global tml = tml_obs
-            global y = y_obs
-            global sync_model = sync_SIR
-            break
+        if MAKE_SECOND_AUTOMATON_TESTS
+            sync_SIR = SIR * create_euclidean_distance_automaton_2(SIR, tml_obs, y_obs, :I)
+            σ = simulate(sync_SIR)
+            test2 = euclidean_distance(σ, :I, tml_obs, y_obs) == σ.state_lha_end[:d]
+            if !test2
+                @show test2, euclidean_distance(σ, :I, tml_obs, y_obs), σ.state_lha_end[:d]
+                global err = σ
+                global tml = tml_obs
+                global y = y_obs
+                global sync_model = sync_SIR
+                break
+            end
+        else
+            test2 = true
         end
         global test_all = test_all && test && test2
     end
@@ -62,18 +67,21 @@ for i = 1:nbr_sim
             global sync_model = sync_ER
             break
         end
-        sync_ER = ER * create_euclidean_distance_automaton_2(ER, tml_obs, y_obs, :P)
-        σ = simulate(sync_ER)
-        test2 = euclidean_distance(σ, :P, tml_obs, y_obs) == σ.state_lha_end[:d]
-        if !test2
-            @show test2, euclidean_distance(σ, :P, tml_obs, y_obs), σ.state_lha_end[:d]
-            global err = σ
-            global tml = tml_obs
-            global y = y_obs
-            global sync_model = sync_ER
-            break
+        if MAKE_SECOND_AUTOMATON_TESTS
+            sync_ER = ER * create_euclidean_distance_automaton_2(ER, tml_obs, y_obs, :P)
+            σ = simulate(sync_ER)
+            test2 = euclidean_distance(σ, :P, tml_obs, y_obs) == σ.state_lha_end[:d]
+            if !test2
+                @show test2, euclidean_distance(σ, :P, tml_obs, y_obs), σ.state_lha_end[:d]
+                global err = σ
+                global tml = tml_obs
+                global y = y_obs
+                global sync_model = sync_ER
+                break
+            end
+        else
+            test2 = true
         end
-        #@show test, euclidean_distance(σ, tml_obs, y_obs, :P), σ.state_lha_end[:d]
         global test_all = test_all && test && test2
     end
 end

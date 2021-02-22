@@ -1,5 +1,3 @@
-#(S[:mean_tp] * (S[:n]-1) + S[:tp]) / S[:n]
-#(S[:var_tp] * (S[:n]-1) + (S[:mean_tp]-S[:tp])^2) / S[:n]
 
 @everywhere f_mean_tp(mean_tp::Float64, tp::Float64, n::Float64) =
 (mean_tp * (n-1) + tp) / n
@@ -10,26 +8,35 @@
 @everywhere mean_error(mean_tp::Float64, var_tp::Float64, ref_mean_tp::Float64, ref_var_tp::Float64) =
 abs(mean_tp - ref_mean_tp)
 
+# Creation of the automaton types
+@everywhere @eval abstract type EdgePeriodAutomaton <: Edge end
+@everywhere @eval $(MarkovProcesses.generate_code_lha_type_def(:PeriodAutomaton, :EdgePeriodAutomaton))
+
 function create_period_automaton(m::ContinuousTimeModel, L::Float64, H::Float64, N::Int, sym_obs::VariableModel;
                                  initT::Float64 = 0.0, ref_mean_tp::Float64 = 0.0, ref_var_tp::Float64 = 0.0, error_func::Symbol = :mean_error)
     # Requirements for the automaton
     @assert sym_obs in m.g "$(sym_obs) is not observed."
     @assert (L < H) "L >= H impossible for period automaton."
     @assert (N >= 1) "N < 1 impossible for period automaton."
-    
+
     N = convert(Float64, N)
-    nbr_rand = rand(1:1000)
-    basename_func = "$(replace(m.name, ' '=>'_'))_$(nbr_rand)"
-    basename_func = replace(basename_func, '-'=>'_')
+    # Automaton types and functions
+    model_name = Symbol(typeof(m))
+    lha_name = :PeriodAutomaton
+    edge_type = :EdgePeriodAutomaton
+    check_constraints = Symbol("check_constraints_$(lha_name)")
+    update_state! = Symbol("update_state_$(lha_name)!")
 
     ## Locations
     locations = [:l0, :l0prime, :low, :mid, :high, :final]
 
     ## Invariant predicates
     idx_sym_obs = getfield(m, :map_var_idx)[sym_obs]
+    id = MarkovProcesses.newid()
+    basename_func = "$(model_name)_$(id)"
     sym_name_L = Symbol("val_L_aut_per_$(basename_func)")
     sym_name_H = Symbol("val_H_aut_per_$(basename_func)")
-    
+
     @everywhere true_predicate(x::Vector{Int}) = true
     @everywhere low_predicate(x::Vector{Int}) = x[$(Meta.quot(idx_sym_obs))] <= $L
     @everywhere not_low_predicate(x::Vector{Int}) = !low_predicate(x)
@@ -43,7 +50,7 @@ function create_period_automaton(m::ContinuousTimeModel, L::Float64, H::Float64,
     ## Init and final loc
     locations_init = [:l0]
     locations_final = [:final]
-    
+
     ## Map of automaton variables
     map_var_automaton_idx = Dict{VariableAutomaton,Int}(:t => 1, :n => 2, :top => 3, :tp => 4,
                                                         :mean_tp => 5, :var_tp => 6, :d => 7)
@@ -55,241 +62,263 @@ function create_period_automaton(m::ContinuousTimeModel, L::Float64, H::Float64,
                                           :high => [1.0,0.0,0.0,1.0,0.0,0.0,0.0],
                                           :final => [1.0,0.0,0.0,0.0,0.0,0.0,0.0]) 
     ## Edges
-    map_edges = Dict{Location, Dict{Location, Vector{Edge}}}()
-    for loc in locations 
-        map_edges[loc] = Dict{Location, Vector{Edge}}()
-    end
- 
-    to_idx(var::Symbol) = map_var_automaton_idx[var] 
-    nbr_rand = rand(1:100000)
-    basename_func = "$(replace(m.name, ' '=>'_'))_$(nbr_rand)"
-    basename_func = replace(basename_func, '-'=>'_')
-    func_name(type_func::Symbol, from_loc::Location, to_loc::Location, edge_number::Int) = 
-    Symbol("$(type_func)_aut_per_$(basename_func)_$(from_loc)$(to_loc)_$(edge_number)$(type_func == :us ? "!" : "")")
-    meta_elementary_functions = quote
-        ## Edge functions
+    to_idx(var::Symbol) = map_var_automaton_idx[var]
+    idx_obs_var = getfield(m, :map_var_idx)[sym_obs]
+    edge_name(from_loc::Location, to_loc::Location, edge_number::Int) = 
+    Symbol("Edge_$(lha_name)_$(basename_func)_$(from_loc)$(to_loc)_$(edge_number)")
 
+    ## check_constraints & update_state!
+    @everywhere @eval begin
         # l0 loc 
         # * l0 => l0
-        @everywhere $(func_name(:cc, :l0, :l0, 1))(S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
+        struct $(edge_name(:l0, :l0, 1)) <: $(edge_type) transitions::Union{Nothing,Vector{Symbol}} end
+        $(check_constraints)(edge::$(edge_name(:l0, :l0, 1)), S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
         true
-        @everywhere $(func_name(:us, :l0, :l0, 1))(S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) =
+        $(update_state!)(edge::$(edge_name(:l0, :l0, 1)), S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) =
         (:l0)
 
         # * l0 => l0prime
-        @everywhere $(func_name(:cc, :l0, :l0prime, 1))(S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
+        struct $(edge_name(:l0, :l0prime, 1)) <: $(edge_type) transitions::Union{Nothing,Vector{Symbol}} end
+        $(check_constraints)(edge::$(edge_name(:l0, :l0prime, 1)), S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
         S_values[$(to_idx(:t))] >= $initT
-        @everywhere $(func_name(:us, :l0, :l0prime, 1))(S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) =
-        (setindex!(S_values, Inf, $(to_idx(:d)));
-		:l0prime)
+        $(update_state!)(edge::$(edge_name(:l0, :l0prime, 1)), S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) =
+        (S_values[$(to_idx(:d))] = Inf;
+         :l0prime)
 
         # * l0 => low
-        @everywhere $(func_name(:cc, :l0, :low, 1))(S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
+        struct $(edge_name(:l0, :low, 1)) <: $(edge_type) transitions::Union{Nothing,Vector{Symbol}} end
+        $(check_constraints)(edge::$(edge_name(:l0, :low, 1)), S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
         S_values[$(to_idx(:t))] >= $initT
-        @everywhere $(func_name(:us, :l0, :low, 1))(S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) =
-        (setindex!(S_values, 0.0, $(to_idx(:t)));
-         setindex!(S_values, 0.0, $(to_idx(:top)));
-         setindex!(S_values, -1, $(to_idx(:n)));
-         setindex!(S_values, 0.0, $(to_idx(:tp)));
-         setindex!(S_values, Inf, $(to_idx(:d)));
-		:low)
+        $(update_state!)(edge::$(edge_name(:l0, :low, 1)), S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) =
+        (S_values[$(to_idx(:t))] = 0.0;
+         S_values[$(to_idx(:top))] = 0.0;
+         S_values[$(to_idx(:n))] = -1;
+         S_values[$(to_idx(:tp))] = 0.0;
+         S_values[$(to_idx(:d))] = Inf;
+         :low)
 
         # l0prime
         # * l0prime => l0prime
-        @everywhere $(func_name(:cc, :l0prime, :l0prime, 1))(S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
+        struct $(edge_name(:l0prime, :l0prime, 1)) <: $(edge_type) transitions::Union{Nothing,Vector{Symbol}} end
+        $(check_constraints)(edge::$(edge_name(:l0prime, :l0prime, 1)), S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
         true
-        @everywhere $(func_name(:us, :l0prime, :l0prime, 1))(S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) =
+        $(update_state!)(edge::$(edge_name(:l0prime, :l0prime, 1)), S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) =
         (:l0prime)
 
         # * l0prime => low
-        @everywhere $(func_name(:cc, :l0prime, :low, 1))(S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
+        struct $(edge_name(:l0prime, :low, 1)) <: $(edge_type) transitions::Union{Nothing,Vector{Symbol}} end
+        $(check_constraints)(edge::$(edge_name(:l0prime, :low, 1)), S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
         true
-        @everywhere $(func_name(:us, :l0prime, :low, 1))(S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) =
-        (setindex!(S_values, 0.0, $(to_idx(:t)));
-         setindex!(S_values, 0.0, $(to_idx(:top)));
-         setindex!(S_values, -1, $(to_idx(:n)));
-         setindex!(S_values, 0.0, $(to_idx(:tp)));
-		:low)
+        $(update_state!)(edge::$(edge_name(:l0prime, :low, 1)), S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) =
+        (S_values[$(to_idx(:t))] = 0.0;
+         S_values[$(to_idx(:top))] = 0.0;
+         S_values[$(to_idx(:n))] = -1;
+         S_values[$(to_idx(:tp))] = 0.0;
+         :low)
 
         # low 
         # * low => low
-        @everywhere $(func_name(:cc, :low, :low, 1))(S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
+        struct $(edge_name(:low, :low, 1)) <: $(edge_type) transitions::Union{Nothing,Vector{Symbol}} end
+        $(check_constraints)(edge::$(edge_name(:low, :low, 1)), S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
         S_values[$(to_idx(:n))] < $N
-        @everywhere $(func_name(:us, :low, :low, 1))(S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) =
+        $(update_state!)(edge::$(edge_name(:low, :low, 1)), S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) =
         (:low)
 
         # * low => mid 
-        @everywhere $(func_name(:cc, :low, :mid, 1))(S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
+        struct $(edge_name(:low, :mid, 1)) <: $(edge_type) transitions::Union{Nothing,Vector{Symbol}} end
+        $(check_constraints)(edge::$(edge_name(:low, :mid, 1)), S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
         S_values[$(to_idx(:n))] < $N
-        @everywhere $(func_name(:us, :low, :mid, 1))(S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) =
+        $(update_state!)(edge::$(edge_name(:low, :mid, 1)), S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) =
         (:mid)
 
         # * low => final
-        @everywhere $(func_name(:cc, :low, :final, 1))(S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
+        struct $(edge_name(:low, :final, 1)) <: $(edge_type) transitions::Union{Nothing,Vector{Symbol}} end
+        $(check_constraints)(edge::$(edge_name(:low, :final, 1)), S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
         S_values[$(to_idx(:n))] == $N
-        @everywhere $(func_name(:us, :low, :final, 1))(S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) =
-        (val_d = getfield(Main, $(Meta.quot(error_func)))(S_values[$(to_idx(:mean_tp))], 
-                                                          S_values[$(to_idx(:var_tp))], 
-                                                          $(ref_mean_tp), $(ref_var_tp));
-         setindex!(S_values, val_d, $(to_idx(:d)));
-		:final)
+        $(update_state!)(edge::$(edge_name(:low, :final, 1)), S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) =
+        (val_d = $(error_func)(S_values[$(to_idx(:mean_tp))], 
+                               S_values[$(to_idx(:var_tp))], 
+                               $(ref_mean_tp), $(ref_var_tp));
+         S_values[$(to_idx(:d))] = val_d;
+        :final)
 
         # mid
         # * mid => mid
-        @everywhere $(func_name(:cc, :mid, :mid, 1))(S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
+        struct $(edge_name(:mid, :mid, 1)) <: $(edge_type) transitions::Union{Nothing,Vector{Symbol}} end
+        $(check_constraints)(edge::$(edge_name(:mid, :mid, 1)), S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
         S_values[$(to_idx(:n))] < $N
-        @everywhere $(func_name(:us, :mid, :mid, 1))(S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) =
+        $(update_state!)(edge::$(edge_name(:mid, :mid, 1)), S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) =
         (:mid)
 
         # * mid => low 
-        @everywhere $(func_name(:cc, :mid, :low, 1))(S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
+        struct $(edge_name(:mid, :low, 1)) <: $(edge_type) transitions::Union{Nothing,Vector{Symbol}} end
+        $(check_constraints)(edge::$(edge_name(:mid, :low, 1)), S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
         S_values[$(to_idx(:n))] < $N &&
         S_values[$(to_idx(:top))] == 0.0
-        @everywhere $(func_name(:us, :mid, :low, 1))(S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) =
+        $(update_state!)(edge::$(edge_name(:mid, :low, 1)), S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) =
         (:low)
 
-        @everywhere $(func_name(:cc, :mid, :low, 2))(S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
+        struct $(edge_name(:mid, :low, 2)) <: $(edge_type) transitions::Union{Nothing,Vector{Symbol}} end
+        $(check_constraints)(edge::$(edge_name(:mid, :low, 2)), S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
         S_values[$(to_idx(:n))] == -1.0 &&
         S_values[$(to_idx(:top))] == 1.0
-        @everywhere $(func_name(:us, :mid, :low, 2))(S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) =
-        (setindex!(S_values, S_values[$(to_idx(:n))] + 1, $(to_idx(:n)));
-         setindex!(S_values, 0.0, $(to_idx(:top)));
-         setindex!(S_values, 0.0, $(to_idx(:tp)));
-		:low)
+        $(update_state!)(edge::$(edge_name(:mid, :low, 2)), S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) =
+        (S_values[$(to_idx(:n))] = S_values[$(to_idx(:n))] + 1;
+         S_values[$(to_idx(:top))] = 0.0;
+         S_values[$(to_idx(:tp))] = 0.0;
+         :low)
 
-        @everywhere $(func_name(:cc, :mid, :low, 3))(S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
+        struct $(edge_name(:mid, :low, 3)) <: $(edge_type) transitions::Union{Nothing,Vector{Symbol}} end
+        $(check_constraints)(edge::$(edge_name(:mid, :low, 3)), S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
         (S_values[$(to_idx(:n))] == 0.0) &&
         S_values[$(to_idx(:top))] == 1.0
-        @everywhere $(func_name(:us, :mid, :low, 3))(S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) =
-        (setindex!(S_values, S_values[$(to_idx(:n))] + 1, $(to_idx(:n)));
-         setindex!(S_values, 0.0, $(to_idx(:top)));
-         setindex!(S_values, f_mean_tp(S_values[$(to_idx(:mean_tp))], 
+        $(update_state!)(edge::$(edge_name(:mid, :low, 3)), S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) =
+        (S_values[$(to_idx(:n))] = S_values[$(to_idx(:n))] + 1;
+         S_values[$(to_idx(:top))] = 0.0;
+         S_values[$(to_idx(:mean_tp))] = f_mean_tp(S_values[$(to_idx(:mean_tp))], 
                                                    S_values[$(to_idx(:tp))],
-                                                   S_values[$(to_idx(:n))]), $(to_idx(:mean_tp)));
-         setindex!(S_values, 0.0, $(to_idx(:tp)));
-        :low)
+                                                   S_values[$(to_idx(:n))]);
+         S_values[$(to_idx(:tp))] = 0.0;
+         :low)
 
-        @everywhere $(func_name(:cc, :mid, :low, 4))(S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
+        struct $(edge_name(:mid, :low, 4)) <: $(edge_type) transitions::Union{Nothing,Vector{Symbol}} end
+        $(check_constraints)(edge::$(edge_name(:mid, :low, 4)), S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
         (1 <= S_values[$(to_idx(:n))] < $N) &&
         S_values[$(to_idx(:top))] == 1.0
-        @everywhere $(func_name(:us, :mid, :low, 4))(S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) =
-        (setindex!(S_values, S_values[$(to_idx(:n))] + 1, $(to_idx(:n)));
-         setindex!(S_values, 0.0, $(to_idx(:top)));
-         setindex!(S_values, g_var_tp(S_values[$(to_idx(:var_tp))], 
-                                                   S_values[$(to_idx(:mean_tp))],
+        $(update_state!)(edge::$(edge_name(:mid, :low, 4)), S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) =
+        (S_values[$(to_idx(:n))] = S_values[$(to_idx(:n))] + 1;
+         S_values[$(to_idx(:top))] = 0.0;
+         S_values[$(to_idx(:var_tp))] = g_var_tp(S_values[$(to_idx(:var_tp))], 
+                                                 S_values[$(to_idx(:mean_tp))],
+                                                 S_values[$(to_idx(:tp))],
+                                                 S_values[$(to_idx(:n))]);
+         S_values[$(to_idx(:mean_tp))] = f_mean_tp(S_values[$(to_idx(:mean_tp))], 
                                                    S_values[$(to_idx(:tp))],
-                                                   S_values[$(to_idx(:n))]), $(to_idx(:var_tp)));
-         setindex!(S_values, f_mean_tp(S_values[$(to_idx(:mean_tp))], 
-                                                   S_values[$(to_idx(:tp))],
-                                                   S_values[$(to_idx(:n))]), $(to_idx(:mean_tp)));
-         setindex!(S_values, 0.0, $(to_idx(:tp)));
-        :low)
+                                                   S_values[$(to_idx(:n))]);
+         S_values[$(to_idx(:tp))] = 0.0;
+         :low)
 
         # * mid => high
-        @everywhere $(func_name(:cc, :mid, :high, 1))(S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
+        struct $(edge_name(:mid, :high, 1)) <: $(edge_type) transitions::Union{Nothing,Vector{Symbol}} end
+        $(check_constraints)(edge::$(edge_name(:mid, :high, 1)), S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
         S_values[$(to_idx(:n))] < $N
-        @everywhere $(func_name(:us, :mid, :high, 1))(S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) =
-        (setindex!(S_values, 1.0, $(to_idx(:top)));
-		:high)
+        $(update_state!)(edge::$(edge_name(:mid, :high, 1)), S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) =
+        (S_values[$(to_idx(:top))] = 1.0;
+         :high)
 
         # * mid => final
-        @everywhere $(func_name(:cc, :mid, :final, 1))(S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
+        struct $(edge_name(:mid, :final, 1)) <: $(edge_type) transitions::Union{Nothing,Vector{Symbol}} end
+        $(check_constraints)(edge::$(edge_name(:mid, :final, 1)), S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
         S_values[$(to_idx(:n))] == $N
-        @everywhere $(func_name(:us, :mid, :final, 1))(S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) =
-        (val_d = getfield(Main, Meta.quot($error_func))(S_values[$(to_idx(:mean_tp))],
-                                                        S_values[$(to_idx(:var_tp))],
-                                                        $(ref_mean_tp), $(ref_var_tp));
-         setindex!(S_values, val_d, $(to_idx(:d)));
-		:final)
+        $(update_state!)(edge::$(edge_name(:mid, :final, 1)), S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) =
+        (val_d = $(error_func)(S_values[$(to_idx(:mean_tp))],
+                               S_values[$(to_idx(:var_tp))],
+                               $(ref_mean_tp), $(ref_var_tp));
+         S_values[$(to_idx(:d))] = val_d;
+        :final)
 
         # high 
         # * high => high
-        @everywhere $(func_name(:cc, :high, :high, 1))(S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
+        struct $(edge_name(:high, :high, 1)) <: $(edge_type) transitions::Union{Nothing,Vector{Symbol}} end
+        $(check_constraints)(edge::$(edge_name(:high, :high, 1)), S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
         S_values[$(to_idx(:n))] < $N
-        @everywhere $(func_name(:us, :high, :high, 1))(S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) =
+        $(update_state!)(edge::$(edge_name(:high, :high, 1)), S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) =
         (:high)
 
         # * high => mid
-        @everywhere $(func_name(:cc, :high, :mid, 1))(S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
+        struct $(edge_name(:high, :mid, 1)) <: $(edge_type) transitions::Union{Nothing,Vector{Symbol}} end
+        $(check_constraints)(edge::$(edge_name(:high, :mid, 1)), S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
         S_values[$(to_idx(:n))] < $N
-        @everywhere $(func_name(:us, :high, :mid, 1))(S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) =
+        $(update_state!)(edge::$(edge_name(:high, :mid, 1)), S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) =
         (:mid)
 
         # * high => final
-        @everywhere $(func_name(:cc, :high, :final, 1))(S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
+        struct $(edge_name(:high, :final, 1)) <: $(edge_type) transitions::Union{Nothing,Vector{Symbol}} end
+        $(check_constraints)(edge::$(edge_name(:high, :final, 1)), S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
         S_values[$(to_idx(:n))] == $N
-        @everywhere $(func_name(:us, :high, :final, 1))(S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) =
-        (val_d = getfield(Main, Meta.quot($error_func))(S_values[$(to_idx(:mean_tp))],
-                                                        S_values[$(to_idx(:var_tp))],
-                                                        $(ref_mean_tp), $(ref_var_tp));
-         setindex!(S_values, val_d, $(to_idx(:d)));
-		:final)
+        $(update_state!)(edge::$(edge_name(:high, :final, 1)), S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) =
+        (val_d = $(error_func)(S_values[$(to_idx(:mean_tp))],
+                               S_values[$(to_idx(:var_tp))],
+                               $(ref_mean_tp), $(ref_var_tp));
+         S_values[$(to_idx(:d))] = val_d;
+        :final)
     end
-    eval(meta_elementary_functions)
 
-    # l0 loc 
-    # * l0 => l0
-    edge_1 = Edge([:ALL], getfield(Main, func_name(:cc, :l0, :l0, 1)), getfield(Main, func_name(:us, :l0, :l0, 1)))
-    map_edges[:l0][:l0] = [edge_1]
-    # * l0 => l0prime
-    edge_1 = Edge(nothing, getfield(Main, func_name(:cc, :l0, :l0prime, 1)), getfield(Main, func_name(:us, :l0, :l0prime, 1)))
-    map_edges[:l0][:l0prime] = [edge_1]
-    # * l0 => low
-    edge_1 = Edge(nothing, getfield(Main, func_name(:cc, :l0, :low, 1)), getfield(Main, func_name(:us, :l0, :low, 1)))
-    map_edges[:l0][:low] = [edge_1]
+    @eval begin
+        map_edges = Dict{Location, Dict{Location, Vector{$(edge_type)}}}()
+        for loc in $(locations)
+            map_edges[loc] = Dict{Location, Vector{$(edge_type)}}()
+        end
 
-    # l0prime
-    # * l0prime => l0prime
-    edge_1 = Edge([:ALL], getfield(Main, func_name(:cc, :l0prime, :l0prime, 1)), getfield(Main, func_name(:us, :l0prime, :l0prime, 1)))
-    map_edges[:l0prime][:l0prime] = [edge_1]
-    # * l0prime => low
-    edge_1 = Edge(nothing, getfield(Main, func_name(:cc, :l0prime, :low, 1)), getfield(Main, func_name(:us, :l0prime, :low, 1)))
-    map_edges[:l0prime][:low] = [edge_1]
+        # l0 loc 
+        # * l0 => l0
+        edge1 = $(edge_name(:l0, :l0, 1))([:ALL])
+        map_edges[:l0][:l0] = [edge1]
+        # * l0 => l0prime
+        edge1 = $(edge_name(:l0, :l0prime, 1))(nothing)
+        map_edges[:l0][:l0prime] = [edge1]
+        # * l0 => low
+        edge1 = $(edge_name(:l0, :low, 1))(nothing)
+        map_edges[:l0][:low] = [edge1]
 
-    # low 
-    # * low => low
-    edge_1 = Edge([:ALL], getfield(Main, func_name(:cc, :low, :low, 1)), getfield(Main, func_name(:us, :low, :low, 1)))
-    map_edges[:low][:low] = [edge_1]
-    # * low => mid 
-    edge_1 = Edge([:ALL], getfield(Main, func_name(:cc, :low, :mid, 1)), getfield(Main, func_name(:us, :low, :mid, 1)))
-    map_edges[:low][:mid] = [edge_1]
-    # * low => final
-    edge_1 = Edge(nothing, getfield(Main, func_name(:cc, :low, :final, 1)), getfield(Main, func_name(:us, :low, :final, 1)))
-    map_edges[:low][:final] = [edge_1]
+        # l0prime
+        # * l0prime => l0prime
+        edge1 = $(edge_name(:l0prime, :l0prime, 1))([:ALL])
+        map_edges[:l0prime][:l0prime] = [edge1]
+        # * l0prime => low
+        edge1 = $(edge_name(:l0prime, :low, 1))(nothing)
+        map_edges[:l0prime][:low] = [edge1]
 
-    # mid
-    # * mid => mid
-    edge_1 = Edge([:ALL], getfield(Main, func_name(:cc, :mid, :mid, 1)), getfield(Main, func_name(:us, :mid, :mid, 1)))
-    map_edges[:mid][:mid] = [edge_1]
-    # * mid => low 
-    edge_1 = Edge([:ALL], getfield(Main, func_name(:cc, :mid, :low, 1)), getfield(Main, func_name(:us, :mid, :low, 1)))
-    edge_2 = Edge([:ALL], getfield(Main, func_name(:cc, :mid, :low, 2)), getfield(Main, func_name(:us, :mid, :low, 2)))
-    edge_3 = Edge([:ALL], getfield(Main, func_name(:cc, :mid, :low, 3)), getfield(Main, func_name(:us, :mid, :low, 3)))
-    edge_4 = Edge([:ALL], getfield(Main, func_name(:cc, :mid, :low, 4)), getfield(Main, func_name(:us, :mid, :low, 4)))
-    map_edges[:mid][:low] = [edge_1, edge_2, edge_3, edge_4]
-    # * mid => high
-    edge_1 = Edge([:ALL], getfield(Main, func_name(:cc, :mid, :high, 1)), getfield(Main, func_name(:us, :mid, :high, 1)))
-    map_edges[:mid][:high] = [edge_1]
-    # * mid => final
-    edge_1 = Edge(nothing, getfield(Main, func_name(:cc, :mid, :final, 1)), getfield(Main, func_name(:us, :mid, :final, 1)))
-    map_edges[:mid][:final] = [edge_1]
+        # low 
+        # * low => low
+        edge1 = $(edge_name(:low, :low, 1))([:ALL])
+        map_edges[:low][:low] = [edge1]
+        # * low => mid 
+        edge1 = $(edge_name(:low, :mid, 1))([:ALL])
+        map_edges[:low][:mid] = [edge1]
+        # * low => final
+        edge1 = $(edge_name(:low, :final, 1))(nothing)
+        map_edges[:low][:final] = [edge1]
 
-    # high 
-    # * high => high
-    edge_1 = Edge([:ALL], getfield(Main, func_name(:cc, :high, :high, 1)), getfield(Main, func_name(:us, :high, :high, 1)))
-    map_edges[:high][:high] = [edge_1]
-    # * high => mid
-    edge_1 = Edge([:ALL], getfield(Main, func_name(:cc, :high, :mid, 1)), getfield(Main, func_name(:us, :high, :mid, 1)))
-    map_edges[:high][:mid] = [edge_1]
-    # * high => final
-    edge_1 = Edge(nothing, getfield(Main, func_name(:cc, :high, :final, 1)), getfield(Main, func_name(:us, :high, :final, 1)))
-    map_edges[:high][:final] = [edge_1] 
+        # mid
+        # * mid => mid
+        edge1 = $(edge_name(:mid, :mid, 1))([:ALL])
+        map_edges[:mid][:mid] = [edge1]
+        # * mid => low 
+        edge1 = $(edge_name(:mid, :low, 1))([:ALL])
+        edge2 = $(edge_name(:mid, :low, 2))([:ALL])
+        edge3 = $(edge_name(:mid, :low, 3))([:ALL])
+        edge4 = $(edge_name(:mid, :low, 4))([:ALL])
+        map_edges[:mid][:low] = [edge1, edge2, edge3, edge4]
+        # * mid => high
+        edge1 = $(edge_name(:mid, :high, 1))([:ALL])
+        map_edges[:mid][:high] = [edge1]
+        # * mid => final
+        edge1 = $(edge_name(:mid, :final, 1))(nothing)
+        map_edges[:mid][:final] = [edge1]
+
+        # high 
+        # * high => high
+        edge1 = $(edge_name(:high, :high, 1))([:ALL])
+        map_edges[:high][:high] = [edge1]
+        # * high => mid
+        edge1 = $(edge_name(:high, :mid, 1))([:ALL])
+        map_edges[:high][:mid] = [edge1]
+        # * high => final
+        edge1 = $(edge_name(:high, :final, 1))(nothing)
+        map_edges[:high][:final] = [edge1] 
+    end
 
     ## Constants
     constants = Dict{Symbol,Float64}(:N => N, :L => L, :H => H, :initT => initT)
 
-    A = LHA("Period", m.transitions, locations, Λ_F, locations_init, locations_final, 
-            map_var_automaton_idx, flow, map_edges, constants, m.map_var_idx)
+    # Updating types and simulation methods
+    @everywhere @eval $(MarkovProcesses.generate_code_synchronized_model_type_def(model_name, lha_name))
+    @everywhere @eval $(MarkovProcesses.generate_code_next_state(lha_name, edge_type, check_constraints, update_state!))
+    @everywhere @eval $(MarkovProcesses.generate_code_synchronized_simulation(model_name, lha_name, edge_type, m.f!, m.isabsorbing))
+
+    A = PeriodAutomaton(m.transitions, locations, Λ_F, locations_init, locations_final, 
+                        map_var_automaton_idx, flow, map_edges, constants, m.map_var_idx)
     return A
 end
 

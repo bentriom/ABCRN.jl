@@ -46,6 +46,6 @@ isabsorbing_ER_col(p::Vector{Float64},xn::AbstractVector{Int}) =
     (p[1]*xn[1]*xn[2] + (p[2]+p[3])*xn[3]) === 0.0
 g = [:P]
 
-ER_col = ContinuousTimeModel(d,k,dict_var,dict_p,l_tr,p,x0,t0,ER_col_f!,isabsorbing_ER_col; g=g)
+ER_col = BenchmarkModel(d,k,dict_var,dict_p,l_tr,p,x0,t0,ER_col_f!,isabsorbing_ER_col; g=g)
 export ER_col
 

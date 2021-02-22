@@ -45,6 +45,6 @@ isabsorbing_ER_col_buffer(p::Vector{Float64},xn::AbstractVector{Int}) =
     (p[1]*xn[1]*xn[2] + (p[2]+p[3])*xn[3]) === 0.0
 g = [:P]
 
-ER_col_buffer = ContinuousTimeModel(d,k,dict_var,dict_p,l_tr,p,x0,t0,ER_col_buffer_f!,isabsorbing_ER_col_buffer; g=g)
+ER_col_buffer = BenchmarkModel(d,k,dict_var,dict_p,l_tr,p,x0,t0,ER_col_buffer_f!,isabsorbing_ER_col_buffer; g=g)
 export ER_col_buffer
 

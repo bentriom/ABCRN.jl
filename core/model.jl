@@ -385,10 +385,10 @@ The model in pm should be of type SynchronizedModel (`typeof(pm.m) <: Synchroniz
 It returns `S::StateLHA`, not a trajectory.
 """
 function volatile_simulate(pm::ParametricModel, p_prior::AbstractVector{Float64};
-                           epsilon::Float64)
+                           epsilon::Union{Nothing,Float64} = nothing)
     @assert typeof(pm.m) <: SynchronizedModel
     # ABC related automata
-    if typeof(pm.m.A) in <: EuclideanDistanceABCAutomaton
+    if @isdefined(EuclideanDistanceABCAutomaton) && typeof(pm.m.automaton) <: EuclideanDistanceABCAutomaton
         nothing
     end
     full_p = copy(get_proba_model(pm).p)

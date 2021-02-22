@@ -1,6 +1,51 @@
 
+mutable struct BenchmarkModel <: ContinuousTimeModel
+    dim_state::Int # state space dim
+    dim_params::Int # parameter space dim
+    map_var_idx::Dict{VariableModel,Int} # maps variable str to index in the state space
+    _map_obs_var_idx::Dict{VariableModel,Int} # maps variable str to index in the observed state space
+    map_param_idx::Dict{ParameterModel,Int} # maps parameter str to index in the parameter space
+    transitions::Vector{Transition}
+    p::Vector{Float64}
+    x0::Vector{Int}
+    t0::Float64
+    f!::Function
+    g::Vector{VariableModel} # of dimension dim_obs_state
+    _g_idx::Vector{Int} # of dimension dim_obs_state
+    isabsorbing::Function
+    time_bound::Float64
+    buffer_size::Int
+    estim_min_states::Int
+end
+
+function BenchmarkModel(dim_state::Int, dim_params::Int, map_var_idx::Dict{VariableModel,Int}, 
+                        map_param_idx::Dict{ParameterModel,Int}, transitions::Vector{<:Transition},
+                        p::Vector{Float64}, x0::Vector{Int}, t0::Float64,
+                        f!::Function, isabsorbing::Function;
+                        g::Vector{VariableModel} = [var for var in keys(map_var_idx)], time_bound::Float64 = Inf, 
+                        buffer_size::Int = 10, estim_min_states::Int = 50)
+    dim_obs_state = length(g)
+    transitions = convert(Vector{Transition}, transitions)
+    _map_obs_var_idx = Dict()
+    _g_idx = Vector{Int}(undef, dim_obs_state)
+    for i = 1:dim_obs_state
+        _g_idx[i] = map_var_idx[g[i]] # = ( (g[i] = i-th obs var)::VariableModel => idx in state space )
+        _map_obs_var_idx[g[i]] = i
+    end
+    if length(methods(f!)) >= 2
+        @warn "You have possibly redefined a function Model.f! used in a previously instantiated model."
+    end
+    if length(methods(isabsorbing)) >= 2
+        @warn "You have possibly redefined a function Model.isabsorbing used in a previously instantiated model."
+    end
+    new_model = BenchmarkModel(dim_state, dim_params, map_var_idx, _map_obs_var_idx, map_param_idx, transitions, 
+                               p, x0, t0, f!, g, _g_idx, isabsorbing, time_bound, buffer_size, estim_min_states)
+    @assert check_consistency(new_model)
+    return new_model
+end
+
 struct OldTrajectory <: AbstractTrajectory 
-    m::ContinuousTimeModel
+    m::BenchmarkModel
     values::Matrix{Int}
     times::Vector{Float64}
     transitions::Vector{Union{Symbol,Nothing}}
@@ -27,7 +72,7 @@ _get_value_row(σ::OldTrajectory, var::Symbol, idx::Int) =
 
 # Model
 
-function _simulate_col(m::ContinuousTimeModel)
+function _simulate_col(m::BenchmarkModel)
     # trajectory fields
     full_values = zeros(m.dim_state, 0)
     times = zeros(0)
@@ -61,7 +106,7 @@ function _simulate_col(m::ContinuousTimeModel)
     return OldTrajectory(m, values, times, transitions)
 end
 
-function _simulate_row(m::ContinuousTimeModel)
+function _simulate_row(m::BenchmarkModel)
     # trajectory fields
     full_values = zeros(m.dim_state, 0)
     times = zeros(0)
@@ -96,7 +141,7 @@ function _simulate_row(m::ContinuousTimeModel)
 end
 
 
-function _simulate_col_buffer(m::ContinuousTimeModel; buffer_size::Int = 5)
+function _simulate_col_buffer(m::BenchmarkModel; buffer_size::Int = 5)
     # trajectory fields
     full_values = zeros(m.dim_state, 0)
     times = zeros(0)
@@ -136,7 +181,7 @@ function _simulate_col_buffer(m::ContinuousTimeModel; buffer_size::Int = 5)
     return OldTrajectory(m, values, times, transitions)
 end
 
-function _simulate_row_buffer(m::ContinuousTimeModel; buffer_size::Int = 5)
+function _simulate_row_buffer(m::BenchmarkModel; buffer_size::Int = 5)
     # trajectory fields
     full_values = zeros(0, m.dim_state)
     times = zeros(0)
@@ -176,7 +221,7 @@ function _simulate_row_buffer(m::ContinuousTimeModel; buffer_size::Int = 5)
     return OldTrajectory(m, values, times, transitions)
 end
 
-function _simulate_without_view(m::ContinuousTimeModel)
+function _simulate_without_view(m::BenchmarkModel)
     # trajectory fields
     full_values = Matrix{Int}(undef, 1, m.dim_state)
     full_values[1,:] = m.x0
@@ -222,7 +267,7 @@ function _simulate_without_view(m::ContinuousTimeModel)
 end
 
 # With trajectory values in Matrix type
-function _simulate_27d56(m::ContinuousTimeModel)
+function _simulate_27d56(m::BenchmarkModel)
     # trajectory fields
     full_values = Matrix{Int}(undef, 1, m.dim_state)
     full_values[1,:] = m.x0
@@ -259,9 +304,9 @@ function _simulate_27d56(m::ContinuousTimeModel)
     if isbounded(m)
         #=
         if times[end] > m.time_bound
-            full_values[end,:] = full_values[end-1,:]
-            times[end] = m.time_bound
-            transitions[end] = nothing
+        full_values[end,:] = full_values[end-1,:]
+        times[end] = m.time_bound
+        transitions[end] = nothing
         else
         end
         =#
@@ -274,7 +319,7 @@ function _simulate_27d56(m::ContinuousTimeModel)
 end
 
 
-function _simulate_d7458(m::ContinuousTimeModel)
+function _simulate_d7458(m::BenchmarkModel)
     # trajectory fields
     full_values = Vector{Vector{Int}}(undef, m.dim_state)
     for i = 1:m.dim_state full_values[i] = Int[m.x0[i]] end

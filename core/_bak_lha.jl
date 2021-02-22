@@ -9,7 +9,6 @@ copy(S::StateLHA) = StateLHA(getfield(S, :A), getfield(S, :loc), copy(getfield(S
 # From the variable automaton var symbol this function get the index in S.values
 get_idx_var_automaton(S::StateLHA, var::VariableAutomaton) = getfield(getfield(S, :A), :map_var_automaton_idx)[var]
 get_value(S::StateLHA, idx_var::Int) = getfield(S, :values)[idx_var]
-get_state_lha_value(A::LHA, values::Vector{Float64}, var::VariableAutomaton) = values[A.map_var_automaton_idx[var]]
 
 getindex(S::StateLHA, var::VariableAutomaton) = getindex(getfield(S, :values), get_idx_var_automaton(S, var))
 setindex!(S::StateLHA, val::Float64, var::VariableAutomaton) = setindex!(getfield(S, :values), val, get_idx_var_automaton(S, var))
@@ -67,7 +66,7 @@ function Base.copyto!(Sdest::StateLHA, Ssrc::StateLHA)
     Sdest.A = Ssrc.A
     Sdest.loc = Ssrc.loc
     for i = eachindex(Sdest.values)
-         Sdest.values[i] = Ssrc.values[i]
+        @inbounds Sdest.values[i] = Ssrc.values[i]
     end
     Sdest.time = Ssrc.time
 end
@@ -76,7 +75,6 @@ end
 # of one of the LHA fields
 
 isaccepted(S::StateLHA) = (getfield(S, :loc) in getfield(getfield(S, :A), :locations_final))
-isaccepted(loc::Symbol, A::LHA) = loc in A.locations_final
 
 # Methods for synchronize / read the trajectory
 function init_state(A::LHA, x0::Vector{Int}, t0::Float64)
@@ -96,8 +94,8 @@ function generate_code_next_state(lha_name::Symbol, edge_type::Symbol,
     return quote 
         # A push! method implementend by myself because of preallocation of edge_candidates
         function _push_edge!(edge_candidates::Vector{<:$(edge_type)}, edge::$(edge_type), nbr_candidates::Int)
-            if nbr_candidates < length(edge_candidates)
-                 edge_candidates[nbr_candidates+1] = edge
+            if nbr_candidates < 2
+                @inbounds edge_candidates[nbr_candidates+1] = edge
             else
                 push!(edge_candidates, edge)
             end
@@ -152,14 +150,16 @@ function generate_code_next_state(lha_name::Symbol, edge_type::Symbol,
             return (ind_edge, bool_event)
         end
 
-        function next_state!(A::$(lha_name),
-                             ptr_loc_state::Vector{Symbol}, values_state::Vector{Float64}, ptr_time_state::Vector{Float64},
+        function next_state!(Snplus1::StateLHA, A::$(lha_name),
                              xnplus1::Vector{Int}, tnplus1::Float64, tr_nplus1::Transition, 
-                             xn::Vector{Int}, p::Vector{Float64},
+                             Sn::StateLHA, xn::Vector{Int}, p::Vector{Float64},
                              edge_candidates::Vector{$(edge_type)}; verbose::Bool = false)
             # En fait d'apres observation de Cosmos, après qu'on ait lu la transition on devrait stop.
             detected_event::Bool = false
             turns = 0
+            current_values = getfield(Snplus1, :values)
+            current_time = getfield(Snplus1, :time)
+            current_loc = getfield(Snplus1, :loc)
             Λ = getfield(A, :Λ)
             flow = getfield(A, :flow)
             map_edges = getfield(A, :map_edges)
@@ -167,15 +167,17 @@ function generate_code_next_state(lha_name::Symbol, edge_type::Symbol,
             if verbose 
                 println("##### Begin next_state!")
                 @show xnplus1, tnplus1, tr_nplus1
+                @show Sn 
             end
+            # In terms of values not reference, Snplus1 == Sn
             # First, we check the asynchronous transitions
             while true
                 turns += 1
                 #edge_candidates = empty!(edge_candidates) 
-                edges_from_current_loc = map_edges[ptr_loc_state[1]]
+                edges_from_current_loc = map_edges[current_loc]
                 # Save all edges that satisfies transition predicate (asynchronous ones)
                 nbr_candidates = _find_edge_candidates!(edge_candidates, edges_from_current_loc, Λ, 
-                                                        ptr_time_state[1], values_state, xn, p, true)
+                                                        current_time, current_values, xn, p, true)
                 # Search the one we must chose, here the event is nothing because 
                 # we're not processing yet the next event
                 ind_edge, detected_event = _get_edge_index(edge_candidates, nbr_candidates, detected_event, nothing)
@@ -184,7 +186,7 @@ function generate_code_next_state(lha_name::Symbol, edge_type::Symbol,
                 #first_round = false
                 if ind_edge > 0
                     firing_edge = edge_candidates[ind_edge]
-                    ptr_loc_state[1] = $(update_state!)(firing_edge, ptr_time_state[1], values_state, xn, p)
+                    current_loc = $(update_state!)(firing_edge, current_time, current_values, xn, p)
                 else
                     if verbose println("No edge fired") end
                     break 
@@ -193,9 +195,9 @@ function generate_code_next_state(lha_name::Symbol, edge_type::Symbol,
                     @show turns
                     @show edge_candidates
                     @show ind_edge, detected_event, nbr_candidates
-                    @show ptr_loc_state[1]
-                    @show ptr_time_state[1]
-                    @show values_state
+                    @show current_loc
+                    @show current_time
+                    @show current_values
                     if turns == 500
                         @warn "We've reached 500 turns"
                     end
@@ -216,31 +218,31 @@ function generate_code_next_state(lha_name::Symbol, edge_type::Symbol,
                 println("Time flies with the flow...")
             end
             # Now time flies according to the flow
-            for i in eachindex(values_state)
-                 coeff_deriv = flow[ptr_loc_state[1]][i]
+            for i in eachindex(current_values)
+                @inbounds coeff_deriv = flow[current_loc][i]
                 if coeff_deriv > 0
-                      values_state[i] += coeff_deriv*(tnplus1 - ptr_time_state[1])
+                    @inbounds current_values[i] += coeff_deriv*(tnplus1 - current_time)
                 end
             end
-            ptr_time_state[1] = tnplus1
+            current_time = tnplus1
             if verbose 
-                @show ptr_loc_state[1]
-                @show ptr_time_state[1]
-                @show values_state
+                @show current_loc
+                @show current_time
+                @show current_values
             end
             # Now firing an edge according to the event 
             while true
                 turns += 1
-                edges_from_current_loc = map_edges[ptr_loc_state[1]]
+                edges_from_current_loc = map_edges[current_loc]
                 # Save all edges that satisfies transition predicate (synchronous ones)
                 nbr_candidates = _find_edge_candidates!(edge_candidates, edges_from_current_loc, Λ, 
-                                                        ptr_time_state[1], values_state, xnplus1, p, false)
+                                                        current_time, current_values, xnplus1, p, false)
                 # Search the one we must chose
                 ind_edge, detected_event = _get_edge_index(edge_candidates, nbr_candidates, detected_event, tr_nplus1)
                 # Update the state with the chosen one (if it exists)
                 if ind_edge > 0
                     firing_edge = edge_candidates[ind_edge]
-                    ptr_loc_state[1] = $(update_state!)(firing_edge, ptr_time_state[1], values_state, xnplus1, p)
+                    current_loc = $(update_state!)(firing_edge, current_time, current_values, xnplus1, p)
                 end
                 if ind_edge == 0 || detected_event
                     if verbose 
@@ -250,9 +252,9 @@ function generate_code_next_state(lha_name::Symbol, edge_type::Symbol,
                             @show edge_candidates
                             @show ind_edge, detected_event, nbr_candidates
                             @show detected_event
-                            @show ptr_loc_state[1]
-                            @show ptr_time_state[1]
-                            @show values_state
+                            @show current_loc
+                            @show current_time
+                            @show current_values
                         else
                             println("No edge fired")
                         end
@@ -264,9 +266,9 @@ function generate_code_next_state(lha_name::Symbol, edge_type::Symbol,
                     @show edge_candidates
                     @show ind_edge, detected_event, nbr_candidates
                     @show detected_event
-                    @show ptr_loc_state[1]
-                    @show ptr_time_state[1]
-                    @show values_state
+                    @show current_loc
+                    @show current_time
+                    @show current_values
                     if turns == 500
                         @warn "We've reached 500 turns"
                     end
@@ -283,7 +285,10 @@ function generate_code_next_state(lha_name::Symbol, edge_type::Symbol,
                 end
                 =#
             end
+            setfield!(Snplus1, :loc, current_loc)
+            setfield!(Snplus1, :time, current_time)
             if verbose 
+                @show Snplus1
                 println("##### End next_state!") 
             end
         end
@@ -298,24 +303,18 @@ function read_trajectory(A::LHA, σ::AbstractTrajectory; verbose = false)
     p_sim = proba_model.p
     l_t = times(σ)
     l_tr = transitions(σ)
-    S = init_state(A, σ[1], l_t[1])
-    ptr_loc = [S.loc]
-    ptr_time = [S.time]
-    values = S.values
-    lha_name = Symbol(typeof(A))
-    edge_type = getfield(Main, Symbol("Edge$(lha_name)"))
-    edge_candidates = Vector{edge_type}(undef, 2)
+    Sn = init_state(A_new, σ[1], l_t[1])
+    Snplus1 = copy(Sn)
+    edge_candidates = Vector{Edge}(undef, 2)
     if verbose println("Init: ") end
-    if verbose @show S end
-    func_next_state! = getfield(Main, :next_state!) # It's defined after the compilation of the package
-    for k in 2:length_states(σ)
-        func_next_state!(A, ptr_loc, values, ptr_time, σ[k], l_t[k], l_tr[k], σ[k-1], p_sim, edge_candidates; verbose = verbose)
-        if ptr_loc[1] in A_new.locations_final 
+    if verbose @show Sn end
+    for n in 2:length_states(σ)
+        next_state!(Snplus1, A_new, σ[n], l_t[n], l_tr[n], Sn, σ[n-1], p_sim, edge_candidates; verbose = verbose)
+        copyto!(Sn, Snplus1)
+        if Snplus1.loc in A_new.locations_final 
             break 
         end
     end
-    setfield!(S, :loc, ptr_loc[1])
-    setfield!(S, :time, ptr_time[1])
-    return S
+    return Sn
 end
 

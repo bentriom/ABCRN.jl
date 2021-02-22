@@ -44,6 +44,6 @@ end
 isabsorbing_SIR_col_buffer(p::Vector{Float64}, xn::AbstractVector{Int}) = (p[1]*xn[1]*xn[2] + p[2]*xn[2]) === 0.0
 g = [:I]
 
-SIR_col_buffer = ContinuousTimeModel(d,k,dict_var,dict_p,l_tr,p,x0,t0,SIR_col_buffer_f!,isabsorbing_SIR_col_buffer; g=g)
+SIR_col_buffer = BenchmarkModel(d,k,dict_var,dict_p,l_tr,p,x0,t0,SIR_col_buffer_f!,isabsorbing_SIR_col_buffer; g=g)
 export SIR_col_buffer
 
