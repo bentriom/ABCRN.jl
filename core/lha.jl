@@ -67,7 +67,7 @@ function Base.copyto!(Sdest::StateLHA, Ssrc::StateLHA)
     Sdest.A = Ssrc.A
     Sdest.loc = Ssrc.loc
     for i = eachindex(Sdest.values)
-         Sdest.values[i] = Ssrc.values[i]
+        Sdest.values[i] = Ssrc.values[i]
     end
     Sdest.time = Ssrc.time
 end
