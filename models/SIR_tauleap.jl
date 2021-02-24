@@ -14,15 +14,15 @@ t0_SIR_tauleap = 0.0
     @inbounds tau = p[3]
     @inbounds a1 = p[1] * xn[1] * xn[2]
     @inbounds a2 = p[2] * xn[2]
-    l_a = (a1, a2)
+    l_a = SVector(a1, a2)
     asum = sum(l_a)
     if asum == 0.0
         copyto!(xnplus1, xn)
         return nothing
     end
     # column-major order
-    nu_1 = (-1, 1, 0)
-    nu_2 = (0, -1, 1)
+    nu_1 = SVector(-1, 1, 0)
+    nu_2 = SVector(0, -1, 1)
     nbr_R1 = (a1 > 0.0) ? rand(Poisson(a1*tau)) : 0.0
     nbr_R2 = (a2 > 0.0) ? rand(Poisson(a2*tau)) : 0.0
     for i = 1:3

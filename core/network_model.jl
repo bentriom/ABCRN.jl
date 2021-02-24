@@ -154,7 +154,7 @@ macro network_model(expr_network,expr_name...)
     symbol_func_f! = Symbol("$(basename_func)_f!")
     str_expr_model_f! = "function $(symbol_func_f!)(xnplus1::Vector{Int}, l_t::Vector{Float64}, l_tr::Vector{Transition}, xn::Vector{Int}, tn::Float64, p::Vector{Float64})\n\t"
     # Computation of nu and propensity functions in f!
-    str_l_a = "l_a = ("
+    str_l_a = "l_a = SVector("
     str_test_isabsorbing = "@inbounds("
     l_nu = [zeros(Int, dim_state) for i = 1:nbr_reactions]
     for (i, expr_reaction) in enumerate(list_expr_reactions)
@@ -205,8 +205,8 @@ macro network_model(expr_network,expr_name...)
     str_expr_model_f! *= "return nothing\n\t"
     str_expr_model_f! *= "end\n\t"
     # Computation of array of transitions
-    str_expr_model_f! *= "l_nu = (" * reduce(*, ["nu_$i, " for i = 1:nbr_reactions])[1:(end-2)] * ")\n\t"
-    str_expr_model_f! *= "l_sym_R = $(Tuple(transitions))\n\t"
+    str_expr_model_f! *= "l_nu = SVector(" * reduce(*, ["nu_$i, " for i = 1:nbr_reactions])[1:(end-2)] * ")\n\t"
+    str_expr_model_f! *= "l_sym_R = SVector$(Tuple(transitions))\n\t"
     # Simulation of the reaction
     str_expr_model_f! *= "u1 = rand()\n\t"
     str_expr_model_f! *= "u2 = rand()\n\t"

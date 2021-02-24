@@ -17,8 +17,7 @@ y_obs = vectorize(simulate(repressilator), :P1, tml_obs)
 
 println("Vectorize:")
 b_vectorize = @benchmark (σ = simulate($(repressilator)); euclidean_distance(σ, :P1, tml_obs, y_obs)) 
-@btime (σ = simulate($(repressilator))) 
-@btime (euclidean_distance(σ, :P1, tml_obs, y_obs)) 
+@btime (σ = simulate($(repressilator)); euclidean_distance(σ, :P1, tml_obs, y_obs)) 
 @show minimum(b_vectorize), mean(b_vectorize), maximum(b_vectorize)
 
 println("Automaton with 1 loc")

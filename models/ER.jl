@@ -12,17 +12,17 @@ t0_ER = 0.0
     @inbounds a1 = p[1] * xn[1] * xn[2]
     @inbounds a2 = p[2] * xn[3]
     @inbounds a3 = p[3] * xn[3]
-    l_a = (a1, a2, a3)
+    l_a = SVector(a1, a2, a3)
     asum = sum(l_a)
     if asum == 0.0
         copyto!(xnplus1, xn)
         return nothing
     end
-    nu_1 = (-1, -1, 1, 0)
-    nu_2 = (1, 1, -1, 0)
-    nu_3 = (1, 0, -1, 1) 
-    l_nu = (nu_1, nu_2, nu_3)
-    l_str_R = (:R1, :R2, :R3)
+    nu_1 = SVector(-1, -1, 1, 0)
+    nu_2 = SVector(1, 1, -1, 0)
+    nu_3 = SVector(1, 0, -1, 1) 
+    l_nu = SVector(nu_1, nu_2, nu_3)
+    l_str_R = SVector(:R1, :R2, :R3)
 
     u1 = rand()
     u2 = rand()
