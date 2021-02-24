@@ -145,9 +145,7 @@ function generate_code_synchronized_simulation(model_name::Symbol, lha_name::Sym
             time_bound = getfield(m, :time_bound)
             buffer_size = getfield(m, :buffer_size)
             estim_min_states = getfield(m, :estim_min_states)
-            #edge_candidates = Vector{$(edge_type)}(undef, 2)
-            edge_id_candidates = zeros(Int, 2)
-            target_loc_candidates = Vector{Symbol}(undef, 2)
+            edge_candidates = Vector{$(edge_type)}(undef, 2)
             # First alloc
             full_values = Vector{Vector{Int}}(undef, getfield(m, :dim_state))
             for i = eachindex(full_values) full_values[i] = zeros(Int, estim_min_states) end
@@ -166,7 +164,7 @@ function generate_code_synchronized_simulation(model_name::Symbol, lha_name::Sym
             xn = copy(x0)
             tn = copy(t0) 
             next_state!(A, ptr_loc_state, values_state, ptr_time_state, 
-                        x0, t0, nothing, x0, p_sim, edge_id_candidates, target_loc_candidates; verbose = verbose)
+                        x0, t0, nothing, x0, p_sim, edge_candidates; verbose = verbose)
             isabsorbing::Bool = $(isabsorbing)(p_sim,xn)
             isacceptedLHA::Bool = isaccepted(ptr_loc_state[1], A)
             # Alloc of vectors where we stock n+1 values
@@ -182,7 +180,7 @@ function generate_code_synchronized_simulation(model_name::Symbol, lha_name::Sym
                 end
                 if isabsorbing && !isacceptedLHA
                     next_state!(A, ptr_loc_state, values_state, ptr_time_state, 
-                                xn, time_bound, nothing, xn, p_sim, edge_id_candidates, target_loc_candidates; verbose = verbose)
+                                xn, time_bound, nothing, xn, p_sim, edge_candidates; verbose = verbose)
                 end
                 setfield!(S, :loc, ptr_loc_state[1])
                 setfield!(S, :time, ptr_time_state[1])
@@ -197,7 +195,7 @@ function generate_code_synchronized_simulation(model_name::Symbol, lha_name::Sym
                     break
                 end
                 n += 1
-                next_state!(A, ptr_loc_state, values_state, ptr_time_state, vec_x, l_t[1], l_tr[1], xn, p_sim, edge_id_candidates, target_loc_candidates; verbose = verbose)
+                next_state!(A, ptr_loc_state, values_state, ptr_time_state, vec_x, l_t[1], l_tr[1], xn, p_sim, edge_candidates; verbose = verbose)
                 copyto!(xn, vec_x)
                 tn = l_t[1]
                 tr_n = l_tr[1]
@@ -216,7 +214,7 @@ function generate_code_synchronized_simulation(model_name::Symbol, lha_name::Sym
                 end
                 if isabsorbing && !isacceptedLHA
                     next_state!(A, ptr_loc_state, values_state, ptr_time_state, 
-                                xn, time_bound, nothing, xn, p_sim, edge_id_candidates, target_loc_candidates; verbose = verbose)
+                                xn, time_bound, nothing, xn, p_sim, edge_candidates; verbose = verbose)
                 end
                 setfield!(S, :loc, ptr_loc_state[1])
                 setfield!(S, :time, ptr_time_state[1])
@@ -241,7 +239,7 @@ function generate_code_synchronized_simulation(model_name::Symbol, lha_name::Sym
                         i -= 1
                         break
                     end
-                    next_state!(A, ptr_loc_state, values_state, ptr_time_state, vec_x, l_t[1], l_tr[1], xn, p_sim, edge_id_candidates, target_loc_candidates; verbose = verbose)
+                    next_state!(A, ptr_loc_state, values_state, ptr_time_state, vec_x, l_t[1], l_tr[1], xn, p_sim, edge_candidates; verbose = verbose)
                     copyto!(xn, vec_x)
                     tn = l_t[1]
                     tr_n = l_tr[1]
@@ -267,7 +265,7 @@ function generate_code_synchronized_simulation(model_name::Symbol, lha_name::Sym
             end
             if isabsorbing && !isacceptedLHA
                 next_state!(A, ptr_loc_state, values_state, ptr_time_state, 
-                            xn, time_bound, nothing, xn, p_sim, edge_id_candidates, target_loc_candidates; verbose = verbose)
+                            xn, time_bound, nothing, xn, p_sim, edge_candidates; verbose = verbose)
             end
             setfield!(S, :loc, ptr_loc_state[1])
             setfield!(S, :time, ptr_time_state[1])
@@ -282,15 +280,13 @@ function generate_code_synchronized_simulation(model_name::Symbol, lha_name::Sym
             ptr_loc_state = [S.loc]
             values_state = S.values
             ptr_time_state = [S.time]
-            #edge_candidates = Vector{$(edge_type)}(undef, 2)
-            edge_id_candidates = zeros(Int, 2)
-            target_loc_candidates = Vector{Symbol}(undef, 2)
+            edge_candidates = Vector{$(edge_type)}(undef, 2)
             # Values at time n
             n = 1
             xn = copy(x0)
             tn = copy(t0) 
             next_state!(A, ptr_loc_state, values_state, ptr_time_state, 
-                        x0, t0, nothing, x0, p_sim, edge_id_candidates, target_loc_candidates; verbose = verbose)
+                        x0, t0, nothing, x0, p_sim, edge_candidates; verbose = verbose)
             isabsorbing::Bool = $(isabsorbing)(p_sim,xn)
             isacceptedLHA::Bool = isaccepted(ptr_loc_state[1], A)
             # Alloc of vectors where we stock n+1 values
@@ -301,7 +297,7 @@ function generate_code_synchronized_simulation(model_name::Symbol, lha_name::Sym
             if isabsorbing || isacceptedLHA 
                 if !isacceptedLHA
                     next_state!(A, ptr_loc_state, values_state, ptr_time_state, 
-                                xn, time_bound, nothing, xn, p_sim, edge_id_candidates, target_loc_candidates; verbose = verbose)
+                                xn, time_bound, nothing, xn, p_sim, edge_candidates; verbose = verbose)
                 end
                 setfield!(S, :loc, ptr_loc_state[1])
                 setfield!(S, :time, ptr_time_state[1])
@@ -318,7 +314,7 @@ function generate_code_synchronized_simulation(model_name::Symbol, lha_name::Sym
                     break
                 end
                 next_state!(A, ptr_loc_state, values_state, ptr_time_state, 
-                            vec_x, l_t[1], l_tr[1], xn, p_sim, edge_id_candidates, target_loc_candidates; verbose = verbose)
+                            vec_x, l_t[1], l_tr[1], xn, p_sim, edge_candidates; verbose = verbose)
                 copyto!(xn, vec_x)
                 tn = l_t[1]
                 tr_n = l_tr[1]
@@ -327,7 +323,7 @@ function generate_code_synchronized_simulation(model_name::Symbol, lha_name::Sym
             end
             if isabsorbing && !isacceptedLHA
                 next_state!(A, ptr_loc_state, values_state, ptr_time_state, 
-                            xn, time_bound, nothing, xn, p_sim, edge_id_candidates, target_loc_candidates; verbose = verbose)
+                            xn, time_bound, nothing, xn, p_sim, edge_candidates; verbose = verbose)
             end
             setfield!(S, :loc, ptr_loc_state[1])
             setfield!(S, :time, ptr_time_state[1])
