@@ -1,6 +1,11 @@
 
 # Creation of the automaton types
-@everywhere @eval abstract type EdgeEuclideanDistanceAutomaton <: Edge end
+#@everywhere @eval abstract type EdgeEuclideanDistanceAutomaton <: Edge end
+@everywhere struct EdgeEuclideanDistanceAutomaton <: Edge
+    transitions::TransitionSet
+    check_constraints::CheckConstraintsFunction
+    update_state!::UpdateStateFunction
+end
 @everywhere @eval $(MarkovProcesses.generate_code_lha_type_def(:EuclideanDistanceAutomaton, :EdgeEuclideanDistanceAutomaton))
 
 function create_euclidean_distance_automaton(m::ContinuousTimeModel, timeline::AbstractVector{Float64}, observations::AbstractVector{Float64}, sym_obs::VariableModel)
@@ -43,14 +48,20 @@ function create_euclidean_distance_automaton(m::ContinuousTimeModel, timeline::A
     basename_func = "$(model_name)_$(id)"
     edge_name(from_loc::Location, to_loc::Location, edge_number::Int) = 
     Symbol("Edge_$(lha_name)_$(basename_func)_$(from_loc)$(to_loc)_$(edge_number)")
-    
+    function check_constraints(from_loc::Location, to_loc::Location, edge_number::Int)
+        return Symbol("check_constraints_$(edge_type)_$(from_loc)$(to_loc)_$(edge_number)_$(model_name)_$(id)")
+    end
+    function update_state!(from_loc::Location, to_loc::Location, edge_number::Int)
+        return Symbol("update_state_$(edge_type)_$(from_loc)$(to_loc)_$(edge_number)_$(model_name)_$(id)!")
+    end
+
     ## check_constraints & update_state!
-    @everywhere @eval begin
+    meta_funcs = quote
         # l0 loc
         # l0 => l1
-        struct $(edge_name(:l0, :l1, 1)) <: $(edge_type) transitions::Union{Nothing,Vector{Symbol}} end
-        $(check_constraints)(edge::$(edge_name(:l0, :l1, 1)), S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = true
-        $(update_state!)(edge::$(edge_name(:l0, :l1, 1)), S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
+        #struct $(edge_name(:l0, :l1, 1)) <: $(edge_type) transitions::Union{Nothing,Vector{Symbol}} end
+        @everywhere $(check_constraints(:l0, :l1, 1))(S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = true
+        @everywhere $(update_state!(:l0, :l1, 1))(S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
         (S_values[$(to_idx(:n))] = x[$(idx_obs_var)];
          S_values[$(to_idx(:d))] = 0.0;
          S_values[$(to_idx(:idx))] = 1.0;
@@ -59,32 +70,33 @@ function create_euclidean_distance_automaton(m::ContinuousTimeModel, timeline::A
         # l1 loc
         # l1 => l1
         # Defined below 
-        struct $(edge_name(:l1, :l1, 1)) <: $(edge_type) transitions::Union{Nothing,Vector{Symbol}} end
-        $(check_constraints)(edge::$(edge_name(:l1, :l1, 1)), S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) =
+        #struct $(edge_name(:l1, :l1, 1)) <: $(edge_type) transitions::Union{Nothing,Vector{Symbol}} end
+        @everywhere $(check_constraints(:l1, :l1, 1))(S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) =
         (tml = $(Tuple(timeline));
          tml_idx = tml[convert(Int, S_values[$(to_idx(:idx))])];
          S_values[$(to_idx(:t))] >= tml_idx)
-        $(update_state!)(edge::$(edge_name(:l1, :l1, 1)), S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) =
+        @everywhere $(update_state!(:l1, :l1, 1))(S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) =
         (y_obs = $(Tuple(observations));
          y_obs_idx = y_obs[convert(Int, S_values[$(to_idx(:idx))])];
          S_values[$(to_idx(:d))] = S_values[$(to_idx(:d))]+(S_values[$(to_idx(:n))]-y_obs_idx)^2;
          S_values[$(to_idx(:idx))] = S_values[$(to_idx(:idx))]+1.0;
          :l1)
 
-        struct $(edge_name(:l1, :l1, 2)) <: $(edge_type) transitions::Union{Nothing,Vector{Symbol}} end
-        $(check_constraints)(edge::$(edge_name(:l1, :l1, 2)), S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = true 
-        $(update_state!)(edge::$(edge_name(:l1, :l1, 2)), S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
+        #struct $(edge_name(:l1, :l1, 2)) <: $(edge_type) transitions::Union{Nothing,Vector{Symbol}} end
+        @everywhere $(check_constraints(:l1, :l1, 2))(S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = true 
+        @everywhere $(update_state!(:l1, :l1, 2))(S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
         (S_values[$(to_idx(:n))] = x[$(idx_obs_var)];
          :l1)
 
         # l1 => l2
-        struct $(edge_name(:l1, :l2, 1)) <: $(edge_type) transitions::Union{Nothing,Vector{Symbol}} end
-        $(check_constraints)(edge::$(edge_name(:l1, :l2, 1)), S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
+        #struct $(edge_name(:l1, :l2, 1)) <: $(edge_type) transitions::Union{Nothing,Vector{Symbol}} end
+        @everywhere $(check_constraints(:l1, :l2, 1))(S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
         S_values[$(to_idx(:idx))] >= ($nbr_observations + 1)
-        $(update_state!)(edge::$(edge_name(:l1, :l2, 1)), S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
+        @everywhere $(update_state!(:l1, :l2, 1))(S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) = 
         (S_values[$(to_idx(:d))] = sqrt(S_values[$(to_idx(:d))]);
          :l2)
     end
+    eval(meta_funcs)
 
     @eval begin
         map_edges = Dict{Location,Dict{Location,Vector{$(edge_type)}}}()
@@ -95,20 +107,24 @@ function create_euclidean_distance_automaton(m::ContinuousTimeModel, timeline::A
         ## Edges
         # l0 loc
         # l0 => l1
-        edge1 = $(edge_name(:l0, :l1, 1))(nothing)
+        edge1 = EdgeEuclideanDistanceAutomaton(nothing, $(check_constraints(:l0, :l1, 1)), $(update_state!(:l0, :l1, 1)))
         map_edges[:l0][:l1] = [edge1]
 
         # l1 loc
         # l1 => l1
-        edge1 = $(edge_name(:l1, :l1, 1))(nothing)
-        edge2 = $(edge_name(:l1, :l1, 2))([:ALL])
+        edge1 = EdgeEuclideanDistanceAutomaton(nothing, $(check_constraints(:l1, :l1, 1)), $(update_state!(:l1, :l1, 1)))
+        edge2 = EdgeEuclideanDistanceAutomaton([:ALL], $(check_constraints(:l1, :l1, 2)), $(update_state!(:l1, :l1, 2)))
         map_edges[:l1][:l1] = [edge1, edge2]
 
         # l1 => l2
-        edge1 = $(edge_name(:l1, :l2, 1))(nothing)
+        edge1 = EdgeEuclideanDistanceAutomaton(nothing, $(check_constraints(:l1, :l2, 1)), $(update_state!(:l1, :l2, 1)))
         map_edges[:l1][:l2] = [edge1]
     end
 
+    map_edges_transitions = Dict{Symbol, Dict{Symbol,Vector{TransitionSet}}}()
+    map_edges_check_constraints = Dict{Symbol, Dict{Symbol,Vector{CheckConstraintsFunction}}}()
+    map_edges_update_state = Dict{Symbol, Dict{Symbol,Vector{UpdateStateFunction}}}()
+    
     ## Constants
     constants = Dict{Symbol,Float64}(:nbr_obs => nbr_observations)
     for i = 1:nbr_observations
@@ -118,11 +134,13 @@ function create_euclidean_distance_automaton(m::ContinuousTimeModel, timeline::A
 
     # Updating types and simulation methods
     @everywhere @eval $(MarkovProcesses.generate_code_synchronized_model_type_def(model_name, lha_name))
-    @everywhere @eval $(MarkovProcesses.generate_code_next_state(lha_name, edge_type, check_constraints, update_state!))
+    @everywhere @eval $(MarkovProcesses.generate_code_next_state(lha_name, edge_type))
     @everywhere @eval $(MarkovProcesses.generate_code_synchronized_simulation(model_name, lha_name, edge_type, m.f!, m.isabsorbing))
 
     A = EuclideanDistanceAutomaton(m.transitions, locations, Λ_F, locations_init, locations_final, 
-                                   map_var_automaton_idx, flow, map_edges, constants, m.map_var_idx)
+                                   map_var_automaton_idx, flow, 
+                                   map_edges, map_edges_transitions, map_edges_check_constraints, map_edges_update_state,
+                                   constants, m.map_var_idx)
 
     return A
 end

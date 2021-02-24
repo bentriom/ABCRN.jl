@@ -10,17 +10,19 @@ import Distributed: @everywhere, @distributed
 import Distributions: Product, Uniform, Normal
 import Distributions: Distribution, Univariate, Continuous, UnivariateDistribution, 
                       MultivariateDistribution, product_distribution
+import FunctionWrappers: FunctionWrapper
 import StaticArrays: SVector, @SVector
 
 ## Exports
 export Distribution, Product, Uniform, Normal
 
 # Common types and constructors
-export Observations, AbstractTrajectory, Trajectory, SynchronizedTrajectory
 export SVector, @SVector
+export Observations, AbstractTrajectory, Trajectory, SynchronizedTrajectory
 export Model, ContinuousTimeModel, SynchronizedModel, ParametricModel
 export VariableModel, ParameterModel, Transition, TransitionSet
 export LHA, StateLHA, Edge, Location, VariableAutomaton
+export InvariantPredicateFunction, CheckConstraintsFunction, UpdateStateFunction
 
 # Trajectory related methods
 export +, -, δ, dist_lp, euclidean_distance

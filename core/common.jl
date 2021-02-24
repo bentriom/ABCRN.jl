@@ -11,8 +11,12 @@ abstract type Edge end
 const VariableModel = Symbol
 const ParameterModel = Symbol
 const Transition = Union{Symbol,Nothing}
+const TransitionSet = Union{Vector{Symbol},Nothing}
 const Location = Symbol
 const VariableAutomaton = Symbol
+const InvariantPredicateFunction = FunctionWrapper{Bool,Tuple{Vector{Int}}}
+const CheckConstraintsFunction = FunctionWrapper{Bool,Tuple{Float64,Vector{Float64},Vector{Int},Vector{Float64}}}
+const UpdateStateFunction = FunctionWrapper{Symbol,Tuple{Float64,Vector{Float64},Vector{Int},Vector{Float64}}}
 
 function generate_code_model_type_def(model_name::Symbol)
     return quote
@@ -49,12 +53,15 @@ function generate_code_lha_type_def(lha_name::Symbol, edge_type::Symbol)
         struct $(lha_name) <: LHA
             transitions::Vector{Transition}
             locations::Vector{Location} 
-            Λ::Dict{Location,Function}
+            Λ::Dict{Location,InvariantPredicateFunction}
             locations_init::Vector{Location}
             locations_final::Vector{Location}
             map_var_automaton_idx::Dict{VariableAutomaton,Int} # nvar keys : str_var => idx in values
             flow::Dict{Location,Vector{Float64}} # output of length nvar
             map_edges::Dict{Location, Dict{Location,Vector{$(edge_type)}}}
+            map_edges_transitions::Dict{Location, Dict{Location,Vector{TransitionSet}}}
+            map_edges_check_constraints::Dict{Location, Dict{Location,Vector{CheckConstraintsFunction}}}
+            map_edges_update_state::Dict{Location, Dict{Location,Vector{UpdateStateFunction}}}
             constants::Dict{Symbol,Float64}
             map_var_model_idx::Dict{VariableModel,Int} # of dim d (of a model)
         end
@@ -129,7 +136,9 @@ end
 
 LHA(A::LHA, map_var::Dict{VariableModel,Int}) = 
 getfield(Main, Symbol(typeof(A)))(A.transitions, A.locations, A.Λ, A.locations_init, A.locations_final, 
-                                  A.map_var_automaton_idx, A.flow, A.map_edges, A.constants, map_var)
+                                  A.map_var_automaton_idx, A.flow, A.map_edges, 
+                                  A.map_edges_transitions, A.map_edges_check_constraints, A.map_edges_update_state,
+                                  A.constants, map_var)
 
 function ParametricModel(am::Model, priors::Tuple{ParameterModel,UnivariateDistribution}...)
     m = get_proba_model(am)
