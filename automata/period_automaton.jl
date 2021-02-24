@@ -48,9 +48,9 @@ function create_period_automaton(m::ContinuousTimeModel, L::Float64, H::Float64,
     @everywhere mid_predicate(x::Vector{Int}) = $L < x[$(Meta.quot(idx_sym_obs))] < $H
     @everywhere high_predicate(x::Vector{Int}) = x[$(Meta.quot(idx_sym_obs))] >= $H
 
-    Λ_F = Dict(:l0 => getfield(Main, :true_predicate), :l0prime => getfield(Main, :not_low_predicate),
-               :low => getfield(Main, :low_predicate), :mid => getfield(Main, :mid_predicate), 
-               :high => getfield(Main, :high_predicate), :final => getfield(Main, :true_predicate))
+    Λ_F = Dict{Location,InvariantPredicateFunction}(:l0 => getfield(Main, :true_predicate), :l0prime => getfield(Main, :not_low_predicate),
+                                                    :low => getfield(Main, :low_predicate), :mid => getfield(Main, :mid_predicate), 
+                                                    :high => getfield(Main, :high_predicate), :final => getfield(Main, :true_predicate))
 
     ## Init and final loc
     locations_init = [:l0]

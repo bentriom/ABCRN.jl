@@ -26,8 +26,8 @@ function create_automaton_F(m::ContinuousTimeModel, x1::Float64, x2::Float64, t1
 
     ## Invariant predicates
     @everywhere true_inv_predicate(x::Vector{Int}) = true 
-    Λ_F = Dict(:l0 => getfield(Main, :true_inv_predicate), :l1 => getfield(Main, :true_inv_predicate),
-               :l2 => getfield(Main, :true_inv_predicate), :l3 => getfield(Main, :true_inv_predicate))
+    Λ_F = Dict{Location,InvariantPredicateFunction}(:l0 => getfield(Main, :true_inv_predicate), :l1 => getfield(Main, :true_inv_predicate),
+                                                    :l2 => getfield(Main, :true_inv_predicate), :l3 => getfield(Main, :true_inv_predicate))
 
     ## Init and final loc
     locations_init = [:l0]

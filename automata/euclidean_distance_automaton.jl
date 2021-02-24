@@ -26,8 +26,8 @@ function create_euclidean_distance_automaton(m::ContinuousTimeModel, timeline::A
 
     ## Invariant predicates
     @everywhere true_inv_predicate(x::Vector{Int}) = true 
-    Λ_F = Dict{Symbol,Function}(:l0 => getfield(Main, :true_inv_predicate), :l1 => getfield(Main, :true_inv_predicate),
-                                :l2 => getfield(Main, :true_inv_predicate))
+    Λ_F = Dict{Location,InvariantPredicateFunction}(:l0 => getfield(Main, :true_inv_predicate), :l1 => getfield(Main, :true_inv_predicate),
+                                                    :l2 => getfield(Main, :true_inv_predicate))
 
     ## Init and final loc
     locations_init = [:l0]
