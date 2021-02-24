@@ -18,7 +18,7 @@ export Distribution, Product, Uniform, Normal
 # Common types and constructors
 export Observations, AbstractTrajectory, Trajectory, SynchronizedTrajectory
 export Model, ContinuousTimeModel, SynchronizedModel, ParametricModel
-export VariableModel, ParameterModel, Transition
+export VariableModel, ParameterModel, Transition, TransitionSet
 export LHA, StateLHA, Edge, Location, VariableAutomaton
 
 # Trajectory related methods

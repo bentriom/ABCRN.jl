@@ -90,8 +90,234 @@ function init_state(A::LHA, x0::Vector{Int}, t0::Float64)
     return S0
 end
 
-function generate_code_next_state(lha_name::Symbol, edge_type::Symbol, 
-                                  check_constraints::Symbol, update_state!::Symbol)
+function generate_code_next_state_with_dicts_lha(lha_name::Symbol, edge_type::Symbol)
+    
+    return quote 
+        # A push! method implementend by myself because of preallocation of edge_candidates
+        function _push_edge!(edge_id_candidates::Vector{Int}, target_loc_candidates::Vector{Symbol}, 
+                             edge_id::Int, target_loc::Symbol, nbr_candidates::Int)
+            if nbr_candidates < length(edge_id_candidates)
+                 edge_id_candidates[nbr_candidates+1] = edge_id
+                 target_loc_candidates[nbr_candidates+1] = target_loc
+            else
+                push!(edge_id_candidates, edge_id)
+                push!(target_loc_candidates, target_loc)
+            end
+        end
+
+        function _find_edge_candidates!(edge_id_candidates::Vector{Int}, target_loc_candidates::Vector{Symbol},
+                                        dict_transitions_from_current_loc::Dict{Location,Vector{TransitionSet}},
+                                        dict_check_constraints_from_current_loc::Dict{Location,Vector{Function}},
+                                        Λ::Dict{Location,Function},
+                                        S_time::Float64, S_values::Vector{Float64},
+                                        x::Vector{Int}, p::Vector{Float64},
+                                        only_asynchronous::Bool)
+            nbr_candidates = 0
+            for target_loc in keys(dict_transitions_from_current_loc)
+                if !Λ[target_loc](x) continue end
+                for i = eachindex(dict_transitions_from_current_loc[target_loc])
+                    check_constraints_edge = dict_check_constraints_from_current_loc[target_loc][i]
+                    if check_constraints_edge(S_time, S_values, x, p)
+                        transitions = dict_transitions_from_current_loc[target_loc][i]
+                        if transitions == nothing
+                            _push_edge!(edge_id_candidates, target_loc_candidates, i, target_loc, nbr_candidates)
+                            nbr_candidates += 1
+                            return nbr_candidates
+                        else
+                            if !only_asynchronous
+                                _push_edge!(edge_id_candidates, target_loc_candidates, i, target_loc, nbr_candidates)
+                                nbr_candidates += 1
+                            end
+                        end
+                    end
+                end
+            end
+            return nbr_candidates
+        end
+
+        function _get_edge_index(edge_id_candidates::Vector{Int}, target_loc_candidates::Vector{Symbol}, nbr_candidates::Int,
+                                 dict_transitions_from_current_loc::Dict{Location,Vector{TransitionSet}},
+                                 detected_event::Bool, tr_nplus1::Transition)
+            ind_edge = 0
+            bool_event = detected_event
+            for i = 1:nbr_candidates
+                target_loc = target_loc_candidates[i]
+                edge_id = edge_id_candidates[i]
+                transitions = dict_transitions_from_current_loc[target_loc][edge_id]
+                # Asynchronous edge detection: we fire it
+                if transitions == nothing
+                    return (i, detected_event)
+                end
+                # Synchronous detection
+                if !detected_event && tr_nplus1 != nothing
+                    if (transitions[1] == :ALL) || (tr_nplus1 in transitions)
+                        ind_edge = i
+                        bool_event = true
+                    end
+                end
+            end
+            return (ind_edge, bool_event)
+        end
+
+        function next_state!(A::$(lha_name),
+                             ptr_loc_state::Vector{Symbol}, values_state::Vector{Float64}, ptr_time_state::Vector{Float64},
+                             xnplus1::Vector{Int}, tnplus1::Float64, tr_nplus1::Transition, 
+                             xn::Vector{Int}, p::Vector{Float64},
+                             edge_id_candidates::Vector{Int}, target_loc_candidates::Vector{Symbol}; verbose::Bool = false)
+            # En fait d'apres observation de Cosmos, après qu'on ait lu la transition on devrait stop.
+            detected_event::Bool = false
+            turns = 0
+            Λ = getfield(A, :Λ)
+            flow = getfield(A, :flow)
+            map_edges = A.map_edges
+            map_edges_transitions = A.map_edges_transitions
+            map_edges_check_constraints = A.map_edges_check_constraints
+            map_edges_update_state = A.map_edges_update_state
+            if verbose 
+                println("##### Begin next_state!")
+                @show xnplus1, tnplus1, tr_nplus1
+            end
+            # First, we check the asynchronous transitions
+            while true
+                turns += 1
+                if verbose @show turns end
+                #edge_candidates = empty!(edge_candidates) 
+                dict_transitions_from_current_loc = map_edges_transitions[ptr_loc_state[1]]
+                dict_check_constraints_from_current_loc = map_edges_check_constraints[ptr_loc_state[1]]
+                # Save all edges that satisfies transition predicate (asynchronous ones)
+                nbr_candidates = _find_edge_candidates!(edge_id_candidates, target_loc_candidates, 
+                                                        dict_transitions_from_current_loc, dict_check_constraints_from_current_loc,
+                                                        Λ, ptr_time_state[1], values_state, xn, p, true)
+                # Search the one we must chose, here the event is nothing because 
+                # we're not processing yet the next event
+                ind_edge, detected_event = _get_edge_index(edge_id_candidates, target_loc_candidates, nbr_candidates, 
+                                                           dict_transitions_from_current_loc,
+                                                           detected_event, nothing)
+                # Update the state with the chosen one (if it exists)
+                # Should be xn here
+                #first_round = false
+                if ind_edge > 0
+                    edge_target_loc = target_loc_candidates[ind_edge]
+                    edge_id = edge_id_candidates[ind_edge]
+                    firing_update_state! = map_edges_update_state[ptr_loc_state[1]][edge_target_loc][edge_id]
+                    ptr_loc_state[1] = firing_update_state!(ptr_time_state[1], values_state, xn, p)
+                else
+                    if verbose 
+                        println("No edge fired:")
+                        @show ind_edge, detected_event, nbr_candidates
+                    end
+                    break 
+                end
+                if verbose
+                    println("Edge fired:")
+                    @show edge_id_candidates, target_loc_candidates
+                    @show ind_edge, detected_event, nbr_candidates
+                    @show ptr_loc_state[1]
+                    @show ptr_time_state[1]
+                    @show values_state
+                    if turns == 500
+                        @warn "We've reached 500 turns"
+                    end
+                end
+                # For debug
+                #=
+                if turns > 100
+                println("Number of turns in next_state! is suspicious")
+                @show first_round, detected_event
+                @show length(edge_candidates)
+                @show tnplus1, tr_nplus1, xnplus1
+                @show edge_candidates
+                error("Unpredicted behavior automaton")
+                end
+                =#
+            end
+            if verbose 
+                println("Time flies with the flow...")
+            end
+            # Now time flies according to the flow
+            for i in eachindex(values_state)
+                 coeff_deriv = flow[ptr_loc_state[1]][i]
+                if coeff_deriv > 0
+                      values_state[i] += coeff_deriv*(tnplus1 - ptr_time_state[1])
+                end
+            end
+            ptr_time_state[1] = tnplus1
+            if verbose 
+                @show ptr_loc_state[1]
+                @show ptr_time_state[1]
+                @show values_state
+            end
+            # Now firing an edge according to the event 
+            while true
+                turns += 1
+                if verbose @show turns end
+                edges_from_current_loc = map_edges[ptr_loc_state[1]]
+                dict_transitions_from_current_loc = map_edges_transitions[ptr_loc_state[1]]
+                dict_check_constraints_from_current_loc = map_edges_check_constraints[ptr_loc_state[1]]
+                # Save all edges that satisfies transition predicate (synchronous ones)
+                nbr_candidates = _find_edge_candidates!(edge_id_candidates, target_loc_candidates,
+                                                        dict_transitions_from_current_loc, dict_check_constraints_from_current_loc,
+                                                        Λ, ptr_time_state[1], values_state, xnplus1, p, false)
+                # Search the one we must chose
+                ind_edge, detected_event = _get_edge_index(edge_id_candidates, target_loc_candidates, nbr_candidates, 
+                                                           dict_transitions_from_current_loc,
+                                                           detected_event, tr_nplus1)
+                # Update the state with the chosen one (if it exists)
+                if ind_edge > 0
+                    edge_target_loc = target_loc_candidates[ind_edge]
+                    edge_id = edge_id_candidates[ind_edge]
+                    firing_update_state! = map_edges_update_state[ptr_loc_state[1]][edge_target_loc][edge_id]
+                    ptr_loc_state[1] = firing_update_state!(ptr_time_state[1], values_state, xnplus1, p)
+                end
+                if ind_edge == 0 || detected_event
+                    if verbose 
+                        if detected_event    
+                            println("Synchronized with $(tr_nplus1)") 
+                            @show edge_id_candidates, target_loc_candidates
+                            @show ind_edge, detected_event, nbr_candidates
+                            @show detected_event
+                            @show ptr_loc_state[1]
+                            @show ptr_time_state[1]
+                            @show values_state
+                        else
+                            println("No edge fired")
+                        end
+                    end
+                    break 
+                end
+                if verbose
+                    @show edge_id_candidates, target_loc_candidates
+                    @show ind_edge, detected_event, nbr_candidates
+                    @show detected_event
+                    @show ptr_loc_state[1]
+                    @show ptr_time_state[1]
+                    @show values_state
+                    if turns == 500
+                        @warn "We've reached 500 turns"
+                    end
+                end
+                # For debug
+                #=
+                if turns > 100
+                println("Number of turns in next_state! is suspicious")
+                @show detected_event
+                @show length(edge_candidates)
+                @show tnplus1, tr_nplus1, xnplus1
+                @show edge_candidates
+                error("Unpredicted behavior automaton")
+                end
+                =#
+            end
+            if verbose 
+                println("##### End next_state!") 
+            end
+        end
+    end
+end
+
+############################################################################################################
+
+function generate_code_next_state(lha_name::Symbol, edge_type::Symbol)
     
     return quote 
         # A push! method implementend by myself because of preallocation of edge_candidates
@@ -113,8 +339,8 @@ function generate_code_next_state(lha_name::Symbol, edge_type::Symbol,
             for target_loc in keys(edges_from_current_loc)
                 if !Λ[target_loc](x) continue end
                 for edge in edges_from_current_loc[target_loc]
-                    if $(check_constraints)(edge, S_time, S_values, x, p)
-                        if getfield(edge, :transitions) == nothing
+                    if edge.check_constraints(S_time, S_values, x, p)
+                        if edge.transitions == nothing
                             _push_edge!(edge_candidates, edge, nbr_candidates)
                             nbr_candidates += 1
                             return nbr_candidates
@@ -137,13 +363,12 @@ function generate_code_next_state(lha_name::Symbol, edge_type::Symbol,
             for i = 1:nbr_candidates
                 edge = edge_candidates[i]
                 # Asynchronous edge detection: we fire it
-                if getfield(edge, :transitions) == nothing
+                if edge.transitions == nothing
                     return (i, detected_event)
                 end
                 # Synchronous detection
                 if !detected_event && tr_nplus1 != nothing
-                    if (getfield(edge, :transitions)[1] == :ALL) || 
-                        (tr_nplus1 in getfield(edge, :transitions))
+                    if (edge.transitions[1] == :ALL) || (tr_nplus1 in edge.transitions)
                         ind_edge = i
                         bool_event = true
                     end
@@ -184,7 +409,7 @@ function generate_code_next_state(lha_name::Symbol, edge_type::Symbol,
                 #first_round = false
                 if ind_edge > 0
                     firing_edge = edge_candidates[ind_edge]
-                    ptr_loc_state[1] = $(update_state!)(firing_edge, ptr_time_state[1], values_state, xn, p)
+                    ptr_loc_state[1] = firing_edge.update_state!(ptr_time_state[1], values_state, xn, p)
                 else
                     if verbose println("No edge fired") end
                     break 
@@ -240,7 +465,7 @@ function generate_code_next_state(lha_name::Symbol, edge_type::Symbol,
                 # Update the state with the chosen one (if it exists)
                 if ind_edge > 0
                     firing_edge = edge_candidates[ind_edge]
-                    ptr_loc_state[1] = $(update_state!)(firing_edge, ptr_time_state[1], values_state, xnplus1, p)
+                    ptr_loc_state[1] = firing_edge.update_state!(ptr_time_state[1], values_state, xnplus1, p)
                 end
                 if ind_edge == 0 || detected_event
                     if verbose 

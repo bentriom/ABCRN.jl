@@ -11,6 +11,7 @@ abstract type Edge end
 const VariableModel = Symbol
 const ParameterModel = Symbol
 const Transition = Union{Symbol,Nothing}
+const TransitionSet = Union{Vector{Symbol},Nothing}
 const Location = Symbol
 const VariableAutomaton = Symbol
 
@@ -55,6 +56,9 @@ function generate_code_lha_type_def(lha_name::Symbol, edge_type::Symbol)
             map_var_automaton_idx::Dict{VariableAutomaton,Int} # nvar keys : str_var => idx in values
             flow::Dict{Location,Vector{Float64}} # output of length nvar
             map_edges::Dict{Location, Dict{Location,Vector{$(edge_type)}}}
+            map_edges_transitions::Dict{Location, Dict{Location,Vector{TransitionSet}}}
+            map_edges_check_constraints::Dict{Location, Dict{Location,Vector{Function}}}
+            map_edges_update_state::Dict{Location, Dict{Location,Vector{Function}}}
             constants::Dict{Symbol,Float64}
             map_var_model_idx::Dict{VariableModel,Int} # of dim d (of a model)
         end
