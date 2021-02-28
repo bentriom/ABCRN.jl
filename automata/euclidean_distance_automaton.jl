@@ -72,11 +72,11 @@ function create_euclidean_distance_automaton(m::ContinuousTimeModel, timeline::A
         # Defined below 
         #struct $(edge_name(:l1, :l1, 1)) <: $(edge_type) transitions::Union{Nothing,Vector{Symbol}} end
         @everywhere $(check_constraints(:l1, :l1, 1))(S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) =
-        (tml = $(Tuple(timeline));
+        (tml = $(SVector{length(timeline)}(timeline));
          tml_idx = tml[convert(Int, S_values[$(to_idx(:idx))])];
          S_values[$(to_idx(:t))] >= tml_idx)
         @everywhere $(update_state!(:l1, :l1, 1))(S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}) =
-        (y_obs = $(Tuple(observations));
+        (y_obs = $(SVector{length(observations)}(observations));
          y_obs_idx = y_obs[convert(Int, S_values[$(to_idx(:idx))])];
          S_values[$(to_idx(:d))] = S_values[$(to_idx(:d))]+(S_values[$(to_idx(:n))]-y_obs_idx)^2;
          S_values[$(to_idx(:idx))] = S_values[$(to_idx(:idx))]+1.0;
