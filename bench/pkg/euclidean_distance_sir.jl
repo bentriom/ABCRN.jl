@@ -29,10 +29,11 @@ b_vol_sim_aut1 = @benchmark (σ = volatile_simulate($(sync1)))
 @btime (σ = volatile_simulate($(sync1)))
 @show minimum(b_vol_sim_aut1), mean(b_vol_sim_aut1), maximum(b_vol_sim_aut1)
 
+#=
 println("Memory test")
 Profile.clear_malloc_data()
 σ = volatile_simulate(sync1)
-exit()
+=#
 
 println("Automaton with nbr_obs loc")
 aut2 = create_euclidean_distance_automaton_2(SIR, tml_obs, y_obs, :I)
