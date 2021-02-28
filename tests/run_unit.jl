@@ -41,6 +41,7 @@ using Test
     @test include("unit/simulate_sir.jl")
     @test include("unit/simulate_sir_bounded.jl")
     @test include("unit/simulate_er.jl")
+    @test include("unit/simulation_stop_criteria.jl")
     @test include("unit/square_wave_oscillator.jl")
     
     @test include("unit/vectorize.jl")

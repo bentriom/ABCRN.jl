@@ -271,12 +271,12 @@ function generate_code_synchronized_simulation(model_name::Symbol, lha_name::Sym
                 n += i
             end
             values = full_values[getfield(m, :_g_idx)]
-            if isbounded(m) && !isaccepted(ptr_loc_state[1], A)
+            if isbounded(m) && !isacceptedLHA
                 # Add last value: the convention is that if the last transition is nothing,
                 # the trajectory is bounded
                 MarkovProcesses._finish_bounded_trajectory!(values, times, transitions, time_bound)
             end
-            if isabsorbing && !isacceptedLHA
+            if (isabsorbing || tn > time_bound) && !isacceptedLHA
                 next_state!(A, ptr_loc_state, values_state, ptr_time_state, 
                             xn, time_bound, nothing, xn, p_sim, edge_candidates; verbose = verbose)
             end
@@ -398,6 +398,7 @@ function simulate(pm::ParametricModel, p_prior::AbstractVector{Float64})
     
     return simulate(pm.m; p = full_p) 
 end
+
 """
     `volatile_simulate(pm::ParametricModel, p_prior::AbstractVector{Float64})
 
@@ -413,6 +414,25 @@ function volatile_simulate(pm::ParametricModel, p_prior::AbstractVector{Float64}
     
     return volatile_simulate(pm.m; p = full_p, epsilon = epsilon)
 end
+
+"""
+    `change_simulation_stop_criteria(m::ContinuousTimeModel, isabsorbing_func::Symbol)`
+
+    Change the simulation of the model `m` by adding a stop criteria based on the function named `isabsorbing_func::Symbol`.
+    isabsorbing_func must have the type signature `isabsorbing_func(p::Vector{Float64}, x::Vector{Int})` where `p` is the parameter vector of the model and `x` a state (not an observed state) of the model.
+"""
+function change_simulation_stop_criteria(m::ContinuousTimeModel, isabsorbing_func::Symbol)
+    model_name = Symbol(typeof(m))
+    isabs = getfield(Main, isabsorbing_func)
+    try 
+        isabs(m.p, m.x0) 
+    catch err 
+        error("Something went wrong when trying to apply the criteria function")
+    end
+    @everywhere @eval $(generate_code_simulation(model_name, m.f!, isabsorbing_func; run_isabsorbing = true))
+end
+
+
 """
     `distribute_mean_value_lha(sm::SynchronizedModel, sym_var::Symbol, nbr_stim::Int)`
 

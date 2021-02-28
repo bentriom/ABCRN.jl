@@ -38,7 +38,7 @@ export init_state, next_state!, read_trajectory
 export get_index, get_value, length_var, isaccepted
 
 # Model related methods
-export simulate, volatile_simulate
+export simulate, volatile_simulate, change_simulation_stop_criteria
 export distribute_mean_value_lha, mean_value_lha, distribute_prob_accept_lha, probability_var_value_lha 
 export number_simulations_smc_chernoff, smc_chernoff
 export set_param!, set_x0!, set_time_bound!, set_observed_var!, observe_all!
