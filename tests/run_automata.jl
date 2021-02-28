@@ -5,7 +5,7 @@ using Test
     @test include("automata/absorbing_x0_p.jl")
     @test include("automata/accept_R5.jl")
     @test include("automata/euclidean_distance.jl")
-    @test include("automata/euclidean_distance_single.jl")
+    @test include("automata/euclidean_distance_on_bound.jl")
     @test include("automata/period_automaton_doping_single.jl")
     @test include("automata/read_trajectory_last_state_F.jl")
     @test include("automata/read_trajectory_last_state_G.jl")
