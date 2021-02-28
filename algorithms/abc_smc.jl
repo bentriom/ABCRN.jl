@@ -125,6 +125,7 @@ function _abc_smc(pm::ParametricModel, nbr_particles::Int, tolerance::Float64, a
     l_nbr_sim = zeros(Int, nbr_particles) 
     while (epsilon > last_epsilon) && (current_time - begin_time <= duration_time) && (nbr_tot_sim <= bound_sim)
         t += 1
+        @show pm.m.automaton.ϵ, epsilon
         begin_time_ite = time()
         @info "Step $t"
         # Set new epsilon

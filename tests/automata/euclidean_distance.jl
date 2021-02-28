@@ -5,6 +5,7 @@ import Distributions: Uniform
 
 load_automaton("euclidean_distance_automaton")
 load_automaton("euclidean_distance_automaton_2")
+load_automaton("abc_euclidean_distance_automaton")
 load_model("SIR")
 load_model("ER")
 observe_all!(SIR)
@@ -46,7 +47,18 @@ for i = 1:nbr_sim
         else
             test2 = true
         end
-        global test_all = test_all && test && test2
+        sync_SIR = SIR * create_abc_euclidean_distance_automaton(SIR, tml_obs, y_obs, :I)
+        σ = simulate(sync_SIR)
+        test3 = euclidean_distance(σ, :I, tml_obs, y_obs) == σ.state_lha_end[:d]
+        if !test3
+            @show test3, euclidean_distance(σ, :I, tml_obs, y_obs), σ.state_lha_end[:d]
+            global err = σ
+            global tml = tml_obs
+            global y = y_obs
+            global sync_model = sync_SIR
+            break
+        end
+        global test_all = test_all && test && test2 && test3
     end
 end
 
@@ -82,7 +94,18 @@ for i = 1:nbr_sim
         else
             test2 = true
         end
-        global test_all = test_all && test && test2
+        sync_ER = ER * create_abc_euclidean_distance_automaton(ER, tml_obs, y_obs, :P)
+        σ = simulate(sync_ER)
+        test3 = euclidean_distance(σ, :P, tml_obs, y_obs) == σ.state_lha_end[:d]
+        if !test3
+            @show test3, euclidean_distance(σ, :P, tml_obs, y_obs), σ.state_lha_end[:d]
+            global err = σ
+            global tml = tml_obs
+            global y = y_obs
+            global sync_model = sync_ER
+            break
+        end
+        global test_all = test_all && test && test2 && test3
     end
 end
 

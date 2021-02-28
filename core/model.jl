@@ -1,7 +1,4 @@
 
-import Random: rand, rand!
-import Distributions: insupport, pdf
-
 function _resize_trajectory!(values::Vector{Vector{Int}}, times::Vector{Float64}, 
                              transitions::Vector{Transition}, size::Int)
     for i = eachindex(values) resize!((values[i]), size) end
@@ -66,7 +63,7 @@ function generate_code_simulation(model_name::Symbol, f!::Symbol, isabsorbing::S
                 end
                 return Trajectory(m, values, times, transitions)
             end
-            # Alloc of vectors where we stock n+1 values
+            # Alloc of vectors where we store n+1 values
             vec_x = zeros(Int, getfield(m, :dim_state))
             l_t = Float64[0.0]
             l_tr = Transition[nothing]
@@ -74,10 +71,12 @@ function generate_code_simulation(model_name::Symbol, f!::Symbol, isabsorbing::S
             for i = 2:estim_min_states
                 $(f!)(vec_x, l_t, l_tr, xn, tn, p_sim)
                 tn = l_t[1]
-                if tn > time_bound || vec_x == xn
-                    isabsorbing = (vec_x == xn)
+                isabsorbing = vec_x == xn
+                #isabsorbing = $(isabsorbing)(p_sim,xn)
+                if isabsorbing || tn > time_bound
                     break
                 end
+                # n+1 values are now n values
                 n += 1
                 copyto!(xn, vec_x)
                 MarkovProcesses._update_values!(full_values, times, transitions, xn, tn, l_tr[1], i)
@@ -101,15 +100,13 @@ function generate_code_simulation(model_name::Symbol, f!::Symbol, isabsorbing::S
                     i += 1
                     $(f!)(vec_x, l_t, l_tr, xn, tn, p_sim)
                     tn = l_t[1]
-                    if tn > time_bound 
+                    isabsorbing = vec_x == xn
+                    #isabsorbing = $(isabsorbing)(p_sim,xn)
+                    if isabsorbing || tn > time_bound
                         i -= 1
                         break
                     end
-                    if vec_x == xn
-                        isabsorbing = true
-                        i -= 1
-                        break
-                    end
+                    # n+1 values are now n values
                     copyto!(xn, vec_x)
                     MarkovProcesses._update_values!(full_values, times, transitions, 
                                     xn, tn, l_tr[1], estim_min_states+size_tmp+i)
@@ -189,19 +186,19 @@ function generate_code_synchronized_simulation(model_name::Symbol, lha_name::Sym
             # First we fill the allocated array
             for i = 2:estim_min_states
                 $(f!)(vec_x, l_t, l_tr, xn, tn, p_sim)
-                if l_t[1] > time_bound || vec_x == xn
-                    tn = l_t[1]
-                    isabsorbing = (vec_x == xn)
+                tn = l_t[1]
+                isabsorbing = vec_x == xn
+                if isabsorbing || tn > time_bound
                     break
                 end
-                n += 1
                 next_state!(A, ptr_loc_state, values_state, ptr_time_state, vec_x, l_t[1], l_tr[1], xn, p_sim, edge_candidates; verbose = verbose)
+                # n+1 values are now n values
+                n += 1
                 copyto!(xn, vec_x)
-                tn = l_t[1]
                 tr_n = l_tr[1]
                 MarkovProcesses._update_values!(full_values, times, transitions, xn, tn, tr_n, i)
                 isacceptedLHA = isaccepted(ptr_loc_state[1], A)
-                if isabsorbing || isacceptedLHA 
+                if isacceptedLHA 
                     break
                 end
             end
@@ -229,24 +226,20 @@ function generate_code_synchronized_simulation(model_name::Symbol, lha_name::Sym
                 while i < buffer_size
                     i += 1
                     $(f!)(vec_x, l_t, l_tr, xn, tn, p_sim)
-                    if l_t[1] > time_bound
-                        tn = l_t[1]
-                        i -= 1
-                        break
-                    end
-                    if vec_x == xn
-                        isabsorbing = true
+                    tn = l_t[1]
+                    isabsorbing = vec_x == xn
+                    if isabsorbing || tn > time_bound
                         i -= 1
                         break
                     end
                     next_state!(A, ptr_loc_state, values_state, ptr_time_state, vec_x, l_t[1], l_tr[1], xn, p_sim, edge_candidates; verbose = verbose)
+                    # n+1 values are now n values
                     copyto!(xn, vec_x)
-                    tn = l_t[1]
                     tr_n = l_tr[1]
                     MarkovProcesses._update_values!(full_values, times, transitions, 
                                                     xn, tn, tr_n, estim_min_states+size_tmp+i)
                     isacceptedLHA = isaccepted(ptr_loc_state[1], A)
-                    if isabsorbing || isacceptedLHA
+                    if isacceptedLHA
                         break
                     end
                 end
@@ -259,7 +252,7 @@ function generate_code_synchronized_simulation(model_name::Symbol, lha_name::Sym
             end
             values = full_values[getfield(m, :_g_idx)]
             if isbounded(m) && !isaccepted(ptr_loc_state[1], A)
-                # Add last value: the convention is the last transition is nothing,
+                # Add last value: the convention is that if the last transition is nothing,
                 # the trajectory is bounded
                 MarkovProcesses._finish_bounded_trajectory!(values, times, transitions, time_bound)
             end
@@ -272,7 +265,9 @@ function generate_code_synchronized_simulation(model_name::Symbol, lha_name::Sym
             return SynchronizedTrajectory(S, product, values, times, transitions)
         end
         
-        function volatile_simulate(m::$(model_name), A::$(lha_name), p_sim::AbstractVector{Float64}, verbose::Bool)
+        function volatile_simulate(m::$(model_name), A::$(lha_name), p_sim::AbstractVector{Float64}, 
+                                   epsilon::Float64, verbose::Bool)
+            if $(Meta.quot(lha_name)) == :ABCEuclideanDistanceAutomaton A.ϵ = epsilon end
             x0 = getfield(m, :x0)
             t0 = getfield(m, :t0)
             time_bound = getfield(m, :time_bound)
@@ -309,12 +304,13 @@ function generate_code_synchronized_simulation(model_name::Symbol, lha_name::Sym
                     tn = l_t[1]
                     break
                 end
-                if vec_x == xn
-                    isabsorbing = true
+                isabsorbing = vec_x == xn
+                if isabsorbing
                     break
                 end
                 next_state!(A, ptr_loc_state, values_state, ptr_time_state, 
                             vec_x, l_t[1], l_tr[1], xn, p_sim, edge_candidates; verbose = verbose)
+                # n+1 values are now n values
                 copyto!(xn, vec_x)
                 tn = l_t[1]
                 tr_n = l_tr[1]
@@ -340,14 +336,14 @@ in order to improve performance.
 It returns the last state of the simulation `S::StateLHA` not a trajectory `σ::SynchronizedTrajectory`.
 """
 function volatile_simulate(product::SynchronizedModel; 
-    p::Union{Nothing,AbstractVector{Float64}} = nothing, verbose::Bool = false)
+                           p::Union{Nothing,AbstractVector{Float64}} = nothing, epsilon::Float64 = 0.0, verbose::Bool = false)
     m = product.m
     A = product.automaton
     p_sim = getfield(m, :p)
     if p != nothing
         p_sim = p
     end
-    S = volatile_simulate(m, A, p_sim, verbose)
+    S = volatile_simulate(m, A, p_sim, epsilon, verbose)
     return S
 end
 
@@ -362,7 +358,6 @@ function simulate(product::SynchronizedModel;
     σ = simulate(m, A, product, p_sim, verbose)
     return σ
 end
-
 
 """
     `simulate(pm::ParametricModel, p_prior::AbstractVector{Float64})
@@ -387,14 +382,10 @@ It returns `S::StateLHA`, not a trajectory.
 function volatile_simulate(pm::ParametricModel, p_prior::AbstractVector{Float64};
                            epsilon::Union{Nothing,Float64} = nothing)
     @assert typeof(pm.m) <: SynchronizedModel
-    # ABC related automata
-    if @isdefined(EuclideanDistanceABCAutomaton) && typeof(pm.m.automaton) <: EuclideanDistanceABCAutomaton
-        nothing
-    end
     full_p = copy(get_proba_model(pm).p)
     full_p[pm._param_idx] = p_prior
     
-    return volatile_simulate(pm.m; p = full_p) 
+    return volatile_simulate(pm.m; p = full_p, epsilon = epsilon)
 end
 """
     `distribute_mean_value_lha(sm::SynchronizedModel, sym_var::Symbol, nbr_stim::Int)`

@@ -10,7 +10,9 @@ import Distributed: @everywhere, @distributed
 import Distributions: Product, Uniform, Normal
 import Distributions: Distribution, Univariate, Continuous, UnivariateDistribution, 
                       MultivariateDistribution, product_distribution
+import Distributions: insupport, pdf
 import FunctionWrappers: FunctionWrapper
+import Random: rand, rand!
 import StaticArrays: SVector, @SVector
 
 ## Exports

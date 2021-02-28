@@ -16,12 +16,21 @@ sync_SIR = SIR * aut1
 σ = simulate(sync_SIR)
 test = euclidean_distance(σ, :I, tml_obs, y_obs) == σ.state_lha_end[:d]
 
+if !test
+    @show euclidean_distance(σ, :I, tml_obs, y_obs), σ.state_lha_end[:d]
+    @show σ
+end
+
 if MAKE_SECOND_AUTOMATON_TESTS
     load_automaton("euclidean_distance_automaton_2")
     aut2 = create_euclidean_distance_automaton_2(SIR, tml_obs, y_obs, :I)
     sync_SIR = SIR * aut2
     σ = simulate(sync_SIR)
     test2 = euclidean_distance(σ, :I, tml_obs, y_obs) == σ.state_lha_end[:d]
+    if !test2
+        @show euclidean_distance(σ, :I, tml_obs, y_obs), σ.state_lha_end[:d]
+        @show σ
+    end
 else
     test2 = true
 end
