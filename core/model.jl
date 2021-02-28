@@ -20,7 +20,11 @@ function _update_values!(values::Vector{Vector{Int}}, times::Vector{Float64}, tr
     (transitions[idx] = tr_n)
 end
 
-function generate_code_simulation(model_name::Symbol, f!::Symbol, isabsorbing::Symbol)
+########## Code generation methods
+
+# Generates simulate method for a specific ContinuousTimeModel
+function generate_code_simulation(model_name::Symbol, f!::Symbol, isabsorbing::Symbol;
+                                  run_isabsorbing::Bool = false)
 
     return quote
         import MarkovProcesses: simulate
@@ -72,7 +76,6 @@ function generate_code_simulation(model_name::Symbol, f!::Symbol, isabsorbing::S
                 $(f!)(vec_x, l_t, l_tr, xn, tn, p_sim)
                 tn = l_t[1]
                 isabsorbing = vec_x == xn
-                #isabsorbing = $(isabsorbing)(p_sim,xn)
                 if isabsorbing || tn > time_bound
                     break
                 end
@@ -80,6 +83,10 @@ function generate_code_simulation(model_name::Symbol, f!::Symbol, isabsorbing::S
                 n += 1
                 copyto!(xn, vec_x)
                 MarkovProcesses._update_values!(full_values, times, transitions, xn, tn, l_tr[1], i)
+                if $(run_isabsorbing)
+                    isabsorbing = isabsorbing || $(isabsorbing)(p_sim,xn)
+                    if isabsorbing break end
+                end
             end
             # If simulation ended before the estimation of states
             if n < estim_min_states
@@ -101,7 +108,6 @@ function generate_code_simulation(model_name::Symbol, f!::Symbol, isabsorbing::S
                     $(f!)(vec_x, l_t, l_tr, xn, tn, p_sim)
                     tn = l_t[1]
                     isabsorbing = vec_x == xn
-                    #isabsorbing = $(isabsorbing)(p_sim,xn)
                     if isabsorbing || tn > time_bound
                         i -= 1
                         break
@@ -109,7 +115,11 @@ function generate_code_simulation(model_name::Symbol, f!::Symbol, isabsorbing::S
                     # n+1 values are now n values
                     copyto!(xn, vec_x)
                     MarkovProcesses._update_values!(full_values, times, transitions, 
-                                    xn, tn, l_tr[1], estim_min_states+size_tmp+i)
+                                                    xn, tn, l_tr[1], estim_min_states+size_tmp+i)
+                    if $(run_isabsorbing)
+                        isabsorbing = isabsorbing || $(isabsorbing)(p_sim,xn)
+                        if isabsorbing break end
+                    end
                 end
                 # If simulation ended before the end of buffer
                 if i < buffer_size
@@ -129,8 +139,10 @@ function generate_code_simulation(model_name::Symbol, f!::Symbol, isabsorbing::S
     end
 end
 
+# Generates simulate method for a specific SynchronizedModel
 function generate_code_synchronized_simulation(model_name::Symbol, lha_name::Symbol, 
-                                               edge_type::Symbol, f!::Symbol, isabsorbing::Symbol)
+                                               edge_type::Symbol, f!::Symbol, isabsorbing::Symbol;
+                                               run_isabsorbing::Bool = false)
     
     return quote
         import MarkovProcesses: simulate, volatile_simulate
@@ -201,6 +213,10 @@ function generate_code_synchronized_simulation(model_name::Symbol, lha_name::Sym
                 if isacceptedLHA 
                     break
                 end
+                if $(run_isabsorbing)
+                    isabsorbing = isabsorbing || $(isabsorbing)(p_sim,xn)
+                    if isabsorbing break end
+                end
             end
             # If simulation ended before the estimation of states
             if n < estim_min_states
@@ -241,6 +257,10 @@ function generate_code_synchronized_simulation(model_name::Symbol, lha_name::Sym
                     isacceptedLHA = isaccepted(ptr_loc_state[1], A)
                     if isacceptedLHA
                         break
+                    end
+                    if $(run_isabsorbing)
+                        isabsorbing = isabsorbing || $(isabsorbing)(p_sim,xn)
+                        if isabsorbing break end
                     end
                 end
                 # If simulation ended before the end of buffer
@@ -311,11 +331,15 @@ function generate_code_synchronized_simulation(model_name::Symbol, lha_name::Sym
                 next_state!(A, ptr_loc_state, values_state, ptr_time_state, 
                             vec_x, l_t[1], l_tr[1], xn, p_sim, edge_candidates; verbose = verbose)
                 # n+1 values are now n values
+                n += 1
                 copyto!(xn, vec_x)
                 tn = l_t[1]
                 tr_n = l_tr[1]
                 isacceptedLHA = isaccepted(ptr_loc_state[1], A)
-                n += 1
+                if $(run_isabsorbing)
+                    isabsorbing = isabsorbing || $(isabsorbing)(p_sim,xn)
+                    if isabsorbing break end
+                end
             end
             if isabsorbing && !isacceptedLHA
                 next_state!(A, ptr_loc_state, values_state, ptr_time_state, 
@@ -327,6 +351,8 @@ function generate_code_synchronized_simulation(model_name::Symbol, lha_name::Sym
         end
     end
 end
+
+########## Generic methods
 
 """
 `volatile_simulate(sm::SynchronizedModel; p, verbose)`

@@ -24,7 +24,7 @@ nbr_pa = 404
 
 r = automaton_abc(pm_sync_ER; nbr_particles = nbr_pa)
 
-rmprocs(2)
+rmprocs(workers())
 
 test = size(r.mat_p_end)[1] == pm_sync_ER.df &&
        size(r.mat_p_end)[2] == nbr_pa &&

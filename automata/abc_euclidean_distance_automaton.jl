@@ -25,8 +25,8 @@ end
 end
 
 # A push! method implementend by myself because of preallocation of edge_candidates
-function _push_edge!(edge_candidates::Vector{<:EdgeABCEuclideanDistanceAutomaton}, 
-                     edge::EdgeABCEuclideanDistanceAutomaton, nbr_candidates::Int)
+@everywhere function _push_edge!(edge_candidates::Vector{<:EdgeABCEuclideanDistanceAutomaton}, 
+                                 edge::EdgeABCEuclideanDistanceAutomaton, nbr_candidates::Int)
     if nbr_candidates < length(edge_candidates)
         edge_candidates[nbr_candidates+1] = edge
     else
@@ -34,12 +34,12 @@ function _push_edge!(edge_candidates::Vector{<:EdgeABCEuclideanDistanceAutomaton
     end
 end
 
-function _find_edge_candidates!(edge_candidates::Vector{EdgeABCEuclideanDistanceAutomaton},
-                                edges_from_current_loc::Dict{Location,Vector{EdgeABCEuclideanDistanceAutomaton}},
-                                Λ::Dict{Location,InvariantPredicateFunction},
-                                S_time::Float64, S_values::Vector{Float64},
-                                x::Vector{Int}, p::Vector{Float64}, ϵ::Float64,
-                                only_asynchronous::Bool)
+@everywhere function _find_edge_candidates!(edge_candidates::Vector{EdgeABCEuclideanDistanceAutomaton},
+                                            edges_from_current_loc::Dict{Location,Vector{EdgeABCEuclideanDistanceAutomaton}},
+                                            Λ::Dict{Location,InvariantPredicateFunction},
+                                            S_time::Float64, S_values::Vector{Float64},
+                                            x::Vector{Int}, p::Vector{Float64}, ϵ::Float64,
+                                            only_asynchronous::Bool)
     nbr_candidates = 0
     for target_loc in keys(edges_from_current_loc)
         if !Λ[target_loc](x) continue end
@@ -61,8 +61,8 @@ function _find_edge_candidates!(edge_candidates::Vector{EdgeABCEuclideanDistance
     return nbr_candidates
 end
 
-function _get_edge_index(edge_candidates::Vector{EdgeABCEuclideanDistanceAutomaton}, nbr_candidates::Int,
-                         detected_event::Bool, tr_nplus1::Transition)
+@everywhere function _get_edge_index(edge_candidates::Vector{EdgeABCEuclideanDistanceAutomaton}, nbr_candidates::Int,
+                                     detected_event::Bool, tr_nplus1::Transition)
     ind_edge = 0
     bool_event = detected_event
     for i = 1:nbr_candidates
@@ -82,11 +82,11 @@ function _get_edge_index(edge_candidates::Vector{EdgeABCEuclideanDistanceAutomat
     return (ind_edge, bool_event)
 end
 
-function next_state!(A::ABCEuclideanDistanceAutomaton,
-                     ptr_loc_state::Vector{Symbol}, values_state::Vector{Float64}, ptr_time_state::Vector{Float64},
-                     xnplus1::Vector{Int}, tnplus1::Float64, tr_nplus1::Transition, 
-                     xn::Vector{Int}, p::Vector{Float64},
-                     edge_candidates::Vector{EdgeABCEuclideanDistanceAutomaton}; verbose::Bool = false)
+@everywhere function next_state!(A::ABCEuclideanDistanceAutomaton,
+                                 ptr_loc_state::Vector{Symbol}, values_state::Vector{Float64}, ptr_time_state::Vector{Float64},
+                                 xnplus1::Vector{Int}, tnplus1::Float64, tr_nplus1::Transition, 
+                                 xn::Vector{Int}, p::Vector{Float64},
+                                 edge_candidates::Vector{EdgeABCEuclideanDistanceAutomaton}; verbose::Bool = false)
     # En fait d'apres observation de Cosmos, après qu'on ait lu la transition on devrait stop.
     detected_event::Bool = false
     turns = 0
@@ -302,7 +302,7 @@ function create_abc_euclidean_distance_automaton(m::ContinuousTimeModel, timelin
         @everywhere $(update_state!(:l1, :l2, 1))(S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}, ϵ::Float64) = 
         (S_values[$(to_idx(:d))] = sqrt(S_values[$(to_idx(:d))]);
          :l2)
-        
+
         @everywhere $(check_constraints(:l1, :l2, 2))(S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}, ϵ::Float64) = 
         (S_values[$(to_idx(:d))] > ϵ^2)
         @everywhere $(update_state!(:l1, :l2, 2))(S_time::Float64, S_values::Vector{Float64}, x::Vector{Int}, p::Vector{Float64}, ϵ::Float64) = 
