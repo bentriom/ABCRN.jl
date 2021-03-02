@@ -286,8 +286,10 @@ function generate_code_synchronized_simulation(model_name::Symbol, lha_name::Sym
         end
         
         function volatile_simulate(m::$(model_name), A::$(lha_name), p_sim::AbstractVector{Float64}, 
-                                   epsilon::Float64, verbose::Bool)
-            if $(Meta.quot(lha_name)) == :ABCEuclideanDistanceAutomaton A.ϵ = epsilon end
+                                   epsilon::Union{Nothing,Float64}, verbose::Bool)
+            if $(Meta.quot(lha_name)) == :ABCEuclideanDistanceAutomaton && epsilon != nothing
+                A.ϵ = epsilon 
+            end
             x0 = getfield(m, :x0)
             t0 = getfield(m, :t0)
             time_bound = getfield(m, :time_bound)
@@ -341,7 +343,7 @@ function generate_code_synchronized_simulation(model_name::Symbol, lha_name::Sym
                     if isabsorbing break end
                 end
             end
-            if isabsorbing && !isacceptedLHA
+            if (isabsorbing || tn > time_bound) && !isacceptedLHA
                 next_state!(A, ptr_loc_state, values_state, ptr_time_state, 
                             xn, time_bound, nothing, xn, p_sim, edge_candidates; verbose = verbose)
             end
@@ -362,7 +364,7 @@ in order to improve performance.
 It returns the last state of the simulation `S::StateLHA` not a trajectory `σ::SynchronizedTrajectory`.
 """
 function volatile_simulate(product::SynchronizedModel; 
-                           p::Union{Nothing,AbstractVector{Float64}} = nothing, epsilon::Float64 = 0.0, verbose::Bool = false)
+                           p::Union{Nothing,AbstractVector{Float64}} = nothing, epsilon::Union{Nothing,Float64} = nothing, verbose::Bool = false)
     m = product.m
     A = product.automaton
     p_sim = getfield(m, :p)

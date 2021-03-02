@@ -19,9 +19,11 @@ end
     map_var_automaton_idx::Dict{VariableAutomaton,Int} # nvar keys : str_var => idx in values
     flow::Dict{Location,Vector{Float64}} # output of length nvar
     map_edges::Dict{Location, Dict{Location,Vector{EdgeABCEuclideanDistanceAutomaton}}}
-    constants::Dict{Symbol,Float64}
+    constants::Dict
     map_var_model_idx::Dict{VariableModel,Int} # of dim d (of a model)
     ϵ::Float64
+    timeline::Vector{Float64}
+    observations::Vector{Float64}
 end
 
 # A push! method implementend by myself because of preallocation of edge_candidates
@@ -336,18 +338,20 @@ function create_abc_euclidean_distance_automaton(m::ContinuousTimeModel, timelin
     end
 
     ## Constants
-    constants = Dict{Symbol,Float64}(:nbr_obs => nbr_observations)
+    constants = Dict(:nbr_obs => nbr_observations, :species => sym_obs)
+    #=
     for i = 1:nbr_observations
         constants[Symbol("tml_$(convert(Float64, i))")] = timeline[i]
         constants[Symbol("y_$(convert(Float64, i))")] = observations[i]
     end
+    =#
 
     # Updating types and simulation methods
     @everywhere @eval $(MarkovProcesses.generate_code_synchronized_model_type_def(model_name, lha_name))
     @everywhere @eval $(MarkovProcesses.generate_code_synchronized_simulation(model_name, lha_name, edge_type, m.f!, m.isabsorbing))
 
     A = ABCEuclideanDistanceAutomaton(m.transitions, locations, Λ_F, locations_init, locations_final, 
-                                      map_var_automaton_idx, flow, map_edges, constants, m.map_var_idx, Inf)
+                                      map_var_automaton_idx, flow, map_edges, constants, m.map_var_idx, Inf, timeline, observations)
 
     return A
 end

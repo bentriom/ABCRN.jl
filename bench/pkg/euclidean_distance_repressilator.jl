@@ -8,6 +8,7 @@ import Distributions: Uniform
 
 load_automaton("euclidean_distance_automaton")
 load_automaton("euclidean_distance_automaton_2")
+load_automaton("abc_euclidean_distance_automaton")
 load_model("repressilator")
 tb = 210.0
 tml_obs = 0:10.0:210.0
@@ -35,6 +36,23 @@ b_sim_aut1 = @benchmark (σ = simulate($(sync1)))
 b_vol_sim_aut1 = @benchmark (σ = volatile_simulate($(sync1)))
 @btime (σ = volatile_simulate($(sync1)))
 @show minimum(b_vol_sim_aut1), mean(b_vol_sim_aut1), maximum(b_vol_sim_aut1)
+
+println("ABC reject automaton with 1 loc")
+aut1_abc = create_abc_euclidean_distance_automaton(repressilator, tml_obs, y_obs, :P1)
+aut1_abc.ϵ = Inf
+sync1_abc = repressilator * aut1_abc
+println("After creating sync model")
+@show aut1_abc.ϵ
+b_sim_aut1_abc = @benchmark (σ = simulate($(sync1_abc)))
+@btime (σ = simulate($(sync1_abc)))
+println("After bench simulate sync model")
+@show aut1_abc.ϵ
+@show minimum(b_sim_aut1_abc), mean(b_sim_aut1_abc), maximum(b_sim_aut1_abc)
+b_vol_sim_aut1_abc = @benchmark (σ = volatile_simulate($(sync1_abc)))
+@btime (σ = volatile_simulate($(sync1_abc)))
+println("After bench volatile_simulate sync model")
+@show aut1_abc.ϵ
+@show minimum(b_vol_sim_aut1_abc), mean(b_vol_sim_aut1_abc), maximum(b_vol_sim_aut1_abc)
 
 #=
 println("Memory test")
