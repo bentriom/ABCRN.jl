@@ -129,7 +129,7 @@ function _abc_smc(pm::ParametricModel, nbr_particles::Int, tolerance::Float64, a
         @info "Step $t"
         # Set new epsilon
         epsilon = _compute_epsilon(vec_dist, alpha, old_epsilon, last_epsilon)
-        @info "Current epsilon and total number of simulations" epsilon nbr_tot_sim
+        @info "Current epsilon" epsilon
         @debug "5 first dist values" sort(vec_dist)[1:5]
         @debug mean(vec_dist), maximum(vec_dist), median(vec_dist), std(vec_dist)
         
@@ -169,7 +169,7 @@ function _abc_smc(pm::ParametricModel, nbr_particles::Int, tolerance::Float64, a
             @info "End"
         end
         current_time = time()
-        @info "After this step, time spent and number of simulations" steptime=(current_time-begin_time_ite) step_nbr_sim
+        @info "After this step, time spent and number of simulations" steptime=(current_time-begin_time_ite) step_nbr_sim nbr_tot_sim
         mat_p_old = copy(mat_p)
         wl_old = copy(wl_current)
         fill!(l_nbr_sim, 0)
@@ -230,7 +230,7 @@ function _distributed_abc_smc(pm::ParametricModel, nbr_particles::Int, tolerance
         @info "Step $t"
         # Set new epsilon
         epsilon = _compute_epsilon(vec_dist, alpha, old_epsilon, last_epsilon)
-        @info "Current epsilon and total number of simulations" epsilon nbr_tot_sim
+        @info "Current epsilon" epsilon
         @debug "5 first dist values" sort(vec_dist)[1:5]
         @debug mean(vec_dist), maximum(vec_dist), median(vec_dist), std(vec_dist)
         
@@ -276,7 +276,7 @@ function _distributed_abc_smc(pm::ParametricModel, nbr_particles::Int, tolerance
             @info "End"
         end
         current_time = time()
-        @info "After this step, time spent and number of simulations" steptime=(current_time-begin_time_ite) step_nbr_sim
+        @info "After this step, time spent and number of simulations" steptime=(current_time-begin_time_ite) step_nbr_sim nbr_tot_sim
         mat_p_old = mat_p
         wl_old = wl_current
         vec_dist = convert(Array, d_vec_dist)
