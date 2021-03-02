@@ -44,7 +44,7 @@ get_idx(SIR, :I), get_idx(SIR2, :I), get_idx(ER, :P), get_idx(repressilator, :P1
 @eval new_isabsorbing_SIR(p::Vector{Float64}, x::Vector{Int}) = x[$(idx_I_SIR)] == 2
 @eval new_isabsorbing_SIR2(p::Vector{Float64}, x::Vector{Int}) = x[$(idx_I_SIR2)] == 3
 @eval new_isabsorbing_ER(p::Vector{Float64}, x::Vector{Int}) = x[$(idx_P_ER)] == 50
-@eval new_isabsorbing_repressilator(p::Vector{Float64}, x::Vector{Int}) = x[$(idx_P1_repressilator)] == 100
+@eval new_isabsorbing_repressilator(p, x) = x[$(idx_P1_repressilator)] == 100
 
 change_simulation_stop_criteria(SIR, :new_isabsorbing_SIR)
 change_simulation_stop_criteria(SIR2, :new_isabsorbing_SIR2)
