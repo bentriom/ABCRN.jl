@@ -22,7 +22,7 @@ function plot(σ::AbstractTrajectory, vars::VariableModel...; plot_transitions::
     end
     
     # Plots
-    p = plot(title = "Trajectory of $(Symbol(typeof(σ.m))) model", palette = :lightrainbow, legend = :outertopright, background_color_legend=:transparent, dpi = 480)
+    p = plot(title = "Trajectory of $(Symbol(typeof(σ.m)))", palette = :lightrainbow, legend = :outertopright, background_color_legend=:transparent, dpi = 480)
     for var in to_plot
         @assert var in get_obs_var(σ) "Variable $var is not observed." 
         plot!(p, times(σ), σ[var], 
@@ -106,7 +106,7 @@ function plot_periodic_trajectory(A::LHA, σ::SynchronizedTrajectory, sym_obs::S
             break
         end
     end
-    p = plot(title = "Oscillatory trajectory of $(Symbol(typeof(σ.m))) model", palette = :lightrainbow,
+    p = plot(title = "Oscillatory trajectory of $(Symbol(typeof(σ.m)))", palette = :lightrainbow,
              background_color_legend=:transparent, dpi = 480, legend = :outertopright) #legendfontsize, legend
     colors_loc = Dict(:l0 => :silver, :l0prime => :silver, :final => :black,
                       :low => :skyblue2, :mid => :orange, :high => :red)
@@ -118,8 +118,8 @@ function plot_periodic_trajectory(A::LHA, σ::SynchronizedTrajectory, sym_obs::S
                     markersize = 1.0, markershape = :cross, 
                     label = label_state, xlabel = "Time", ylabel = "Species $sym_obs")
     end
-    annot_n = [(times(σ)[idx_n[i]], σ[sym_obs][idx_n[i]] - 10, text("n = $(values_n[i])", annot_size, :top)) for i = eachindex(idx_n)]
-    annot_tp = [(times(σ)[idx_n[i]], σ[sym_obs][idx_n[i]] - 10, text("tp = $(round(values_tp[i], digits = 5))", annot_size, :bottom)) for i = eachindex(idx_n)]
+    annot_n = [(times(σ)[idx_n[i]], σ[sym_obs][idx_n[i]] - 20, text("n = $(values_n[i])", annot_size, :top)) for i = eachindex(idx_n)]
+    annot_tp = [(times(σ)[idx_n[i]], σ[sym_obs][idx_n[i]] - 20, text("tp = $(round(values_tp[i], digits = 5))", annot_size, :bottom)) for i = eachindex(idx_n)]
     annots = (show_tp) ? vcat(annot_n, annot_tp) : annot_n
     scatter!(p, times(σ)[idx_n], σ[sym_obs][idx_n], annotations = annots,
                              markershape = :utriangle, markersize = 3, label = "n")
