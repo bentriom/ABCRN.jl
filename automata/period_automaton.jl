@@ -11,6 +11,9 @@ abs(mean_tp - ref_mean_tp)
 @everywhere min_mean_var_relative_error(mean_tp::Float64, var_tp::Float64, ref_mean_tp::Float64, ref_var_tp::Float64) =
 min(abs((mean_tp - ref_mean_tp)/ref_mean_tp), sqrt(var_tp)/ref_mean_tp)
 
+@everywhere max_mean_var_relative_error(mean_tp::Float64, var_tp::Float64, ref_mean_tp::Float64, ref_var_tp::Float64) =
+max(abs((mean_tp - ref_mean_tp)/ref_mean_tp), sqrt(var_tp)/ref_mean_tp)
+
 # Creation of the automaton types
 #@everywhere @eval abstract type EdgePeriodAutomaton <: Edge end
 @everywhere struct EdgePeriodAutomaton <: Edge 
