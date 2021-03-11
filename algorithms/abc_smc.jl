@@ -12,8 +12,7 @@ using LinearAlgebra
 using DelimitedFiles
 using Logging
 
-main_pkg_path = get_module_path()
-include("$(main_pkg_path)/algorithms/_utils_abc.jl")
+include("_utils_abc.jl")
 
 struct ResultAbc
 	mat_p_end::Matrix{Float64}
