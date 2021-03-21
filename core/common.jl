@@ -147,12 +147,12 @@ function ParametricModel(am::Model, priors::Tuple{ParameterModel,UnivariateDistr
     _param_idx = zeros(Int, 0)
     for prior in priors
         check_vars = true
-        str_p = prior[1]
+        name_p = prior[1]
         distribution = prior[2]
-        @assert str_p in keys(m.map_param_idx)
-        push!(params, str_p)
+        @assert name_p in keys(m.map_param_idx) "Unknown model parameter in the definition of a ParametricModel"
+        push!(params, name_p)
         push!(distributions, distribution)
-        push!(_param_idx, m.map_param_idx[str_p])
+        push!(_param_idx, m.map_param_idx[name_p])
     end
     return ParametricModel(am, params, product_distribution(distributions), _param_idx)
 end
