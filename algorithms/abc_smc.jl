@@ -76,7 +76,7 @@ function abc_smc(pm::ParametricModel, l_obs::AbstractVector, func_dist::Function
     if dir_results != nothing
         dir_results = basename(dir_results) != "" ? dir_results * "/" : dir_results 
         if !isdir(dir_results) mkdir(dir_results) end
-        file_cfg = open(dir_results * "results_abc.out", "w")
+        file_cfg = open(dir_results * "config_abc.out", "w")
         write(file_cfg, "Configuration of ABC algorithm\n")
         write(file_cfg, "ParametricModel : $(pm) \n")
         write(file_cfg, "Number of particles : $(nbr_particles) \n")
