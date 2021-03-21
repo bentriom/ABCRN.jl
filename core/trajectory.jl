@@ -308,3 +308,23 @@ function +(σ1::AbstractTrajectory,σ2::AbstractTrajectory) end
 function -(σ1::AbstractTrajectory,σ2::AbstractTrajectory) end
 δ(σ::AbstractTrajectory,idx::Int) = times(σ)[i+1] - times(σ)[i]
 
+function trajectory_from_csv(csv_file, model::ContinuousTimeModel)
+    csv_mat_values, header = readdlm(csv_file, ',', header = true)
+    nbr_states = size(csv_mat_values, 1)
+    times = zeros(nbr_states)
+    values = Vector{Vector{Int}}(undef, length(model.g))
+    transitions = fill(nothing, nbr_states)
+    for i = eachindex(header)
+        model_var = header[i]
+        if model_var == "time"
+            times = csv_mat_values[:,i]
+        elseif model_var == "transitions"
+            transitions = csv_mat_values[:,i]
+        else
+            @assert Symbol(model_var) in model.g "Variable is not observed in the model"
+            values[model._map_obs_var_idx[Symbol(model_var)]] = csv_mat_values[:,i]
+        end
+    end
+    return Trajectory(model, values, times, transitions)
+end
+
