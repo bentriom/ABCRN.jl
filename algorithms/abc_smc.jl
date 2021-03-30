@@ -28,11 +28,17 @@ end
 function automaton_abc(pm::ParametricModel; 
                        nbr_particles::Int = 100, tolerance::Float64 = 0.0, alpha::Float64 = 0.75, kernel_type = "mvnormal", 
                        NT::Float64 = nbr_particles/2, duration_time::Float64 = Inf, dir_results::Union{Nothing,String} = nothing,
-                       bound_sim::Int = typemax(Int), sym_var_aut::VariableAutomaton = :d, save_iterations::Bool = false, verbose::Int = 0) 
+                       bound_sim::Int = typemax(Int), sym_var_aut::VariableAutomaton = :d, save_iterations::Bool = false, 
+                       init_mat_p::Union{Matrix{Float64},Nothing} = nothing, 
+                       init_weights::Union{Vector{Float64},Nothing} = nothing, init_vec_dist::Union{Vector{Float64},Nothing} = nothing,
+                       verbose::Int = 0) 
     @assert typeof(pm.m) <: SynchronizedModel "Automaton-ABC is defined for synchronized models only"
     @assert 0 < nbr_particles
     @assert 0.0 < alpha < 1.0
     @assert kernel_type in ["mvnormal", "knn_mvnormal"]
+    test_init = (init_mat_p == nothing && init_weights == nothing) || 
+                (size(init_mat_p, 2) == length(init_weights) == length(init_vec_dist))
+    @assert test_init "All initialisation data should be specified and have the correct dimension"
     if dir_results != nothing
         dir_results = basename(dir_results) != "" ? dir_results * "/" : dir_results 
         if !isdir(dir_results) mkdir(dir_results) end
@@ -45,9 +51,9 @@ function automaton_abc(pm::ParametricModel;
         close(file_cfg)
     end
     if nprocs() == 1
-        return _abc_smc(pm, nbr_particles, tolerance, alpha, kernel_type, NT, duration_time, bound_sim, dir_results, sym_var_aut, save_iterations)
+        return _abc_smc(pm, nbr_particles, tolerance, alpha, kernel_type, NT, duration_time, bound_sim, dir_results, sym_var_aut, save_iterations, init_mat_p, init_weights, init_vec_dist)
     end
-    return _distributed_abc_smc(pm, nbr_particles, tolerance, alpha, kernel_type, NT, duration_time, bound_sim, dir_results, sym_var_aut, save_iterations)
+    return _distributed_abc_smc(pm, nbr_particles, tolerance, alpha, kernel_type, NT, duration_time, bound_sim, dir_results, sym_var_aut, save_iterations, init_mat_p, init_weights, init_vec_dist)
 end
 
 """
@@ -70,10 +76,16 @@ If pm is defined on a ContinuousTimeModel, then `T1` should verify `T1 <: Trajec
 function abc_smc(pm::ParametricModel, l_obs::AbstractVector, func_dist::Function; 
                  nbr_particles::Int = 100, tolerance::Float64 = 0.0, alpha::Float64 = 0.75, kernel_type = "mvnormal", 
                  NT::Float64 = nbr_particles/2, duration_time::Float64 = Inf, dir_results::Union{Nothing,String} = nothing,
-                 bound_sim::Int = typemax(Int), sym_var_aut::VariableAutomaton = :d, save_iterations::Bool = false, verbose::Int = 0) 
+                 bound_sim::Int = typemax(Int), sym_var_aut::VariableAutomaton = :d, save_iterations::Bool = false, 
+                 init_mat_p::Union{Matrix{Float64},Nothing} = nothing, 
+                 init_weights::Union{Vector{Float64},Nothing} = nothing, init_vec_dist::Union{Vector{Float64},Nothing} = nothing,
+                 verbose::Int = 0) 
     @assert 0 < nbr_particles
     @assert 0.0 < alpha < 1.0
     @assert kernel_type in ["mvnormal", "knn_mvnormal"]
+    test_init = (init_mat_p == nothing && init_weights == nothing) || 
+                (size(init_mat_p, 2) == length(init_weights) == length(init_vec_dist))
+    @assert test_init "All initialisation data should be specified and have the correct dimension"
     if dir_results != nothing
         dir_results = basename(dir_results) != "" ? dir_results * "/" : dir_results 
         if !isdir(dir_results) mkdir(dir_results) end
@@ -87,9 +99,9 @@ function abc_smc(pm::ParametricModel, l_obs::AbstractVector, func_dist::Function
         close(file_cfg)
     end
     if nprocs() == 1
-        return _abc_smc(pm, nbr_particles, tolerance, alpha, kernel_type, NT, duration_time, bound_sim, dir_results, sym_var_aut, save_iterations; l_obs = l_obs, func_dist = func_dist)
+        return _abc_smc(pm, nbr_particles, tolerance, alpha, kernel_type, NT, duration_time, bound_sim, dir_results, sym_var_aut, save_iterations, init_mat_p, init_weights, init_vec_dist; l_obs = l_obs, func_dist = func_dist)
     end
-    return _distributed_abc_smc(pm, nbr_particles, tolerance, alpha, kernel_type, NT, duration_time, bound_sim, dir_results, sym_var_aut, save_iterations; l_obs = l_obs, func_dist = func_dist)
+    return _distributed_abc_smc(pm, nbr_particles, tolerance, alpha, kernel_type, NT, duration_time, bound_sim, dir_results, sym_var_aut, save_iterations, init_mat_p, init_weights, init_vec_dist; l_obs = l_obs, func_dist = func_dist)
 end
 
 
@@ -98,7 +110,9 @@ end
 
 function _abc_smc(pm::ParametricModel, nbr_particles::Int, tolerance::Float64, alpha::Float64, 
                   kernel_type::String, NT::Float64, duration_time::Float64, 
-                  bound_sim::Int, dir_results::Union{Nothing,String}, sym_var_aut::VariableAutomaton, save_iterations::Bool; 
+                  bound_sim::Int, dir_results::Union{Nothing,String}, sym_var_aut::VariableAutomaton, save_iterations::Bool,
+                  init_mat_p::Union{Matrix{Float64},Nothing}, 
+                  init_weights::Union{Vector{Float64},Nothing}, init_vec_dist::Union{Vector{Float64},Nothing}; 
                   l_obs::Union{Nothing,AbstractVector} = nothing, func_dist::Union{Nothing,Function} = nothing)
     @info "ABC PMC with $(nworkers()) processus and $(Threads.nthreads()) threads"
     begin_time = time()
@@ -111,9 +125,15 @@ function _abc_smc(pm::ParametricModel, nbr_particles::Int, tolerance::Float64, a
     vec_dist = zeros(nbr_particles)
     wl_old = zeros(nbr_particles)
     @info "Step 1 : Init"
-    _init_abc_automaton!(mat_p_old, vec_dist, pm, sym_var_aut; l_obs = l_obs, func_dist = func_dist)
-    prior_pdf!(wl_old, pm, mat_p_old)
-    normalize!(wl_old, 1)
+    if init_mat_p == nothing
+        _init_abc_automaton!(mat_p_old, vec_dist, pm, sym_var_aut; l_obs = l_obs, func_dist = func_dist)
+        prior_pdf!(wl_old, pm, mat_p_old)
+        normalize!(wl_old, 1)
+    else
+        mat_p_old = init_mat_p
+        wl_old = init_weights
+        vec_dist = init_vec_dist
+    end
     ess = effective_sample_size(wl_old)
     l_ess = zeros(0)
     l_ess = push!(l_ess, ess)
@@ -127,9 +147,9 @@ function _abc_smc(pm::ParametricModel, nbr_particles::Int, tolerance::Float64, a
     while (epsilon > last_epsilon) && (current_time - begin_time <= duration_time) && (nbr_tot_sim <= bound_sim)
         if dir_results != "" && save_iterations
             step_dir = dir_results * "/step_$t/"
-            mkdir(step_dir)
-            writedlm(step_dir * "weights_end.csv", wl_old, ',')
-            writedlm(step_dir * "mat_p_end.csv", mat_p_old, ',')
+            if !isdir(step_dir) mkdir(step_dir) end
+            writedlm(step_dir * "weights.csv", wl_old, ',')
+            writedlm(step_dir * "mat_p.csv", mat_p_old, ',')
             writedlm(step_dir * "vec_dist.csv", vec_dist, ',')
         end
         t += 1
@@ -189,6 +209,7 @@ function _abc_smc(pm::ParametricModel, nbr_particles::Int, tolerance::Float64, a
     if dir_results != nothing
         writedlm(dir_results * "weights_end.csv", wl_old, ',')
         writedlm(dir_results * "mat_p_end.csv", mat_p_old, ',')
+        writedlm(dir_results * "vec_dist_end.csv", vec_dist, ',')
         file_cfg = open(dir_results * "results_abc.out", "w")
         write(file_cfg, "\n")
         write(file_cfg, "About the results: \n")
@@ -205,7 +226,9 @@ end
 
 function _distributed_abc_smc(pm::ParametricModel, nbr_particles::Int, tolerance::Float64, alpha::Float64, 
                               kernel_type::String, NT::Float64, duration_time::Float64, bound_sim::Int, 
-                              dir_results::Union{Nothing,String}, sym_var_aut::VariableAutomaton, save_iterations::Bool;
+                              dir_results::Union{Nothing,String}, sym_var_aut::VariableAutomaton, save_iterations::Bool,
+                              init_mat_p::Union{Matrix{Float64},Nothing}, 
+                              init_weights::Union{Vector{Float64},Nothing}, init_vec_dist::Union{Vector{Float64},Nothing};
                               l_obs::Union{Nothing,AbstractVector} = nothing, func_dist::Union{Nothing,Function} = nothing)
     @info "Distributed ABC PMC with $(nworkers()) processus and $(Threads.nthreads()) threads"
     begin_time = time()
@@ -218,9 +241,15 @@ function _distributed_abc_smc(pm::ParametricModel, nbr_particles::Int, tolerance
     vec_dist = zeros(nbr_particles)
     wl_old = zeros(nbr_particles)
     @info "Step 1 : Init"
-    _init_abc_automaton!(mat_p_old, vec_dist, pm, sym_var_aut; l_obs = l_obs, func_dist = func_dist)
-    prior_pdf!(wl_old, pm, mat_p_old)
-    normalize!(wl_old, 1)
+    if init_mat_p == nothing
+        _init_abc_automaton!(mat_p_old, vec_dist, pm, sym_var_aut; l_obs = l_obs, func_dist = func_dist)
+        prior_pdf!(wl_old, pm, mat_p_old)
+        normalize!(wl_old, 1)
+    else
+        mat_p_old = init_mat_p
+        wl_old = init_weights
+        vec_dist = init_vec_dist
+    end
     ess = effective_sample_size(wl_old)
     l_ess = zeros(0)
     l_ess = push!(l_ess, ess)
@@ -236,9 +265,9 @@ function _distributed_abc_smc(pm::ParametricModel, nbr_particles::Int, tolerance
     while (epsilon > last_epsilon) && (current_time - begin_time <= duration_time) && (nbr_tot_sim <= bound_sim)
         if dir_results != "" && save_iterations
             step_dir = dir_results * "/step_$t/"
-            mkdir(step_dir)
-            writedlm(step_dir * "weights_end.csv", wl_old, ',')
-            writedlm(step_dir * "mat_p_end.csv", mat_p_old, ',')
+            if !isdir(step_dir) mkdir(step_dir) end
+            writedlm(step_dir * "weights.csv", wl_old, ',')
+            writedlm(step_dir * "mat_p.csv", mat_p_old, ',')
             writedlm(step_dir * "vec_dist.csv", vec_dist, ',')
         end
         t += 1
@@ -306,7 +335,7 @@ function _distributed_abc_smc(pm::ParametricModel, nbr_particles::Int, tolerance
     if dir_results != nothing
         writedlm(dir_results * "weights_end.csv", wl_old, ',')
         writedlm(dir_results * "mat_p_end.csv", mat_p_old, ',')
-        writedlm(dir_results * "vec_dist.csv", vec_dist, ',')
+        writedlm(dir_results * "vec_dist_end.csv", vec_dist, ',')
         file_cfg = open(dir_results * "results_abc.out", "w")
         write(file_cfg, "\n")
         write(file_cfg, "About the results: \n")
