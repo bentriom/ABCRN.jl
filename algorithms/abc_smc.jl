@@ -28,7 +28,7 @@ end
 function automaton_abc(pm::ParametricModel; 
                        nbr_particles::Int = 100, tolerance::Float64 = 0.0, alpha::Float64 = 0.75, kernel_type = "mvnormal", 
                        NT::Float64 = nbr_particles/2, duration_time::Float64 = Inf, dir_results::Union{Nothing,String} = nothing,
-                       bound_sim::Int = typemax(Int), sym_var_aut::VariableAutomaton = :d, verbose::Int = 0) 
+                       bound_sim::Int = typemax(Int), sym_var_aut::VariableAutomaton = :d, save_iterations::Bool = false, verbose::Int = 0) 
     @assert typeof(pm.m) <: SynchronizedModel "Automaton-ABC is defined for synchronized models only"
     @assert 0 < nbr_particles
     @assert 0.0 < alpha < 1.0
@@ -39,14 +39,15 @@ function automaton_abc(pm::ParametricModel;
         file_cfg = open(dir_results * "config_abc.out", "w")
         write(file_cfg, "ParametricModel : $(pm) \n")
         write(file_cfg, "Number of particles : $(nbr_particles) \n")
+        write(file_cfg, "Final tolerance : $(tolerance) \n")
         write(file_cfg, "alpha : $(alpha) \n")
         write(file_cfg, "kernel type : $(kernel_type) \n")
         close(file_cfg)
     end
     if nprocs() == 1
-        return _abc_smc(pm, nbr_particles, tolerance, alpha, kernel_type, NT, duration_time, bound_sim, dir_results, sym_var_aut)
+        return _abc_smc(pm, nbr_particles, tolerance, alpha, kernel_type, NT, duration_time, bound_sim, dir_results, sym_var_aut, save_iterations)
     end
-    return _distributed_abc_smc(pm, nbr_particles, tolerance, alpha, kernel_type, NT, duration_time, bound_sim, dir_results, sym_var_aut)
+    return _distributed_abc_smc(pm, nbr_particles, tolerance, alpha, kernel_type, NT, duration_time, bound_sim, dir_results, sym_var_aut, save_iterations)
 end
 
 """
@@ -69,7 +70,7 @@ If pm is defined on a ContinuousTimeModel, then `T1` should verify `T1 <: Trajec
 function abc_smc(pm::ParametricModel, l_obs::AbstractVector, func_dist::Function; 
                  nbr_particles::Int = 100, tolerance::Float64 = 0.0, alpha::Float64 = 0.75, kernel_type = "mvnormal", 
                  NT::Float64 = nbr_particles/2, duration_time::Float64 = Inf, dir_results::Union{Nothing,String} = nothing,
-                 bound_sim::Int = typemax(Int), sym_var_aut::VariableAutomaton = :d, verbose::Int = 0) 
+                 bound_sim::Int = typemax(Int), sym_var_aut::VariableAutomaton = :d, save_iterations::Bool = false, verbose::Int = 0) 
     @assert 0 < nbr_particles
     @assert 0.0 < alpha < 1.0
     @assert kernel_type in ["mvnormal", "knn_mvnormal"]
@@ -80,14 +81,15 @@ function abc_smc(pm::ParametricModel, l_obs::AbstractVector, func_dist::Function
         write(file_cfg, "Configuration of ABC algorithm\n")
         write(file_cfg, "ParametricModel : $(pm) \n")
         write(file_cfg, "Number of particles : $(nbr_particles) \n")
+        write(file_cfg, "Final tolerance : $(tolerance) \n")
         write(file_cfg, "alpha : $(alpha) \n")
         write(file_cfg, "kernel type : $(kernel_type) \n")
         close(file_cfg)
     end
     if nprocs() == 1
-        return _abc_smc(pm, nbr_particles, tolerance, alpha, kernel_type, NT, duration_time, bound_sim, dir_results, sym_var_aut; l_obs = l_obs, func_dist = func_dist)
+        return _abc_smc(pm, nbr_particles, tolerance, alpha, kernel_type, NT, duration_time, bound_sim, dir_results, sym_var_aut, save_iterations; l_obs = l_obs, func_dist = func_dist)
     end
-    return _distributed_abc_smc(pm, nbr_particles, tolerance, alpha, kernel_type, NT, duration_time, bound_sim, dir_results, sym_var_aut; l_obs = l_obs, func_dist = func_dist)
+    return _distributed_abc_smc(pm, nbr_particles, tolerance, alpha, kernel_type, NT, duration_time, bound_sim, dir_results, sym_var_aut, save_iterations; l_obs = l_obs, func_dist = func_dist)
 end
 
 
@@ -96,7 +98,7 @@ end
 
 function _abc_smc(pm::ParametricModel, nbr_particles::Int, tolerance::Float64, alpha::Float64, 
                   kernel_type::String, NT::Float64, duration_time::Float64, 
-                  bound_sim::Int, dir_results::Union{Nothing,String}, sym_var_aut::VariableAutomaton; 
+                  bound_sim::Int, dir_results::Union{Nothing,String}, sym_var_aut::VariableAutomaton, save_iterations::Bool; 
                   l_obs::Union{Nothing,AbstractVector} = nothing, func_dist::Union{Nothing,Function} = nothing)
     @info "ABC PMC with $(nworkers()) processus and $(Threads.nthreads()) threads"
     begin_time = time()
@@ -123,6 +125,13 @@ function _abc_smc(pm::ParametricModel, nbr_particles::Int, tolerance::Float64, a
     wl_current = zeros(nbr_particles)
     l_nbr_sim = zeros(Int, nbr_particles) 
     while (epsilon > last_epsilon) && (current_time - begin_time <= duration_time) && (nbr_tot_sim <= bound_sim)
+        if dir_results != "" && save_iterations
+            step_dir = dir_results * "/step_$t/"
+            mkdir(step_dir)
+            writedlm(step_dir * "weights_end.csv", wl_old, ',')
+            writedlm(step_dir * "mat_p_end.csv", mat_p_old, ',')
+            writedlm(step_dir * "vec_dist.csv", vec_dist, ',')
+        end
         t += 1
         begin_time_ite = time()
         @info "Step $t"
@@ -184,6 +193,7 @@ function _abc_smc(pm::ParametricModel, nbr_particles::Int, tolerance::Float64, a
         write(file_cfg, "\n")
         write(file_cfg, "About the results: \n")
         write(file_cfg, "Total number of simulations: $nbr_tot_sim\n")
+        write(file_cfg, "Final tolerance : $(old_epsilon) \n")
         write(file_cfg, "Execution time: $(time() - begin_time)\n")
         write(file_cfg, "Number of jobs: $(nprocs())\n")
         write(file_cfg, "Number of threads: $(Threads.nthreads())\n")
@@ -195,7 +205,7 @@ end
 
 function _distributed_abc_smc(pm::ParametricModel, nbr_particles::Int, tolerance::Float64, alpha::Float64, 
                               kernel_type::String, NT::Float64, duration_time::Float64, bound_sim::Int, 
-                              dir_results::Union{Nothing,String}, sym_var_aut::VariableAutomaton;
+                              dir_results::Union{Nothing,String}, sym_var_aut::VariableAutomaton, save_iterations::Bool;
                               l_obs::Union{Nothing,AbstractVector} = nothing, func_dist::Union{Nothing,Function} = nothing)
     @info "Distributed ABC PMC with $(nworkers()) processus and $(Threads.nthreads()) threads"
     begin_time = time()
@@ -224,6 +234,13 @@ function _distributed_abc_smc(pm::ParametricModel, nbr_particles::Int, tolerance
     mat_p = zeros(0,0)
     wl_current = zeros(0)
     while (epsilon > last_epsilon) && (current_time - begin_time <= duration_time) && (nbr_tot_sim <= bound_sim)
+        if dir_results != "" && save_iterations
+            step_dir = dir_results * "/step_$t/"
+            mkdir(step_dir)
+            writedlm(step_dir * "weights_end.csv", wl_old, ',')
+            writedlm(step_dir * "mat_p_end.csv", mat_p_old, ',')
+            writedlm(step_dir * "vec_dist.csv", vec_dist, ',')
+        end
         t += 1
         begin_time_ite = time()
         @info "Step $t"
@@ -289,10 +306,12 @@ function _distributed_abc_smc(pm::ParametricModel, nbr_particles::Int, tolerance
     if dir_results != nothing
         writedlm(dir_results * "weights_end.csv", wl_old, ',')
         writedlm(dir_results * "mat_p_end.csv", mat_p_old, ',')
+        writedlm(dir_results * "vec_dist.csv", vec_dist, ',')
         file_cfg = open(dir_results * "results_abc.out", "w")
         write(file_cfg, "\n")
         write(file_cfg, "About the results: \n")
         write(file_cfg, "Total number of simulations: $nbr_tot_sim\n")
+        write(file_cfg, "Final tolerance : $(old_epsilon) \n")
         write(file_cfg, "Execution time: $(time() - begin_time)\n")
         write(file_cfg, "Number of jobs: $(nprocs())\n")
         write(file_cfg, "Number of threads: $(Threads.nthreads())\n")
