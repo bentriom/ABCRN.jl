@@ -321,7 +321,7 @@ function trajectory_from_csv(csv_file, model::ContinuousTimeModel)
         elseif model_var == "transitions"
             transitions = csv_mat_values[:,i]
         else
-            @assert Symbol(model_var) in model.g "Variable is not observed in the model"
+            @assert Symbol(model_var) in model.g "Variable $(model_var) is not observed in the model"
             values[model._map_obs_var_idx[Symbol(model_var)]] = csv_mat_values[:,i]
         end
     end
