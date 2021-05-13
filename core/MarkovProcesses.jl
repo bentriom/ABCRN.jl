@@ -8,12 +8,25 @@ import Base: setindex!, setproperty!, fill!, copyto!
 import Dates
 import Distributed: @everywhere, @distributed
 import Distributions: Product, Uniform, Normal
-import Distributions: Distribution, Univariate, Continuous, UnivariateDistribution, 
+import Distributions: Distribution, Univariate, Continuous, 
+                      UnivariateDistribution, DiscreteUnivariateDistribution,
                       MultivariateDistribution, product_distribution
-import Distributions: insupport, isbounded, pdf
+import Distributions: insupport, isbounded, ncategories, pdf
 import FunctionWrappers: FunctionWrapper
 import Random: rand, rand!
+import ScikitLearn
+import ScikitLearn: fit!, predict, get_params
+import ScikitLearn.GridSearch: GridSearchCV
 import StaticArrays: SVector, @SVector
+# Python objects import
+import PyCall: PyNULL
+const RandomForestClassifier = PyNULL()
+const RandomForestRegressor = PyNULL()
+function __init__()
+    (ScikitLearn.Skcore).import_sklearn()
+    copy!(RandomForestClassifier, (ScikitLearn.Skcore.pyimport("sklearn.ensemble")).RandomForestClassifier)
+    copy!(RandomForestRegressor, (ScikitLearn.Skcore.pyimport("sklearn.ensemble")).RandomForestRegressor)
+end
 
 ## Exports
 export Distribution, Product, Uniform, Normal
@@ -52,6 +65,7 @@ export load_model, load_automaton, load_plots
 
 # Algorithms
 export automaton_abc, abc_smc
+export abc_model_choice_dataset, rf_abc_model_choice, posterior_proba_model
 
 # About biochemical networks
 export @network_model
@@ -63,6 +77,7 @@ include("model.jl")
 include("utils.jl")
 include("network_model.jl")
 include("../algorithms/abc_smc.jl")
+include("../algorithms/abc_model_choice.jl")
 
 end
 
