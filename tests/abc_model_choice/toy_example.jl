@@ -33,7 +33,7 @@ lh_m2(s) = exp(-s[2]^2/(2n*(n+1)) - (s[3]^2)/2 + (s[2]^2)/(2n) - s[2]) * (2pi)^(
 lh_m3(s) = exp(s[2])*gamma(2n+1)/gamma(2)^n * (1+s[1])^(-2n-1)
 
 ss_func(y) = [sum(y), sum(log.(y)), sum(log.(y).^2)]
-dist_l2(s_sim,s_obs) = sqrt(dot(s_sim,s_obs))
+dist_l2(s_sim,s_obs) = norm(s_sim-s_obs)
 
 observations = simulate(m3)
 ss_observations = ss_func(observations)
@@ -64,8 +64,8 @@ end
 savefig("set.svg")
 =#
 
-grid = Dict(:n_estimators => [500], :min_samples_leaf => [1], :min_samples_split => [2])
-res_rf_abc = rf_abc_model_choice(models, ss_observations, ss_func, 29000; hyperparameters_range = grid)
+grid = Dict(:n_estimators => [500], :min_samples_leaf => [1], :min_samples_split => [2], :n_jobs => [8])
+@timev res_rf_abc = rf_abc_model_choice(models, ss_observations, ss_func, 29000; hyperparameters_range = grid)
 @show posterior_proba_model(res_rf_abc) 
 println(classification_report(y_true = abc_testset.y, y_pred = predict(res_rf_abc.clf, abc_testset.X)))
 @show accuracy_score(abc_testset.y, predict(res_rf_abc.clf, abc_testset.X))

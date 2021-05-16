@@ -64,8 +64,8 @@ function rf_abc_model_choice(models::Vector{<:Union{Model,ParametricModel}},
                              summary_stats_observations,
                              summary_stats_func::Function, N_ref::Int;
                              k::Int = N_ref, distance_func::Function = (x,y) -> 1, 
-                             hyperparameters_range::Dict = Dict(:n_estimators => [200], :min_samples_leaf => [1, 2],
-                                                                :min_samples_split => [2,5]))
+                             hyperparameters_range::Dict = Dict(:n_estimators => [200], :min_samples_leaf => [1],
+                                                                :min_samples_split => [2]))
     @assert k <= N_ref
     trainset = abc_model_choice_dataset(models, summary_stats_observations, summary_stats_func, distance_func, k, N_ref)
     gridsearch = GridSearchCV(RandomForestClassifier(oob_score=true), hyperparameters_range)
@@ -80,7 +80,7 @@ function posterior_proba_model(rf_abc::RandomForestABC)
     y_pred_oob = argmax.([oob_votes[i,:] for i = 1:size(oob_votes)[1]])
     y_oob_regression = y_pred_oob .!= rf_abc.reference_table.y
     dict_params = Dict()
-    for param in ["n_estimators", "min_samples_leaf", "min_samples_split", "oob_score"]
+    for param in ["n_estimators", "min_samples_leaf", "min_samples_split", "oob_score", "n_jobs"]
         dict_params[Symbol(param)] = get_params(rf_abc.clf)[param]
     end
     rf_regressor = RandomForestRegressor(;dict_params...)
