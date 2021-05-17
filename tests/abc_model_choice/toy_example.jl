@@ -66,7 +66,8 @@ savefig("set.svg")
 
 grid = Dict(:n_estimators => [500], :min_samples_leaf => [1], :min_samples_split => [2], :n_jobs => [8])
 @timev res_rf_abc = rf_abc_model_choice(models, ss_observations, ss_func, 29000; hyperparameters_range = grid)
-@show posterior_proba_model(res_rf_abc) 
-println(classification_report(y_true = abc_testset.y, y_pred = predict(res_rf_abc.clf, abc_testset.X)))
-@show accuracy_score(abc_testset.y, predict(res_rf_abc.clf, abc_testset.X))
+@show posterior_proba_model(res_rf_abc)
+X_testset = transpose(abc_testset.X)
+println(classification_report(y_true = abc_testset.y, y_pred = predict(res_rf_abc.clf, X_testset)))
+@show accuracy_score(abc_testset.y, predict(res_rf_abc.clf, X_testset))
 

@@ -1,7 +1,7 @@
 
 struct AbcModelChoiceDataset
     models_indexes::Vector{Int}
-    summary_stats_vector::Vector
+    summary_stats_matrix::Matrix
     epsilon::Float64
 end
 
@@ -14,7 +14,7 @@ end
 
 function getproperty(dataset::AbcModelChoiceDataset, sym::Symbol)
     if sym == :X
-        return dataset.summary_stats_vector
+        return dataset.summary_stats_matrix
     elseif sym == :y
         return dataset.models_indexes
     else
@@ -25,21 +25,21 @@ end
 function abc_model_choice_dataset(models::Vector{<:Union{Model,ParametricModel}},
                                   summary_stats_observations,
                                   summary_stats_func::Function, distance_func::Function,
-                                  k::Int, N::Int)
+                                  k::Int, N::Int; dir_results::Union{Nothing,String} = nothing)
     nbr_models = length(models)
     models_prior = Categorical([1/nbr_models for i = 1:nbr_models])
-    return abc_model_choice_dataset(models, models_prior, summary_stats_observations, summary_stats_func, distance_func, k, N)
+    return abc_model_choice_dataset(models, models_prior, summary_stats_observations, summary_stats_func, distance_func, k, N; dir_results = dir_results)
 end
 
 function abc_model_choice_dataset(models::Vector{<:Union{Model,ParametricModel}}, models_prior::DiscreteUnivariateDistribution,
                                   summary_stats_observations,
                                   summary_stats_func::Function, distance_func::Function,
-                                  k::Int, N::Int)
+                                  k::Int, N::Int; dir_results::Union{Nothing,String} = nothing)
     @assert length(models) >= 2 "Should contain at least 2 models"
     @assert ncategories(models_prior) == length(models) "Number of categories of models' prior and number of models do not equal"
 
     models_indexes = zeros(Int, N)
-    summary_stats_vector = Vector{typeof(summary_stats_observations)}(undef, N)
+    summary_stats_matrix = zeros(eltype(summary_stats_observations), length(summary_stats_observations), N)
     distances = zeros(N)
     bool_parametric = typeof(models) <: Vector{ParametricModel} 
     for i = 1:N
@@ -52,12 +52,16 @@ function abc_model_choice_dataset(models::Vector{<:Union{Model,ParametricModel}}
         else
             sim = simulate(models[current_idx_model])
         end
-        summary_stats_vector[i] = summary_stats_func(sim)
-        distances[i] = distance_func(summary_stats_vector[i], summary_stats_observations)
+        ss_i = summary_stats_func(sim)
+        summary_stats_matrix[:,i] = ss_i 
+        distances[i] = distance_func(ss_i, summary_stats_observations)
     end
     k_nn = sortperm(distances, alg = QuickSort)[1:k]
 
-    return AbcModelChoiceDataset(models_indexes[k_nn], summary_stats_vector[k_nn], distances[k_nn[end]])
+    if dir_results != nothing
+        dir_results = basename(dir_results) != "" ? dir_results * "/" : dir_results
+    end
+    return AbcModelChoiceDataset(models_indexes[k_nn], summary_stats_matrix[:,k_nn], distances[k_nn[end]])
 end
 
 function rf_abc_model_choice(models::Vector{<:Union{Model,ParametricModel}},
@@ -69,7 +73,7 @@ function rf_abc_model_choice(models::Vector{<:Union{Model,ParametricModel}},
     @assert k <= N_ref
     trainset = abc_model_choice_dataset(models, summary_stats_observations, summary_stats_func, distance_func, k, N_ref)
     gridsearch = GridSearchCV(RandomForestClassifier(oob_score=true), hyperparameters_range)
-    fit!(gridsearch, trainset.X, trainset.y)
+    fit!(gridsearch, transpose(trainset.X), trainset.y)
     best_rf = gridsearch.best_estimator_
     return RandomForestABC(trainset, best_rf, summary_stats_observations, predict(best_rf, [summary_stats_observations]))
 end
@@ -84,7 +88,7 @@ function posterior_proba_model(rf_abc::RandomForestABC)
         dict_params[Symbol(param)] = get_params(rf_abc.clf)[param]
     end
     rf_regressor = RandomForestRegressor(;dict_params...)
-    fit!(rf_regressor, rf_abc.reference_table.X, y_oob_regression)
+    fit!(rf_regressor, transpose(rf_abc.reference_table.X), y_oob_regression)
     return 1 - predict(rf_regressor, [rf_abc.summary_stats_observations])[1]
 end
 
