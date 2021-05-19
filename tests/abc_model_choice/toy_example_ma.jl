@@ -80,3 +80,5 @@ X_testset = transpose(abc_testset.X)
 println(classification_report(y_true = abc_testset.y, y_pred = predict(res_rf_abc.clf, X_testset)))
 @show accuracy_score(abc_testset.y, predict(res_rf_abc.clf, X_testset))
 
+return true
+

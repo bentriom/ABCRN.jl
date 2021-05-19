@@ -17,6 +17,7 @@ import Random: rand, rand!
 import ScikitLearn
 import ScikitLearn: fit!, predict, get_params
 import ScikitLearn.GridSearch: GridSearchCV
+import SharedArrays: SharedVector, SharedMatrix, sdata
 import StaticArrays: SVector, @SVector
 # Python objects import
 import PyCall: PyNULL
