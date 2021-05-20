@@ -23,10 +23,10 @@ function getproperty(dataset::AbcModelChoiceDataset, sym::Symbol)
 end
 
 """
-    `abc_model_choice_dataset(models, models_prior,
-                              summary_stats_observations,
-                              summary_stats_func::Function, distance_func::Function,
-                              k::Int, N_ref::Int; dir_results::Union{Nothing,String} = nothing)`
+    abc_model_choice_dataset(models, models_prior,
+                             summary_stats_observations,
+                             summary_stats_func::Function, distance_func::Function,
+                             k::Int, N_ref::Int; dir_results::Union{Nothing,String} = nothing)
 
 Creates a reference table for ABC model choice.
 
@@ -56,10 +56,10 @@ function abc_model_choice_dataset(models::Vector{<:Union{Model,ParametricModel}}
 end
 
 """
-    `abc_model_choice_dataset(models, models_prior,
-                              summary_stats_observations,
-                              summary_stats_func::Function, distance_func::Function,
-                              k::Int, N_ref::Int; dir_results::Union{Nothing,String} = nothing)`
+    abc_model_choice_dataset(models,
+                             summary_stats_observations,
+                             summary_stats_func::Function, distance_func::Function,
+                             k::Int, N_ref::Int; dir_results::Union{Nothing,String} = nothing)
 
 Creates a reference table for ABC model choice with discrete uniform prior distribution over the models.
 """
@@ -161,10 +161,10 @@ function _distributed_abc_model_choice_dataset(models::Vector{<:Union{Model,Para
 end
 
 """
-    `rf_abc_model_choice(models, summary_stats_observations,
-                         summary_stats_func::Function, N_ref::Int;
-                         k::Int = N_ref, distance_func::Function = (x,y) -> 1, 
-                         hyperparameters_range::Dict)`
+    rf_abc_model_choice(models, summary_stats_observations,
+                        summary_stats_func::Function, N_ref::Int;
+                        k::Int = N_ref, distance_func::Function = (x,y) -> 1, 
+                        hyperparameters_range::Dict)
 
 Run the Random Forest Approximate Bayesian Computation model choice method.
 
@@ -179,8 +179,8 @@ The optional arguments are:
 * `k`: the k nearest samples from the observations to keep in the reference table (by default: k = N_ref)
 * `distance_func`: the distance function, has to be defined if k < N_ref
 * `hyperparameters_range`: a dict with the hyperparameters range values for the cross validation
-fit of the Random Forest (by default: `Dict(:n_estimators => [200], :min_samples_leaf => [1], :min_samples_split => [2])`).
-See scikit-learn documentation of RandomForestClassifier for the hyperparameters name.
+    fit of the Random Forest (by default: `Dict(:n_estimators => [200], :min_samples_leaf => [1], :min_samples_split => [2])`).
+    See scikit-learn documentation of RandomForestClassifier for the hyperparameters name.
 
 The result is a `RandomForestABC` object with fields:
 * `reference_table` an AbcModelChoiceDataset that corresponds to the reference table of the algorithm, 
@@ -205,11 +205,10 @@ function rf_abc_model_choice(models::Vector{<:Union{Model,ParametricModel}},
 end
 
 """
-    `posterior_proba_model(rf_abc::RandomForestABC)`
+    posterior_proba_model(rf_abc::RandomForestABC)
 
-Estimates the posterior probability of the model with the Random Forest ABC method.
+Estimates the posterior probability of the model ``P(M = \\widehat{M}(s_{obs}) | s_{obs})`` with the Random Forest ABC method.
 """
-# P(m = m^(ss_obs) | ss_obs) estimate
 function posterior_proba_model(rf_abc::RandomForestABC)
     oob_votes = rf_abc.clf.oob_decision_function_
     y_pred_oob = argmax.([oob_votes[i,:] for i = 1:size(oob_votes)[1]])
