@@ -1,5 +1,5 @@
 build-doc:
-    image: julia
+    image: 2017bentrioum/markovprocesses.jl/julia
     stage: build
     script:
         - "julia --project=docs/ -e 'using Pkg; Pkg.develop(PackageSpec(path=pwd())); Pkg.instantiate()'"
