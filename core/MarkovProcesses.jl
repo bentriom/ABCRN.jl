@@ -6,19 +6,27 @@ import Base: copy, getfield, getindex, getproperty, lastindex
 import Base: setindex!, setproperty!, fill!, copyto!
 
 import Dates
-import Distributed: @everywhere, @distributed
-import Distributions: Product, Uniform, Normal
+import DelimitedFiles: readdlm, writedlm
+import Distributed: @everywhere, @distributed, @sync, @async, nworkers, nprocs, workers
+import Distributed: nworkers, nprocs, workers, remotecall_fetch
+import DistributedArrays: DArray, dzeros, convert, localpart
+import Distributions: Product, Uniform, Normal, MvNormal, Categorical
 import Distributions: Distribution, Univariate, Continuous, 
                       UnivariateDistribution, DiscreteUnivariateDistribution,
                       MultivariateDistribution, product_distribution
 import Distributions: insupport, isbounded, ncategories, pdf
 import FunctionWrappers: FunctionWrapper
+import Logging: @info
+using LinearAlgebra
+import NearestNeighbors: KDTree, knn 
 import Random: rand, rand!
 import ScikitLearn
 import ScikitLearn: fit!, predict, get_params
 import ScikitLearn.GridSearch: GridSearchCV
 import SharedArrays: SharedVector, SharedMatrix, sdata
 import StaticArrays: SVector, @SVector
+import Statistics: quantile
+import StatsBase: mean, median, std, cov, ProbabilityWeights
 # Python objects import
 import PyCall: PyNULL
 const RandomForestClassifier = PyNULL()

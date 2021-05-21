@@ -1,17 +1,4 @@
 
-import StatsBase: mean, median, std, cov, ProbabilityWeights
-import Statistics: quantile
-import NearestNeighbors: KDTree, knn 
-import Distributions: MvNormal, Categorical
-import Random: rand!
-
-import Distributed: @sync, @async, nworkers, nprocs, workers
-import DistributedArrays: DArray, dzeros, convert, localpart
-using Distributed
-using LinearAlgebra
-using DelimitedFiles
-using Logging
-
 include("_utils_abc.jl")
 
 struct ResultAbc
