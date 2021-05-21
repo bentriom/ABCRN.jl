@@ -2,5 +2,5 @@ build-doc:
     image: gitlab-research.centralesupelec.fr:4567/2017bentrioum/markovprocesses.jl/julia
     stage: build
     script:
-        - "julia --project=docs/ -e 'using Pkg; Pkg.develop(PackageSpec(path=pwd(), subdir=\"core/MarkovProcesses.jl\")); Pkg.instantiate()'"
+        - "julia --project=docs/ -e 'using Pkg; Pkg.develop(PackageSpec(path=pwd(), subdir=\"core/\")); Pkg.instantiate()'"
         - "julia --project=docs/ docs/make.jl"
