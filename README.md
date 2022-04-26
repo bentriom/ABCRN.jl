@@ -21,9 +21,10 @@ This package is not yet accessible via the Julia package manager. For the instal
     * Add the Julia line code 
     ```julia
     import Distributed: @everywhere
-    @everywhere push!(LOAD_PATH, /path/to/markovprocesses.jl/core")
+    @everywhere push!(LOAD_PATH, "/path/to/markovprocesses.jl/core")
     ```
-    on your Julia startup file which is often located in `~/.julia/config/startup.jl` in Unix systems.
+    on your Julia startup file which is often located in `~/.julia/config/startup.jl` in Unix systems. 
+    "/path/to/markovprocesses.jl/core" is the path to the core directory of this git repository.
     
     * If you don't want to add this in your startup file, you can add these lines in your Julia script before `using MarkovProcesses`.
 
