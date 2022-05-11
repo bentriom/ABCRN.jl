@@ -18,6 +18,7 @@ import Distributions: insupport, isbounded, ncategories, pdf
 import FunctionWrappers: FunctionWrapper
 import Logging: @info
 using LinearAlgebra
+using MacroTools
 import NearestNeighbors: KDTree, knn 
 import Random: rand, rand!
 import ScikitLearn
