@@ -1,20 +1,8 @@
 
-using MarkovProcesses
 using Distributed
 addprocs(2)
-module_path = get_module_path()
-@everywhere module_path = $module_path
-@everywhere push!(LOAD_PATH, "$(module_path)/src")
 @everywhere using MarkovProcesses
-#=
-@everywhere begin
-    path_module = $(path_module)
-    push!(LOAD_PATH, path_module)
-    using MarkovProcesses
-    load_model("ER")
-    load_automaton("automaton_F")
-end
-=#
+
 load_model("ER")
 load_automaton("automaton_F")
 A_F_R1 = create_automaton_F(ER, 50.0, 75.0, 0.025, 0.05, :P)

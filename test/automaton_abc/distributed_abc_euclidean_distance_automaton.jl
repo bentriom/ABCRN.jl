@@ -1,10 +1,6 @@
 
-using MarkovProcesses
 using Distributed
 addprocs(2)
-module_path = get_module_path()
-@everywhere module_path = $module_path
-@everywhere push!(LOAD_PATH, "$(module_path)/src")
 @everywhere using MarkovProcesses
 import LinearAlgebra: dot
 

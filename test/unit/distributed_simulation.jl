@@ -1,12 +1,7 @@
 
 using Distributed
 using MarkovProcesses
-# A bunch of code to define the package on the workers
-# because they are created after the execution of Julia
 addprocs(2)
-module_path = get_module_path()
-@everywhere module_path = $module_path
-@everywhere push!(LOAD_PATH, "$(module_path)/src")
 @everywhere using MarkovProcesses
 
 test_all = true
