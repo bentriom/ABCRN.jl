@@ -2,7 +2,7 @@
 using BenchmarkTools
 import BenchmarkTools: mean
 using MarkovProcesses
-include(get_module_path() * "/core/_tests_simulate.jl")
+include(get_module_path() * "/src/_tests_simulate.jl")
 
 BenchmarkTools.DEFAULT_PARAMETERS.samples = 20000
 if ARGS[1] == "SIR"

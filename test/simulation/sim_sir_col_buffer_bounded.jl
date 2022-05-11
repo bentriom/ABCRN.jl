@@ -1,6 +1,6 @@
 
 using MarkovProcesses 
-include(get_module_path() * "/core/_tests_simulate.jl")
+include(get_module_path() * "/src/_tests_simulate.jl")
 using PyPlot
 
 load_model("_bench_perf_test/SIR_col_buffer")

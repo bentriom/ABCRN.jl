@@ -1,0 +1,4 @@
+name = "MarkovProcesses"
+uuid = "c0b3d30c-0dcf-40cf-8981-542ba9d93cb6"
+authors = ["Mahmoud Bentriou <mahmoud.bentriou@centralesupelec.fr>"]
+version = "0.1.0"
