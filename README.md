@@ -18,15 +18,12 @@ This package is not yet accessible via the Julia package manager. For the instal
 
 1. Clone this git repository on your computer.
 2. Add the "src" directory of this repository to your `LOAD_PATH`. This can be done by two different ways:
-    * Add the Julia line code 
+    * Launch Julia's REPL (for example by entering `julia` in your terminal)
+    * Enter Pkg's REPL by typing `]`
+    * Type
     ```julia
-    import Distributed: @everywhere
-    @everywhere push!(LOAD_PATH, /path/to/markovprocesses.jl/src")
+    add https://gitlab-research.centralesupelec.fr/2017bentrioum/markovprocesses.jl/
     ```
-    on your Julia startup file which is often located in `~/.julia/config/startup.jl` in Unix systems. 
-    "/path/to/markovprocesses.jl/core" is the path to the core directory of this git repository.
-    
-    * If you don't want to add this in your startup file, you can add these lines in your Julia script before `using MarkovProcesses`.
 
 ## Getting started 
 
