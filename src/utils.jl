@@ -25,7 +25,7 @@ end
 
 load_model(name_model::String) = Base.MainInclude.include("$(get_module_path())/models/$(name_model).jl")
 load_automaton(automaton::String) = Base.MainInclude.include("$(get_module_path())/automata/$(automaton).jl")
-load_plots() = Base.MainInclude.include(get_module_path() * "/core/plots.jl")
+load_plots() = Base.MainInclude.include(get_module_path() * "/src/plots.jl")
 
 newid() = Dates.format(Dates.now(), "YmHMs")
 

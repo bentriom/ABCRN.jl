@@ -2,7 +2,7 @@
 using Test
 import MarkovProcesses: get_module_path
 
-str_dir_pics = get_module_path() * "/tests/simulation/res_pics"
+str_dir_pics = get_module_path() * "/test/simulation/res_pics"
 if !isdir(str_dir_pics) mkdir(str_dir_pics) end
 
 @testset "Simulation tests" begin

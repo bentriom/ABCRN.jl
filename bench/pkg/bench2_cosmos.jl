@@ -4,7 +4,7 @@ using Statistics
 using DelimitedFiles
 import Distributed: nworkers
 
-absolute_path = get_module_path() * "/tests/cosmos/"
+absolute_path = get_module_path() * "/test/cosmos/"
 path_latex = haskey(ENV, "BENTRIOU_THESIS") ? ENV["BENTRIOU_THESIS"] * "/appendices/bench_cosmos/" : "./"
 
 dict_automata_lha = Dict("A_G" => (absolute_path * "distance_G/dist_G_ER.lha"))

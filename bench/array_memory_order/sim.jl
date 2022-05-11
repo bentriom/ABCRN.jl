@@ -3,7 +3,7 @@ using BenchmarkTools
 import BenchmarkTools: mean
 BenchmarkTools.DEFAULT_PARAMETERS.samples = 20000
 using MarkovProcesses
-include(get_module_path() * "/core/_tests_simulate.jl")
+include(get_module_path() * "/src/_tests_simulate.jl")
 
 if ARGS[1] == "SIR"
     l_var = [:S, :I, :R]

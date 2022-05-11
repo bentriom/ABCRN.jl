@@ -1,7 +1,7 @@
 
 using MarkovProcesses
 load_plots()
-path_pics = get_module_path() * "/tests/simulation/res_pics/"
+path_pics = get_module_path() * "/test/simulation/res_pics/"
 
 load_model("repressilator")
 observe_all!(repressilator)
