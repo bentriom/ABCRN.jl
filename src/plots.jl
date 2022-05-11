@@ -1,4 +1,7 @@
 
+import Plots: plot, plot!, scatter!, hline!, Shape, text
+import Plots: current, palette, display, png, close, savefig
+
 """
     `plot(σ, var...; plot_transitions=false)`
 

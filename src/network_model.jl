@@ -1,4 +1,6 @@
 
+using MacroTools
+
 function get_multiplicand_and_species(expr::Expr)
     @assert expr.args[1] == :*
     multiplicand = reduce(*, expr.args[2:(end-1)])
