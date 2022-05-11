@@ -2,7 +2,7 @@
 @everywhere begin 
     using MarkovProcesses
     import Distributed: nworkers
-    absolute_path = get_module_path() * "/tests/cosmos/"
+    absolute_path = get_module_path() * "/test/cosmos/"
     # Values x1, x2  t1, t2
     str_model = "ER"
     load_model(str_model)

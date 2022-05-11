@@ -17,11 +17,11 @@ It implements:
 This package is not yet accessible via the Julia package manager. For the install of the package:
 
 1. Clone this git repository on your computer.
-2. Add the "core" directory of this repository to your `LOAD_PATH`. This can be done by two different ways:
+2. Add the "src" directory of this repository to your `LOAD_PATH`. This can be done by two different ways:
     * Add the Julia line code 
     ```julia
     import Distributed: @everywhere
-    @everywhere push!(LOAD_PATH, /path/to/markovprocesses.jl/core")
+    @everywhere push!(LOAD_PATH, /path/to/markovprocesses.jl/src")
     ```
     on your Julia startup file which is often located in `~/.julia/config/startup.jl` in Unix systems.
     
@@ -35,9 +35,9 @@ A few notebooks are available in examples/notebooks for a quick presentation of 
 
 Execution tests and statistical tests are available. It can be run by:
 
-`julia tests/run_all.jl`
+`julia test/run_all.jl`
 
-> :warning: The statistical tests run by `tests/run_cosmos.jl` needs [Cosmos](http://cosmos.lacl.fr/) in your PATH environment variable.
+> :warning: The statistical tests run by `test/run_cosmos.jl` needs [Cosmos](http://cosmos.lacl.fr/) in your PATH environment variable.
 
 ## Benchmarks
 

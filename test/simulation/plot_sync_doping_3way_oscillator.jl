@@ -1,7 +1,7 @@
 
 using MarkovProcesses
 load_plots()
-path_pics = get_module_path() * "/tests/simulation/res_pics/"
+path_pics = get_module_path() * "/test/simulation/res_pics/"
 
 load_model("doping_3way_oscillator")
 observe_all!(doping_3way_oscillator)
