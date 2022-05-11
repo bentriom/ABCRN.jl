@@ -14,16 +14,14 @@ It implements:
 
 ## Install
 
-This package is not yet accessible via the Julia package manager. For the install of the package:
+This package is not yet registered in the Julia's packages. For the install of the package:
 
-1. Clone this git repository on your computer.
-2. Add the "src" directory of this repository to your `LOAD_PATH`. This can be done by two different ways:
-    * Launch Julia's REPL (for example by entering `julia` in your terminal)
-    * Enter Pkg's REPL by typing `]`
-    * Type
-    ```julia
-    add https://gitlab-research.centralesupelec.fr/2017bentrioum/markovprocesses.jl/
-    ```
+1. Launch Julia's REPL (for example by entering `julia` in your terminal)
+2. Enter Pkg's REPL by typing `]`
+3. Enter
+   ```julia
+   add https://gitlab-research.centralesupelec.fr/2017bentrioum/markovprocesses.jl/
+   ```
 
 ## Getting started 
 
