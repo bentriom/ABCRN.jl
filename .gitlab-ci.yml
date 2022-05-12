@@ -1,7 +1,8 @@
 build-doc:
-  image: julia:latest
+  image: 2017bentrioum/markovprocesses.jl/julia:latest
   stage: build
   script:
+    - "docker image ls" 
     - "julia --project=docs/ -e 'using Pkg; Pkg.develop(PackageSpec(path=pwd(), subdir=\"core/\")); Pkg.instantiate()'"
     - "julia --project=docs/ docs/make.jl"
 
