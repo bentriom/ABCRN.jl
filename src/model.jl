@@ -359,7 +359,7 @@ end
 """
 `volatile_simulate(sm::SynchronizedModel; p, verbose)`
 
-Simulates a model synchronized with an automaton but does not store the values of the simulation
+Simulates a model synchronized with an automaton but does not store the values of the simulation 
 in order to improve performance.
 It returns the last state of the simulation `S::StateLHA` not a trajectory `σ::SynchronizedTrajectory`.
 """
@@ -388,11 +388,11 @@ function simulate(product::SynchronizedModel;
 end
 
 """
-    `simulate(pm::ParametricModel, p_prior::AbstractVector{Float64})
+`simulate(pm::ParametricModel, p_prior::AbstractVector{Float64})`
 
-Simulates the model contained in pm with p_prior values.
-It simulates the model by taking the parameters contained in get_proba_model(pm).p and
-replace the 1D parameters pm.params with p_prior.
+Simulates the model contained in the parametric model `pm` with the `p_prior` parameters.
+It simulates the model by taking the parameters contained in `get_proba_model(pm).p` and
+replace the 1D parameters pm.params with `p_prior`.
 """
 function simulate(pm::ParametricModel, p_prior::AbstractVector{Float64})
     full_p = copy(get_proba_model(pm).p)
@@ -402,10 +402,10 @@ function simulate(pm::ParametricModel, p_prior::AbstractVector{Float64})
 end
 
 """
-    `volatile_simulate(pm::ParametricModel, p_prior::AbstractVector{Float64})
+`volatile_simulate(pm::ParametricModel, p_prior::AbstractVector{Float64})`
 
 A volatile version of `simulate(pm::ParametricModel, p_prior::AbstractVector{Float64})`.
-The model in pm should be of type SynchronizedModel (`typeof(pm.m) <: SynchronizedModel`).
+The model in `pm` should be of type SynchronizedModel (`typeof(pm.m) <: SynchronizedModel`).
 It returns `S::StateLHA`, not a trajectory.
 """
 function volatile_simulate(pm::ParametricModel, p_prior::AbstractVector{Float64};
@@ -418,10 +418,10 @@ function volatile_simulate(pm::ParametricModel, p_prior::AbstractVector{Float64}
 end
 
 """
-    `change_simulation_stop_criteria(m::ContinuousTimeModel, isabsorbing_func::Symbol)`
+`change_simulation_stop_criteria(m::ContinuousTimeModel, isabsorbing_func::Symbol)`
 
-    Change the simulation of the model `m` by adding a stop criteria based on the function named `isabsorbing_func::Symbol`.
-    isabsorbing_func must have the type signature `isabsorbing_func(p::Vector{Float64}, x::Vector{Int})` where `p` is the parameter vector of the model and `x` a state (not an observed state) of the model.
+Change the simulation of the model `m` by adding a stop criteria based on the function named `isabsorbing_func::Symbol`.
+`isabsorbing_func` must have the type signature `isabsorbing_func(p::Vector{Float64}, x::Vector{Int})` where `p` is the parameter vector of the model and `x` a state (not an observed state) of the model.
 """
 function change_simulation_stop_criteria(m::ContinuousTimeModel, isabsorbing_func::Symbol)
     model_name = Symbol(typeof(m))
@@ -434,12 +434,11 @@ function change_simulation_stop_criteria(m::ContinuousTimeModel, isabsorbing_fun
     @everywhere @eval $(generate_code_simulation(model_name, m.f!, isabsorbing_func; run_isabsorbing = true))
 end
 
-
 """
-    `distribute_mean_value_lha(sm::SynchronizedModel, sym_var::Symbol, nbr_stim::Int)`
+`distribute_mean_value_lha(sm::SynchronizedModel, sym_var::Symbol, nbr_stim::Int)`
 
 Distribute over workers the computation of the mean value 
-of a LHA over `nbr_sim` simulations of the model.
+of an LHA over `nbr_sim` simulations of the model.
 """
 function distribute_mean_value_lha(sm::SynchronizedModel, sym_var::VariableAutomaton, nbr_sim::Int; with_accepts::Bool = false)
     sum_val = @distributed (+) for i = 1:nbr_sim
@@ -473,10 +472,10 @@ function mean_value_lha(sm::SynchronizedModel, sym_var::VariableAutomaton, nbr_s
     return sum_val / nbr_sim
 end
 """
-    `distribute_var_value_lha(sm::SynchronizedModel, nbr_sim::Int, value = 0, sym_var = :d)
+`distribute_var_value_lha(sm::SynchronizedModel, nbr_sim::Int, value = 0, sym_var = :d)`
 
-Compute the probability that the variable `sym_var` is equal to  `value`
-of a LHA over `nbr_sim` simulations of the model.
+Compute the probability that the variable `sym_var` is equal to `value`
+of an LHA over `nbr_sim` simulations of the model.
 """
 function probability_var_value_lha(sm::SynchronizedModel, nbr_sim::Int; 
                                    value::Float64 = 0.0, sym_var::VariableAutomaton = :d)
@@ -624,40 +623,44 @@ get_observed_var(m::Model) = get_proba_model(am).g
 
 # Prior methods
 """
-    `draw_model!(pm::ParametricModel)`
+`draw_model!(pm::ParametricModel)`
 
 Draw a parameter from the prior disitribution defined in `pm::ParametricModel`
 and save it in the model contained in `pm`.
 """
 draw_model!(pm::ParametricModel) = set_param!(get_proba_model(pm), pm.params, rand(pm.distribution))
-"""
-    `draw!(vec_p, pm)`
 
-Draw a parameter from the prior distribution defined in pm and stores it in vec_p.
+"""
+`draw!(vec_p, pm)`
+
+Draw a parameter from the prior distribution defined in pm and stores it in `vec_p`.
 """
 draw!(vec_p::AbstractVector{Float64}, pm::ParametricModel) = rand!(pm.distribution, vec_p)
-"""
-    `draw!(mat_p, pm)`
 
-Draw `size(mat_p)[2]` (number of columns of mat_p) parameters from the prior distribution 
-defined in pm and stores it in mat_p.
+"""
+`draw!(mat_p, pm)`
+
+Draw `size(mat_p)[2]` (number of columns of `mat_p`) parameters from the prior distribution 
+defined in `pm` and stores it in `mat_p`.
 """
 function draw!(mat_p::AbstractMatrix{Float64}, pm::ParametricModel)
     for i = 1:size(mat_p)[2]
         draw!(view(mat_p, :, i), pm)
     end
 end
+
 """
-    `prior_pdf(p_prior, pm)`
+`prior_pdf(p_prior, pm)`
  
-Computes the density of the prior distribution defined in pm on argument p_prior.
+Computes the density at `p_prior` of the prior distribution defined in `pm`.
 """
 prior_pdf(pm::ParametricModel, p_prior::AbstractVector{Float64}) = pdf(pm.distribution, p_prior)
+
 """
-    `prior_pdf(vec_res, mat_p, pm)`
+`prior_pdf(res_pdf, mat_p, pm)`
  
-Computes the density of the prior distribution defined in pm on each column
-ov mat_p. Stores it in mat_p. (`length(vec_res) == size(mat_p)[2]`)
+Computes the density for each column of `mat_p` of the prior distribution defined in `pm`.
+Stores it in `res_pdf`. (`length(vec_res) == size(mat_p)[2]`)
 """
 function prior_pdf!(res_pdf::AbstractVector{Float64}, pm::ParametricModel, mat_p::AbstractMatrix{Float64})
     for i = eachindex(res_pdf)

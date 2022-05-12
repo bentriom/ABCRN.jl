@@ -6,7 +6,14 @@ makedocs(
     modules = [MarkovProcesses],
     pages = [
         "Home" => "index.md",
-        "Approximate Bayesian Computation" => "abc.md"
+        "Getting Started" => "starting.md",
+        "Create a model" => "create_model.md",
+        "API" => Any[
+            "Model" => "api/model.md",
+            "Trajectory" => "api/trajectory.md",
+            "Approximate Bayesian Computation" => "api/abc.md",
+            "Plots" => "api/plots.md"
+        ]
     ],
     format = Documenter.HTML(prettyurls = false)
 )

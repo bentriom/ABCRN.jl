@@ -20,8 +20,6 @@ import Logging: @info
 using LinearAlgebra
 using MacroTools
 import NearestNeighbors: KDTree, knn 
-import Plots: plot, plot!, scatter!, hline!, Shape, text
-import Plots: current, palette, display, png, close, savefig
 import Random: rand, rand!
 import ScikitLearn
 import ScikitLearn: fit!, predict, get_params

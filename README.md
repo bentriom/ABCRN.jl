@@ -29,9 +29,15 @@ A few notebooks are available in examples/notebooks for a quick presentation of 
 
 ## Tests
 
-Execution tests and statistical tests are available. It can be run by:
+Execution tests and statistical tests are available. It can be run by
 
-`julia test/run_all.jl`
+`julia test/runtests.jl`
+
+or in Pkg's REPL:
+
+```julia
+pkg> test MarkovProcesses
+```
 
 > :warning: The statistical tests run by `test/run_cosmos.jl` needs [Cosmos](http://cosmos.lacl.fr/) in your PATH environment variable.
 

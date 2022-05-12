@@ -3,7 +3,7 @@
 
 # Top-level Lp distance function
 """
-`dist_lp(l_σ1, l_σ2; verbose, p, str_stat_list, str_stat_trajectory)`   
+`dist_lp(l_σ1, l_σ2; verbose, p, str_stat_list, str_stat_trajectory)` 
 
 Function that computes Lp distance between two set of any dimensional trajectories.
 ...
