@@ -1,8 +1,7 @@
-build-doc:
-  image: 2017bentrioum/markovprocesses.jl/julia:latest
-  stage: build
+
+test:latest:
+  image: gitlab-research.centralesupelec.fr:4567/2017bentrioum/markovprocesses.jl/julia:latest
   script:
-    - "docker image ls" 
-    - "julia --project=docs/ -e 'using Pkg; Pkg.develop(PackageSpec(path=pwd(), subdir=\"core/\")); Pkg.instantiate()'"
-    - "julia --project=docs/ docs/make.jl"
+    - pwd
+    - julia --project=docs/ -e 'using Pkg; Pkg.activate("."); Pkg.instantiate(); Pkg.test("MarkovProcesses")'
 
