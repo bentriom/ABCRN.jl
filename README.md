@@ -16,11 +16,11 @@ It implements:
 
 This package is not yet registered in the Julia's packages. For the install of the package:
 
-1. Launch Julia's REPL (for example by entering `julia` in your terminal)
+1. Launch Julia's REPL (for example by entering `julia` in the shell)
 2. Enter Pkg's REPL by typing `]`
 3. Enter
    ```julia
-   add https://gitlab-research.centralesupelec.fr/2017bentrioum/markovprocesses.jl/
+   pkg> add https://gitlab-research.centralesupelec.fr/2017bentrioum/markovprocesses.jl/
    ```
 
 ## Getting started 
