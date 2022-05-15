@@ -5,3 +5,20 @@ test:latest:
     - julia --project=docs/ -e 'using Pkg; Pkg.develop(PackageSpec(path=".")); Pkg.instantiate(); Pkg.test("MarkovProcesses")'
   tags:
     - docker
+
+pages:
+  image: gitlab-research.centralesupelec.fr:4567/2017bentrioum/markovprocesses.jl/julia:latest
+  stage: deploy
+  script:
+    - apt-get update -qq && apt-get install -y git
+    - julia --project=docs/ -e 'using Pkg; Pkg.develop(PackageSpec(path=".")); Pkg.instantiate(); import MarkovProcesses; Pkg.add("Documenter")'
+    - julia --project=docs/ --color=yes docs/make.jl  # make documentation
+    - mv docs/build latest
+  artifacts:
+    paths:
+      - latest
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+  tags:
+    - docker
+
