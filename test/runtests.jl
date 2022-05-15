@@ -2,6 +2,8 @@
 using Distributed
 using Test
 using MarkovProcesses
+using Logging
+Logging.disable_logging(Logging.Warn)
 
 include("run_unit.jl")
 include("run_simulation.jl")
