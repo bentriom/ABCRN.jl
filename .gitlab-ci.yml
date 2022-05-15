@@ -1,6 +1,6 @@
 
 stages:
-  - build-and-test
+#  - build-and-test
   - deploy
 
 test:latest:
