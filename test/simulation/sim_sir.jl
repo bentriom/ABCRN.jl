@@ -1,14 +1,12 @@
 
 using MarkovProcesses 
-using PyPlot
+using Plots
 
 load_model("SIR")
 
 σ = simulate(SIR)
-plt.figure()
-plt.step(times(σ), σ[:I], "ro--", marker="x", where="post", linewidth=1.0)
-plt.savefig(get_module_path() * "/test/simulation/res_pics/sim_sir.svg")
-plt.close()
+plot(times(σ), σ[:I], linetype=:steppost, linewidth=1.0)
+savefig(get_module_path() * "/test/simulation/res_pics/sim_sir.svg")
 
 return true
 
