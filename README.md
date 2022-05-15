@@ -2,6 +2,8 @@
 MarkovProcesses.jl 
 ==================
 
+[![](https://img.shields.io/badge/docs-stable-blue.svg)](https://2017bentrioum.pages.centralesupelec.fr/markovprocesses.jl/dev)
+
 A Julia package for efficient simulation, statistical inference and verification of Continuous Time Markov Chains.
 
 It implements:

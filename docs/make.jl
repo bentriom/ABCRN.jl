@@ -17,8 +17,11 @@ makedocs(
     ],
     format = Documenter.HTML(prettyurls = false)
 )
+config_gitlab = Documenter.GitLab()
+
 deploydocs(
     repo = "gitlab-research.centralesupelec.fr/2017bentrioum/markovprocesses.jl.git",
-    deploy_config = Documenter.GitLab(),
+    devbranch = "ci_tests",
+    branch = "pages"
 )
 
