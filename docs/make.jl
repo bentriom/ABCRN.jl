@@ -17,4 +17,8 @@ makedocs(
     ],
     format = Documenter.HTML(prettyurls = false)
 )
+deploydocs(
+    repo = "gitlab-research.centralesupelec.fr/2017bentrioum/markovprocesses.jl.git",
+    deploy_config = Documenter.GitLab(),
+)
 
