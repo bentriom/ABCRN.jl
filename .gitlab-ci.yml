@@ -1,5 +1,10 @@
 
+stages:
+  - build-and-test
+  - deploy
+
 test:latest:
+  stage: build-and-test
   image: gitlab-research.centralesupelec.fr:4567/2017bentrioum/markovprocesses.jl/julia:latest
   script:
     - julia --project=docs/ -e 'using Pkg; Pkg.develop(PackageSpec(path=".")); Pkg.instantiate(); Pkg.test("MarkovProcesses")'
@@ -7,11 +12,11 @@ test:latest:
     - docker
 
 pages:
-  image: gitlab-research.centralesupelec.fr:4567/2017bentrioum/markovprocesses.jl/julia:latest
   stage: deploy
+  image: gitlab-research.centralesupelec.fr:4567/2017bentrioum/markovprocesses.jl/julia:latest
   script:
     - apt-get update -qq && apt-get install -y git
-    - julia --project=docs/ -e 'using Pkg; Pkg.develop(PackageSpec(path=".")); Pkg.instantiate(); import MarkovProcesses; Pkg.add("Documenter")'
+    - julia --project=docs/ -e 'using Pkg; Pkg.develop(PackageSpec(path=".")); Pkg.instantiate();'
     - julia --project=docs/ --color=yes docs/make.jl  # make documentation
     - mv docs/build latest
   artifacts:
