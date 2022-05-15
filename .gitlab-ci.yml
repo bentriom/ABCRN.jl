@@ -2,6 +2,6 @@
 test:latest:
   image: gitlab-research.centralesupelec.fr:4567/2017bentrioum/markovprocesses.jl/julia:latest
   script:
-    - pwd
     - julia --project=docs/ -e 'using Pkg; Pkg.develop(PackageSpec(path=".")); Pkg.instantiate(); Pkg.test("MarkovProcesses")'
-
+  tags:
+    - docker
