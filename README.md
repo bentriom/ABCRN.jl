@@ -2,7 +2,7 @@
 MarkovProcesses.jl 
 ==================
 
-[![](https://img.shields.io/badge/docs-stable-blue.svg)](https://2017bentrioum.pages.centralesupelec.fr/markovprocesses.jl/dev)
+[![](https://img.shields.io/badge/docs-stable-blue.svg)](https://2017bentrioum.pages.centralesupelec.fr/markovprocesses.jl/public)
 
 A Julia package for efficient simulation, statistical inference and verification of Continuous Time Markov Chains.
 
@@ -13,6 +13,10 @@ It implements:
 * Synchronized simulation with Linear Hybrid Automata.
 * Approximate Bayesian Computation (a likelihood-free inference method)
 * Automaton-ABC: a statistical method for verification of parametric CTMC (cite paper)
+
+## Resources
+
+* **Documentation**: <https://2017bentrioum.pages.centralesupelec.fr/markovprocesses.jl/public>
 
 ## Install
 
