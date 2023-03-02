@@ -10,11 +10,11 @@ import DelimitedFiles: readdlm, writedlm
 import Distributed: @everywhere, @distributed, @sync, @async, nworkers, nprocs, workers
 import Distributed: nworkers, nprocs, workers, remotecall_fetch
 import DistributedArrays: DArray, dzeros, convert, localpart
-import Distributions: Product, Uniform, Normal, MvNormal, Categorical
+import Distributions: Uniform, Normal, MvNormal, Categorical
 import Distributions: Distribution, Univariate, Continuous, 
                       UnivariateDistribution, DiscreteUnivariateDistribution,
                       MultivariateDistribution, product_distribution
-import Distributions: insupport, isbounded, ncategories, pdf
+import Distributions: insupport, isbounded, ncategories, pdf, product_distribution
 import FunctionWrappers: FunctionWrapper
 import Logging: @info
 using LinearAlgebra
@@ -39,8 +39,8 @@ function __init__()
 end
 
 ## Exports
-export Distribution, Product, Uniform, Normal
-export @everywhere
+export Distribution, Uniform, Normal
+export product_distribution, @everywhere
 
 # Common types and constructors
 export SVector, @SVector

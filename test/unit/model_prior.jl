@@ -9,7 +9,7 @@ pm1 = ParametricModel(ER, (:k2, Uniform(2.0, 4.0)))
 draw_model!(pm1)
 test_all = test_all && 2.0 <= ER[:k2] <= 4.0 && pm1.df == 1
 
-pm2 = ParametricModel(ER, [:k3,:k2], Product(Uniform.([2.5,6.0], [3.5,7.0])))
+pm2 = ParametricModel(ER, [:k3,:k2], product_distribution(Uniform.([2.5,6.0], [3.5,7.0])))
 draw_model!(pm2)
 test_all = test_all && 2.5 <= ER[:k3] <= 3.5 && 6.0 <= ER[:k2] <= 7.0 && pm2.df == 2
 

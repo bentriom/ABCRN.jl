@@ -3,7 +3,7 @@ using MarkovProcesses
 load_model("ER")
 
 k1 = ER[:k1]
-dist_mv_unif = Product(Uniform.([2.5,6.0], [3.5,7.0]))
+dist_mv_unif = product_distribution(Uniform.([2.5,6.0], [3.5,7.0]))
 pm = ParametricModel(ER, [:k3,:k2], dist_mv_unif)
 draw_model!(pm)
 test1 = 2.5 <= ER[:k3] <= 3.5 && 6.0 <= ER[:k2] <= 7.0 && pm.df == 2
