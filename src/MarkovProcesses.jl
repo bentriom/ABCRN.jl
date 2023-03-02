@@ -40,6 +40,7 @@ end
 
 ## Exports
 export Distribution, Product, Uniform, Normal
+export @everywhere
 
 # Common types and constructors
 export SVector, @SVector
