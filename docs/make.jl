@@ -21,7 +21,9 @@ config_gitlab = Documenter.GitLab()
 
 deploydocs(
     repo = "gitlab-research.centralesupelec.fr/2017bentrioum/markovprocesses.jl.git",
+    deploy_config = config_gitlab,
     devbranch = "ci_tests",
+    devurl = "dev",
     branch = "pages"
 )
 

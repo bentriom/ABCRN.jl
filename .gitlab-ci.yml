@@ -23,12 +23,12 @@ pages:
       # To avoid PyImport error with sklearn
     - julia --project=docs/ -e 'using Pkg; Pkg.add("Conda"); using Conda; Conda.add("scikit-learn")'
     - julia --project=docs/ --color=yes docs/make.jl  # make documentation
-    - mkdir public
-    - mkdir dev
+    - mv docs/build public
+    - ls
+    - ls public
   artifacts:
     paths:
       - public
-      - dev
 #  rules:
 #    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
   tags:
