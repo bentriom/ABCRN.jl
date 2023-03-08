@@ -1,4 +1,5 @@
 
+using Distributed
 @everywhere begin
     using Distributions
     using MarkovProcesses
