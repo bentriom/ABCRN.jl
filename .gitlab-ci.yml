@@ -20,14 +20,15 @@ pages:
     - export PYTHON="" 
       # The Pkg.develop() makes MarkovProcesses.jl available in julia
     - julia --project=docs/ -e 'using Pkg; Pkg.develop(PackageSpec(path=".")); Pkg.instantiate();'
+      # To avoid PyImport error with sklearn
     - julia --project=docs/ -e 'using Pkg; Pkg.add("Conda"); using Conda; Conda.add("scikit-learn")'
     - julia --project=docs/ --color=yes docs/make.jl  # make documentation
     - mkdir public
-    # - mkdir public/dev
-    - mv docs/build public
+    - mkdir dev
   artifacts:
     paths:
       - public
+      - dev
 #  rules:
 #    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
   tags:
