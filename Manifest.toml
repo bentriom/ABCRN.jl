@@ -2,7 +2,18 @@
 
 julia_version = "1.8.5"
 manifest_format = "2.0"
-project_hash = "ff77a0bdbd19821d47a6ea7bc9efd02e41e4ebe4"
+project_hash = "3bef2f772c5b03d2784069c83941146145664c29"
+
+[[deps.ARFIMA]]
+deps = ["LinearAlgebra", "Random", "StaticArrays", "Test"]
+git-tree-sha1 = "e75e73b854b4f592466782c0d035f0e5b64ac83d"
+uuid = "9d0fb3db-ba49-4108-bc86-650b3813b6d5"
+version = "0.4.0"
+
+[[deps.AbstractTrees]]
+git-tree-sha1 = "faa260e4cb5aba097a73fab382dd4b5819d8ec8c"
+uuid = "1520ce14-60c1-5f80-bbc7-55ef81b5835c"
+version = "0.4.4"
 
 [[deps.ArgTools]]
 uuid = "0dad84c5-d112-42e6-8d28-ef12dabb789f"
@@ -131,6 +142,12 @@ version = "1.0.0"
 [[deps.Dates]]
 deps = ["Printf"]
 uuid = "ade2ca70-3891-5945-98fb-dc099432e06a"
+
+[[deps.DecisionTree]]
+deps = ["AbstractTrees", "DelimitedFiles", "LinearAlgebra", "Random", "ScikitLearnBase", "Statistics"]
+git-tree-sha1 = "c6475a3ccad06cb1c2ebc0740c1bb4fe5a0731b7"
+uuid = "7806a523-6efd-50cb-b5f6-3fa6f1930dbb"
+version = "0.12.3"
 
 [[deps.DelimitedFiles]]
 deps = ["Mmap"]
