@@ -44,7 +44,8 @@ observations = simulate(m3)
 ss_observations = ss_func(observations)
 models = [m1, m2, m3]
 println("Testset 10000 samples")
-@timev abc_testset = abc_model_choice_dataset(models, ss_observations, ss_func, dist_l2, 10000, 10000; dir_results = "toy_ex")
+@timev abc_testset = abc_model_choice_dataset(models, ss_observations, ss_func, dist_l2, 10000, 10000;
+                                              dir_results = "toy_ex")
 
 list_lh = [lh_m1, lh_m2, lh_m3]
 prob_model(ss, list_lh, idx_model) = list_lh[idx_model](ss) / sum([list_lh[i](ss) for i = eachindex(list_lh)])
@@ -72,11 +73,16 @@ savefig("set.svg")
 
 grid = Dict(:n_estimators => [500], :min_samples_leaf => [1], :min_samples_split => [2], :n_jobs => [8])
 println("RF ABC")
+# When rf_abc_model_choice simulates the abc dataset
 @timev res_rf_abc = rf_abc_model_choice(models, ss_observations, ss_func, 29000; hyperparameters_range = grid)
 @show posterior_proba_model(res_rf_abc)
 X_testset = transpose(abc_testset.X)
 println(classification_report(y_true = abc_testset.y, y_pred = predict(res_rf_abc.clf, X_testset)))
 @show accuracy_score(abc_testset.y, predict(res_rf_abc.clf, X_testset))
+# When rf_abc_model_choice uses an already simulated dataset
+@timev abc_dataset = abc_model_choice_dataset(models, ss_observations, ss_func, dist_l2, 29000, 29000)
+@timev res_rf_abc = rf_abc_model_choice(abc_dataset; hyperparameters_range = grid)
+@show posterior_proba_model(res_rf_abc)
 
 return true
 
