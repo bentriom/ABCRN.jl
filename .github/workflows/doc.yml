@@ -17,11 +17,10 @@ jobs:
       - uses: julia-actions/setup-julia@v1
         with:
           version: '1.6'
-      - name: Install dependencies
-        run: 
-          - julia --project=docs/ -e 'using Pkg; Pkg.develop(PackageSpec(path=".")); Pkg.instantiate()'
-          # To avoid PyImport error with sklearn
-          - julia --project=docs/ -e 'using Pkg; Pkg.add("Conda"); using Conda; Conda.add("scikit-learn")'
+      - name: Install Julia dependencies
+        run: julia --project=docs/ -e 'using Pkg; Pkg.develop(PackageSpec(path=".")); Pkg.instantiate()'
+      - name: Install scikit-learn manually within Julia
+        run: julia --project=docs/ -e 'using Pkg; Pkg.add("Conda"); using Conda; Conda.add("scikit-learn")'
       - name: Build and deploy
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # If authenticating with GitHub Actions token
