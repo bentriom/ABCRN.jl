@@ -1,0 +1,30 @@
+name: Documentation
+
+on:
+  push:
+    branches:
+      - ci_tests
+    tags: '*'
+  pull_request:
+
+jobs:
+  build:
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: julia-actions/setup-julia@v1
+        with:
+          version: '1.6'
+      - name: Install dependencies
+        run: 
+          - julia --project=docs/ -e 'using Pkg; Pkg.develop(PackageSpec(path=".")); Pkg.instantiate()'
+          # To avoid PyImport error with sklearn
+          - julia --project=docs/ -e 'using Pkg; Pkg.add("Conda"); using Conda; Conda.add("scikit-learn")'
+      - name: Build and deploy
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # If authenticating with GitHub Actions token
+          DOCUMENTER_KEY: ${{ secrets.DOCUMENTER_KEY }} # If authenticating with SSH deploy key
+        run: julia --project=docs/ --color=yes docs/make.jl
+
