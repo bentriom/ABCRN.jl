@@ -1,5 +1,5 @@
 
-using MarkovProcesses
+using ABCRN
 
 test = true
 load_model("SIR")

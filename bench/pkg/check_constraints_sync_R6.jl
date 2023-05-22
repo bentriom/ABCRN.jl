@@ -1,7 +1,7 @@
 
 using StaticArrays
 using BenchmarkTools
-using MarkovProcesses
+using ABCRN
 using Profile
 
 load_model("ER")

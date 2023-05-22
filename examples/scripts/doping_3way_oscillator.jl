@@ -1,5 +1,5 @@
 
-using MarkovProcesses
+using ABCRN
 load_plots()
 
 load_model("doping_3way_oscillator")

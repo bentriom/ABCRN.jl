@@ -6,7 +6,7 @@
     check_constraints::CheckConstraintsFunction
     update_state!::UpdateStateFunction
 end
-@everywhere @eval $(MarkovProcesses.generate_code_lha_type_def(:AutomatonGandF, :EdgeAutomatonGandF))
+@everywhere @eval $(ABCRN.generate_code_lha_type_def(:AutomatonGandF, :EdgeAutomatonGandF))
 
 function create_automaton_G_and_F(m::ContinuousTimeModel, x1::Float64, x2::Float64, t1::Float64, t2::Float64, sym_obs_G::VariableModel,
                                   x3::Float64, x4::Float64, t3::Float64, t4::Float64, sym_obs_F::VariableModel)
@@ -61,7 +61,7 @@ function create_automaton_G_and_F(m::ContinuousTimeModel, x1::Float64, x2::Float
     idx_obs_var_G = getfield(m, :map_var_idx)[sym_obs_G]
     to_idx(var::Symbol) = map_var_automaton_idx[var]
 
-    id = MarkovProcesses.newid()
+    id = ABCRN.newid()
     #Symbol("Edge_$(lha_name)_$(basename_func)_$(from_loc)$(to_loc)_$(edge_number)")
     function edge_name(from_loc::Location, to_loc::Location, edge_number::Int)
         return Symbol("$(edge_type)_$(from_loc)$(to_loc)_$(edge_number)_$(model_name)_$(id)")
@@ -427,10 +427,10 @@ function create_automaton_G_and_F(m::ContinuousTimeModel, x1::Float64, x2::Float
                                      :x3 => x3,  :x4 => x4, :t3 => t3, :t4 => t4)
 
     # Updating types and simulation method
-    @everywhere @eval $(MarkovProcesses.generate_code_synchronized_model_type_def(model_name, lha_name))
-    @everywhere @eval $(MarkovProcesses.generate_code_next_state(lha_name, edge_type))
-    #@everywhere @eval $(MarkovProcesses.generate_code_next_state_with_dicts(lha_name, edge_type))
-    @everywhere @eval $(MarkovProcesses.generate_code_synchronized_simulation(model_name, lha_name, edge_type, m.f!, m.isabsorbing))
+    @everywhere @eval $(ABCRN.generate_code_synchronized_model_type_def(model_name, lha_name))
+    @everywhere @eval $(ABCRN.generate_code_next_state(lha_name, edge_type))
+    #@everywhere @eval $(ABCRN.generate_code_next_state_with_dicts(lha_name, edge_type))
+    @everywhere @eval $(ABCRN.generate_code_synchronized_simulation(model_name, lha_name, edge_type, m.f!, m.isabsorbing))
 
     A = AutomatonGandF(m.transitions, locations, Λ_F, locations_init, locations_final, 
                        map_var_automaton_idx, flow, map_edges, 

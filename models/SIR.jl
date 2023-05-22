@@ -47,9 +47,9 @@ end
 @everywhere isabsorbing_SIR(p::Vector{Float64}, xn::Vector{Int}) = (p[1]*xn[1]*xn[2] + p[2]*xn[2]) === 0.0
 g_SIR = [:I]
 
-@everywhere @eval $(MarkovProcesses.generate_code_model_type_def(:SIRModel))
-@everywhere @eval $(MarkovProcesses.generate_code_model_type_constructor(:SIRModel))
-@everywhere @eval $(MarkovProcesses.generate_code_simulation(:SIRModel, :SIR_f!, :isabsorbing_SIR))
+@everywhere @eval $(ABCRN.generate_code_model_type_def(:SIRModel))
+@everywhere @eval $(ABCRN.generate_code_model_type_constructor(:SIRModel))
+@everywhere @eval $(ABCRN.generate_code_simulation(:SIRModel, :SIR_f!, :isabsorbing_SIR))
 
 SIR = SIRModel(d, k, dict_var, dict_p, l_tr_SIR, p_SIR, x0_SIR, t0_SIR,
                :SIR_f!, :isabsorbing_SIR; g=g_SIR)

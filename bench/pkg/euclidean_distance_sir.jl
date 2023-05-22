@@ -2,7 +2,7 @@
 using Profile
 using Statistics
 using BenchmarkTools
-@everywhere using MarkovProcesses
+@everywhere using ABCRN
 import LinearAlgebra: dot
 import Distributions: Uniform
 

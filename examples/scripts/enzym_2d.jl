@@ -1,7 +1,7 @@
 
 using DelimitedFiles
 using Distributed
-@everywhere using MarkovProcesses
+@everywhere using ABCRN
 using Dates
 using Plots
 

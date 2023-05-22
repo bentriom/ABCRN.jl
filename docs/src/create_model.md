@@ -176,9 +176,9 @@ Finally one sets the observed variables and the model can be created. The follow
 g_sir = [:I]
 
 # Generates simulate method for the new model
-@everywhere @eval $(MarkovProcesses.generate_code_model_type_def(:TryhardSIRModel))
-@everywhere @eval $(MarkovProcesses.generate_code_model_type_constructor(:TryhardSIRModel))
-@everywhere @eval $(MarkovProcesses.generate_code_simulation(:TryhardSIRModel, :sir_f!, :sir_isabsorbing))
+@everywhere @eval $(ABCRN.generate_code_model_type_def(:TryhardSIRModel))
+@everywhere @eval $(ABCRN.generate_code_model_type_constructor(:TryhardSIRModel))
+@everywhere @eval $(ABCRN.generate_code_simulation(:TryhardSIRModel, :sir_f!, :sir_isabsorbing))
 
 tryhard_sir = TryhardSIRModel(dim_state_sir, dim_params_sir, 
                               map_var_idx_sir, map_params_idx_sir, 

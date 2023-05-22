@@ -1,9 +1,9 @@
 
 ```@meta
-CurrentModule = MarkovProcesses
+CurrentModule = ABCRN
 ```
 
-# MarkovProcesses.jl
+# ABCRN.jl
 
 *A package for simulation, verification and parameter estimation of Chemical Reaction Networks.*
 

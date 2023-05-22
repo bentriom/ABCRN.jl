@@ -1,5 +1,5 @@
 
-using MarkovProcesses
+using ABCRN
 
 # Settings with two SIR models
 load_model("SIR")

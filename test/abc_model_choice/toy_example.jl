@@ -2,7 +2,7 @@
 using Distributed
 @everywhere begin
     using Distributions
-    using MarkovProcesses
+    using ABCRN
     using SpecialFunctions
     using LinearAlgebra
     using Random
@@ -16,7 +16,7 @@ using ScikitLearn
     struct Model1 <: Model end
     struct Model2 <: Model end
     struct Model3 <: Model end
-    import MarkovProcesses: simulate
+    import ABCRN: simulate
 
     function simulate(m::Model1)
         param = rand(Exponential(1))

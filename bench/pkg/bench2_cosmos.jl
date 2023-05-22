@@ -1,5 +1,5 @@
 
-@everywhere using MarkovProcesses
+@everywhere using ABCRN
 using Statistics
 using DelimitedFiles
 import Distributed: nworkers

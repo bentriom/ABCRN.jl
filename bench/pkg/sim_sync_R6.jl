@@ -1,6 +1,6 @@
 
 using BenchmarkTools
-@everywhere using MarkovProcesses
+@everywhere using ABCRN
 using Profile
 
 load_model("ER")

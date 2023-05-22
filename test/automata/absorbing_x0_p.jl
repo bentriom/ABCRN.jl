@@ -1,5 +1,5 @@
 
-using MarkovProcesses
+using ABCRN
 
 test_all = true
 

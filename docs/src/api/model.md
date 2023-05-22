@@ -2,7 +2,7 @@
 # Model test related methods
 
 ```@autodocs
-Modules = [MarkovProcesses]
+Modules = [ABCRN]
 Pages   = ["src/model.jl"]
 ```
 

@@ -1,7 +1,7 @@
 
 using Distributed
 addprocs(2)
-@everywhere using MarkovProcesses
+@everywhere using ABCRN
 import LinearAlgebra: dot
 
 # ER model

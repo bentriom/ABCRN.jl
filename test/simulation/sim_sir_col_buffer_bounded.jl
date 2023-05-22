@@ -1,5 +1,5 @@
 
-using MarkovProcesses 
+using ABCRN 
 include(get_module_path() * "/src/_tests_simulate.jl")
 using Plots
 

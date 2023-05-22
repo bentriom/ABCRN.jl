@@ -1,8 +1,8 @@
 
 using Distributed
-using MarkovProcesses
+using ABCRN
 addprocs(2)
-@everywhere using MarkovProcesses
+@everywhere using ABCRN
 
 test_all = true
 

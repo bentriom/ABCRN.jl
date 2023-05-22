@@ -1,7 +1,7 @@
 
 using Statistics
 using BenchmarkTools
-using MarkovProcesses
+using ABCRN
 import LinearAlgebra: dot
 import Distributions: Uniform
 

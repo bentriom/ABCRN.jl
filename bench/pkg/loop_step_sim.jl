@@ -1,7 +1,7 @@
 
 using StaticArrays
 using BenchmarkTools
-using MarkovProcesses
+using ABCRN
 Transition = Union{String,Nothing}
 
 load_model("ER")

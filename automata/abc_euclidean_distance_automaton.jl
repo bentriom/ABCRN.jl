@@ -256,7 +256,7 @@ function create_abc_euclidean_distance_automaton(m::ContinuousTimeModel, timelin
     idx_obs_var = m.map_var_idx[sym_obs]
     to_idx(var::Symbol) = map_var_automaton_idx[var]
 
-    id = MarkovProcesses.newid()
+    id = ABCRN.newid()
     function check_constraints(from_loc::Location, to_loc::Location, edge_number::Int)
         return Symbol("check_constraints_$(edge_type)_$(from_loc)$(to_loc)_$(edge_number)_$(model_name)_$(id)")
     end
@@ -347,8 +347,8 @@ function create_abc_euclidean_distance_automaton(m::ContinuousTimeModel, timelin
     =#
 
     # Updating types and simulation methods
-    @everywhere @eval $(MarkovProcesses.generate_code_synchronized_model_type_def(model_name, lha_name))
-    @everywhere @eval $(MarkovProcesses.generate_code_synchronized_simulation(model_name, lha_name, edge_type, m.f!, m.isabsorbing))
+    @everywhere @eval $(ABCRN.generate_code_synchronized_model_type_def(model_name, lha_name))
+    @everywhere @eval $(ABCRN.generate_code_synchronized_simulation(model_name, lha_name, edge_type, m.f!, m.isabsorbing))
 
     A = ABCEuclideanDistanceAutomaton(m.transitions, locations, Λ_F, locations_init, locations_final, 
                                       map_var_automaton_idx, flow, map_edges, constants, m.map_var_idx, Inf, timeline, observations)

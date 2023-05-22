@@ -1,5 +1,5 @@
 
-using MarkovProcesses
+using ABCRN
 
 #=
 load_model("_bench_perf_test/SIR_col")

@@ -1,5 +1,5 @@
 
-using MarkovProcesses
+using ABCRN
 
 load_model("SIR")
 load_model("SIR_tauleap")

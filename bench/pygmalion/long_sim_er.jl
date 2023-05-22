@@ -21,15 +21,15 @@ b2_pyg = @benchmark pygmalion.simulate(f, g_all, x0, u, p_true; on = nothing, fu
 @show minimum(b1_pyg), mean(b1_pyg), maximum(b1_pyg)
 @show minimum(b2_pyg), mean(b2_pyg), maximum(b2_pyg)
 
-println("MarkovProcesses:")
+println("ABCRN:")
 
-using MarkovProcesses
-MarkovProcesses.load_model("ER")
+using ABCRN
+ABCRN.load_model("ER")
 ER.time_bound = 10.0
-b1 = @benchmark MarkovProcesses.simulate($ER)
-b2 = @benchmark MarkovProcesses.simulate(ER)
+b1 = @benchmark ABCRN.simulate($ER)
+b2 = @benchmark ABCRN.simulate(ER)
 
-@timev MarkovProcesses.simulate(ER)
+@timev ABCRN.simulate(ER)
 @show minimum(b1), mean(b1), maximum(b1)
 @show minimum(b2), mean(b2), maximum(b2)
 

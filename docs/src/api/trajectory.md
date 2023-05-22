@@ -2,7 +2,7 @@
 # Trajectory related methods
 
 ```@autodocs
-Modules = [MarkovProcesses]
+Modules = [ABCRN]
 Pages   = ["src/trajectory.jl"]
 ```
 

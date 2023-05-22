@@ -21,7 +21,7 @@ max(abs((mean_tp - ref_mean_tp)/ref_mean_tp), sqrt(var_tp)/ref_mean_tp)
     check_constraints::CheckConstraintsFunction
     update_state!::UpdateStateFunction
 end
-@everywhere @eval $(MarkovProcesses.generate_code_lha_type_def(:PeriodAutomaton, :EdgePeriodAutomaton))
+@everywhere @eval $(ABCRN.generate_code_lha_type_def(:PeriodAutomaton, :EdgePeriodAutomaton))
 
 function create_period_automaton(m::ContinuousTimeModel, L::Float64, H::Float64, N::Int, sym_obs::VariableModel;
                                  initT::Float64 = 0.0, ref_mean_tp::Float64 = 0.0, ref_var_tp::Float64 = 0.0, error_func::Symbol = :mean_error)
@@ -43,7 +43,7 @@ function create_period_automaton(m::ContinuousTimeModel, L::Float64, H::Float64,
 
     ## Invariant predicates
     idx_sym_obs = getfield(m, :map_var_idx)[sym_obs]
-    id = MarkovProcesses.newid()
+    id = ABCRN.newid()
     basename_func = "$(model_name)_$(id)"
     sym_name_L = Symbol("val_L_aut_per_$(basename_func)")
     sym_name_H = Symbol("val_H_aut_per_$(basename_func)")
@@ -336,9 +336,9 @@ function create_period_automaton(m::ContinuousTimeModel, L::Float64, H::Float64,
     constants = Dict{Symbol,Float64}(:N => N, :L => L, :H => H, :initT => initT)
 
     # Updating types and simulation methods
-    @everywhere @eval $(MarkovProcesses.generate_code_synchronized_model_type_def(model_name, lha_name))
-    @everywhere @eval $(MarkovProcesses.generate_code_next_state(lha_name, edge_type))
-    @everywhere @eval $(MarkovProcesses.generate_code_synchronized_simulation(model_name, lha_name, edge_type, m.f!, m.isabsorbing))
+    @everywhere @eval $(ABCRN.generate_code_synchronized_model_type_def(model_name, lha_name))
+    @everywhere @eval $(ABCRN.generate_code_next_state(lha_name, edge_type))
+    @everywhere @eval $(ABCRN.generate_code_synchronized_simulation(model_name, lha_name, edge_type, m.f!, m.isabsorbing))
 
     A = PeriodAutomaton(m.transitions, locations, Λ_F, locations_init, locations_final, 
                         map_var_automaton_idx, flow, map_edges, 

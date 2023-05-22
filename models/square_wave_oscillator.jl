@@ -59,9 +59,9 @@ end
 isabsorbing_SquareWave(p::Vector{Float64}, xn::Vector{Int}) = (p[1] == 0 && p[3] == 0 && p[5] == 0)
 g_square_wave = [:A, :HIGH, :LOW]
 
-@everywhere @eval $(MarkovProcesses.generate_code_model_type_def(:SquareWaveModel))
-@everywhere @eval $(MarkovProcesses.generate_code_model_type_constructor(:SquareWaveModel))
-@everywhere @eval $(MarkovProcesses.generate_code_simulation(:SquareWaveModel, :SquareWave_f!, :isabsorbing_SquareWave))
+@everywhere @eval $(ABCRN.generate_code_model_type_def(:SquareWaveModel))
+@everywhere @eval $(ABCRN.generate_code_model_type_constructor(:SquareWaveModel))
+@everywhere @eval $(ABCRN.generate_code_simulation(:SquareWaveModel, :SquareWave_f!, :isabsorbing_SquareWave))
 
 square_wave_oscillator = SquareWaveModel(d, k, dict_var_square, dict_params_square, l_tr_square, 
                                          p_square, x0_square, t0_square,

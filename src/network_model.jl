@@ -145,7 +145,7 @@ macro network_model(expr_network,expr_name...)
     # Creation of names variables
     model_name = isempty(expr_name) ? "Network" : expr_name[1]
     model_name = Symbol(replace(model_name, ' ' => '_') * "Model")
-    id = MarkovProcesses.newid()
+    id = ABCRN.newid()
     nbr_reactions = length(list_expr_reactions)
     basename_func = "$(model_name)_$(id)"
     basename_func = replace(basename_func, '-'=>'_')
@@ -242,9 +242,9 @@ macro network_model(expr_network,expr_name...)
     model_g = [map_idx_var_model[i] for i = 1:length(list_species)]
 
     return quote
-        @everywhere @eval $(MarkovProcesses.generate_code_model_type_def(model_name))
-        @everywhere @eval $(MarkovProcesses.generate_code_model_type_constructor(model_name))
-        @everywhere @eval $(MarkovProcesses.generate_code_simulation(model_name, symbol_func_f!, symbol_func_isabsorbing))
+        @everywhere @eval $(ABCRN.generate_code_model_type_def(model_name))
+        @everywhere @eval $(ABCRN.generate_code_model_type_constructor(model_name))
+        @everywhere @eval $(ABCRN.generate_code_simulation(model_name, symbol_func_f!, symbol_func_isabsorbing))
         @everywhere @eval $expr_model_f!
         @everywhere @eval $expr_model_isabsorbing
 

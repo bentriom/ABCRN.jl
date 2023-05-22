@@ -2,7 +2,7 @@
 # Plots related methods
 
 ```@autodocs
-Modules = [MarkovProcesses]
+Modules = [ABCRN]
 Pages   = ["src/plots.jl"]
 ```
 

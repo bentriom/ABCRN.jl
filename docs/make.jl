@@ -1,9 +1,9 @@
 
-using Documenter, MarkovProcesses
+using Documenter, ABCRN
 
 makedocs(
-    sitename = "MarkovProcesses.jl",
-    modules = [MarkovProcesses],
+    sitename = "ABCRN.jl",
+    modules = [ABCRN],
     pages = [
         "Home" => "index.md",
         "Getting Started" => "starting.md",

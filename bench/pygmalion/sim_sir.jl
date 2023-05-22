@@ -1,7 +1,7 @@
 
 using BenchmarkTools
 using pygmalion
-using MarkovProcesses
+using ABCRN
 
 println("Pygmalion:")
 
@@ -22,14 +22,14 @@ b2_pyg = @benchmark pygmalion.simulate(f, g_all, x0, u, p_true; on = nothing, fu
 @show minimum(b1_pyg), mean(b1_pyg), maximum(b1_pyg)
 @show minimum(b2_pyg), mean(b2_pyg), maximum(b2_pyg)
 
-println("MarkovProcesses:")
+println("ABCRN:")
 
-MarkovProcesses.load_model("SIR")
+ABCRN.load_model("SIR")
 SIR.time_bound = 100.0
-b1 = @benchmark MarkovProcesses.simulate($SIR)
-b2 = @benchmark MarkovProcesses.simulate(SIR)
+b1 = @benchmark ABCRN.simulate($SIR)
+b2 = @benchmark ABCRN.simulate(SIR)
 
-@timev MarkovProcesses.simulate(SIR)
+@timev ABCRN.simulate(SIR)
 @show minimum(b1), mean(b1), maximum(b1)
 @show minimum(b2), mean(b2), maximum(b2)
 

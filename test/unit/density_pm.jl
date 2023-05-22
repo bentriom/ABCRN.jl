@@ -1,5 +1,5 @@
 
-using MarkovProcesses
+using ABCRN
 import Distributions: rand, pdf, product_distribution
 load_model("SIR")
 

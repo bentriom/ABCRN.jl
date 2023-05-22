@@ -1,5 +1,5 @@
 
-using MarkovProcesses
+using ABCRN
 import QuadGK: quadgk
 load_model("SIR")
 
@@ -29,8 +29,8 @@ for p = 1:2
         test_1_bis = isapprox(dist_lp(y_obs, t_y, x_obs, t_x; p=p), res; atol = 1E-10) 
         test_1_bis = test_1_bis && isapprox(dist_lp(σ2,σ1; p=p), res; atol = 1E-10)
 
-        f_x(t::Real) = MarkovProcesses._f_step(x_obs, t_x, t)
-        f_y(t::Real) = MarkovProcesses._f_step(y_obs, t_y, t)
+        f_x(t::Real) = ABCRN._f_step(x_obs, t_x, t)
+        f_y(t::Real) = ABCRN._f_step(y_obs, t_y, t)
         diff_f(t) = abs(f_x(t) - f_y(t))^p
         int, err = quadgk(diff_f, 0.0, 3.0)
         res_int = int^(1/p)

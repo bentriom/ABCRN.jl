@@ -2,7 +2,7 @@
 using Profile
 using Statistics
 using BenchmarkTools
-using MarkovProcesses
+using ABCRN
 
 ER = @network_model begin
     R1: (E+S => ES, k1*E*S)

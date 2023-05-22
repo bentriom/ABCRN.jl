@@ -1,4 +1,5 @@
 [deps]
+ABCRN = "eb87d800-f8b7-11ed-3652-a7ab94e0ce49"
 ARFIMA = "9d0fb3db-ba49-4108-bc86-650b3813b6d5"
 Distributed = "8ba89e20-285c-5b6f-9357-94700520ee1b"
 Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"

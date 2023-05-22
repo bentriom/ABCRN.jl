@@ -1,7 +1,7 @@
 
 using BenchmarkTools
 import BenchmarkTools: mean
-using MarkovProcesses
+using ABCRN
 include(get_module_path() * "/src/_tests_simulate.jl")
 
 BenchmarkTools.DEFAULT_PARAMETERS.samples = 20000

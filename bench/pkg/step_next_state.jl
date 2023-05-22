@@ -1,6 +1,6 @@
 
 using BenchmarkTools
-using MarkovProcesses
+using ABCRN
 
 load_model("ER")
 load_automaton("automaton_F")

@@ -22,9 +22,9 @@ end
 @everywhere isabsorbing_Poisson(p::Vector{Float64}, xn::Vector{Int}) = p[1] === 0.0
 g_poisson = [:N]
 
-@everywhere @eval $(MarkovProcesses.generate_code_model_type_def(:PoissonModel))
-@everywhere @eval $(MarkovProcesses.generate_code_model_type_constructor(:PoissonModel))
-@everywhere @eval $(MarkovProcesses.generate_code_simulation(:PoissonModel, :Poisson_f!, :isabsorbing_Poisson))
+@everywhere @eval $(ABCRN.generate_code_model_type_def(:PoissonModel))
+@everywhere @eval $(ABCRN.generate_code_model_type_constructor(:PoissonModel))
+@everywhere @eval $(ABCRN.generate_code_simulation(:PoissonModel, :Poisson_f!, :isabsorbing_Poisson))
 
 poisson = PoissonModel(d, k, dict_var_poisson, dict_p_poisson, l_tr_poisson,
                        p_poisson, x0_poisson, t0_poisson,

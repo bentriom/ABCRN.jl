@@ -1,6 +1,6 @@
 
 using Test
-import MarkovProcesses: get_module_path
+import ABCRN: get_module_path
 
 path_bench  = get_module_path() * "/bench/"
 function include_arg!(path_file::String, arg::String)

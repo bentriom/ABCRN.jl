@@ -1,6 +1,6 @@
 
 using Plots
-using MarkovProcesses
+using ABCRN
 import LinearAlgebra: dot
 
 # ER model

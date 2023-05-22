@@ -1,5 +1,5 @@
 
-using MarkovProcesses
+using ABCRN
 import QuadGK: quadgk
 load_model("SIR")
 
@@ -20,11 +20,11 @@ for p = 1:2
         l_tr = Vector{Nothing}(nothing, length(y_obs))
         σ2 = Trajectory(SIR, values, t_y, l_tr)
 
-        f_x(t::Real) = MarkovProcesses._f_step(x_obs, t_x, t)
-        f_y(t::Real) = MarkovProcesses._f_step(y_obs, t_y, t)
+        f_x(t::Real) = ABCRN._f_step(x_obs, t_x, t)
+        f_y(t::Real) = ABCRN._f_step(y_obs, t_y, t)
         diff_f(t) = abs(f_x(t) - f_y(t))^p
         int, err = quadgk(diff_f, 0.0, 20.0, rtol=1e-10)
-        int_riemann = MarkovProcesses._riemann_sum(diff_f, 0.0, 20.0, 1E-5)
+        int_riemann = ABCRN._riemann_sum(diff_f, 0.0, 20.0, 1E-5)
         int_riemann = int_riemann^(1/p)
 
         res1 = dist_lp(x_obs, t_x, y_obs, t_y; p=p)

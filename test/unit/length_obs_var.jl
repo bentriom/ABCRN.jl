@@ -1,5 +1,5 @@
 
-using MarkovProcesses
+using ABCRN
 
 load_model("SIR")
 σ = simulate(SIR)

@@ -1,5 +1,5 @@
 
-using MarkovProcesses 
+using ABCRN 
 using Plots
 
 load_model("SIR")

@@ -1,7 +1,7 @@
 
 using Distributed
 using Test
-using MarkovProcesses
+using ABCRN
 using Logging
 Logging.disable_logging(Logging.Warn)
 

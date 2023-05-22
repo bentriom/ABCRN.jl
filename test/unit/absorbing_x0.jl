@@ -1,5 +1,5 @@
 
-using MarkovProcesses
+using ABCRN
 load_model("SIR")
 new_x0 = [95, 0, 0]
 SIR.x0 = new_x0

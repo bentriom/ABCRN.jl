@@ -1,5 +1,5 @@
 
-using MarkovProcesses
+using ABCRN
 
 load_model("ER")
 observe_all!(ER)

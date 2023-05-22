@@ -1,5 +1,5 @@
 
-@everywhere using MarkovProcesses
+@everywhere using ABCRN
 using Plots
 
 @everywhere load_model("ER")

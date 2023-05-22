@@ -3,7 +3,7 @@ using Test
 using Plots
 ENV["GKSwstype"] = "nul"
 default(show = false, reuse = true)
-import MarkovProcesses: get_module_path
+import ABCRN: get_module_path
 
 str_dir_pics = get_module_path() * "/test/simulation/res_pics"
 if !isdir(str_dir_pics) mkdir(str_dir_pics) end

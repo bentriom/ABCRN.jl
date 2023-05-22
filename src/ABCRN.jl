@@ -1,4 +1,4 @@
-module MarkovProcesses
+module ABCRN
 
 ## Imports
 import Base: +, -, *

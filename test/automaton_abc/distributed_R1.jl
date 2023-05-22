@@ -1,7 +1,7 @@
 
 using Distributed
 addprocs(2)
-@everywhere using MarkovProcesses
+@everywhere using ABCRN
 
 load_model("ER")
 load_automaton("automaton_F")

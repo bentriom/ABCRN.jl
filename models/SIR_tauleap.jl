@@ -35,9 +35,9 @@ end
 @everywhere isabsorbing_SIRTauleap(p::Vector{Float64}, xn::Vector{Int}) = (p[1]*xn[1]*xn[2] + p[2]*xn[2]) === 0.0
 g_SIR_tauleap = [:I]
 
-@everywhere @eval $(MarkovProcesses.generate_code_model_type_def(:SIRTauleapModel))
-@everywhere @eval $(MarkovProcesses.generate_code_model_type_constructor(:SIRTauleapModel))
-@everywhere @eval $(MarkovProcesses.generate_code_simulation(:SIRTauleapModel, :SIRTauleap_f!, :isabsorbing_SIRTauleap))
+@everywhere @eval $(ABCRN.generate_code_model_type_def(:SIRTauleapModel))
+@everywhere @eval $(ABCRN.generate_code_model_type_constructor(:SIRTauleapModel))
+@everywhere @eval $(ABCRN.generate_code_simulation(:SIRTauleapModel, :SIRTauleap_f!, :isabsorbing_SIRTauleap))
 
 SIR_tauleap = SIRTauleapModel(d, k, dict_var_SIR_tauleap, dict_p_SIR_tauleap, l_tr_SIR_tauleap,
                               p_SIR_tauleap, x0_SIR_tauleap, t0_SIR_tauleap, 

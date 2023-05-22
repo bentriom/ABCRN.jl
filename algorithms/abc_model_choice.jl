@@ -236,7 +236,7 @@ The result is a `RandomForestABC` object with fields:
 * `estim_model` is the underlying model of the observations inferred with the RF-ABC method.
 
 """
-function rf_abc_model_choice(abc_trainset::MarkovProcesses.AbcModelChoiceDataset;
+function rf_abc_model_choice(abc_trainset::ABCRN.AbcModelChoiceDataset;
                              hyperparameters_range::Dict = Dict(:n_estimators => [200], :min_samples_leaf => [1],
                                                                 :min_samples_split => [2]))
     gridsearch = GridSearchCV(RandomForestClassifier(oob_score=true), hyperparameters_range)

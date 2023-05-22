@@ -6,7 +6,7 @@
     check_constraints::CheckConstraintsFunction
     update_state!::UpdateStateFunction
 end
-@everywhere @eval $(MarkovProcesses.generate_code_lha_type_def(:AutomatonF, :EdgeAutomatonF))
+@everywhere @eval $(ABCRN.generate_code_lha_type_def(:AutomatonF, :EdgeAutomatonF))
 
 function create_automaton_F(m::ContinuousTimeModel, x1::Float64, x2::Float64, t1::Float64, t2::Float64, sym_obs::VariableModel)
     # Requirements for the automaton
@@ -47,7 +47,7 @@ function create_automaton_F(m::ContinuousTimeModel, x1::Float64, x2::Float64, t1
     to_idx(var::Symbol) = map_var_automaton_idx[var]
     idx_obs_var = getfield(m, :map_var_idx)[sym_obs]
 
-    id = MarkovProcesses.newid()
+    id = ABCRN.newid()
     basename_func = "$(model_name)_$(id)"
     edge_name(from_loc::Location, to_loc::Location, edge_number::Int) = 
     Symbol("Edge_$(lha_name)_$(basename_func)_$(from_loc)$(to_loc)_$(edge_number)")
@@ -175,9 +175,9 @@ function create_automaton_F(m::ContinuousTimeModel, x1::Float64, x2::Float64, t1
     map_edges_update_state = Dict{Symbol, Dict{Symbol,Vector{UpdateStateFunction}}}()
     
     # Updating types and simulation methods
-    @everywhere @eval $(MarkovProcesses.generate_code_synchronized_model_type_def(model_name, lha_name))
-    @everywhere @eval $(MarkovProcesses.generate_code_next_state(lha_name, edge_type))
-    @everywhere @eval $(MarkovProcesses.generate_code_synchronized_simulation(model_name, lha_name, edge_type, m.f!, m.isabsorbing))
+    @everywhere @eval $(ABCRN.generate_code_synchronized_model_type_def(model_name, lha_name))
+    @everywhere @eval $(ABCRN.generate_code_next_state(lha_name, edge_type))
+    @everywhere @eval $(ABCRN.generate_code_synchronized_simulation(model_name, lha_name, edge_type, m.f!, m.isabsorbing))
     
     A = AutomatonF(m.transitions, locations, Λ_F, locations_init, locations_final, 
                    map_var_automaton_idx, flow, map_edges, 
