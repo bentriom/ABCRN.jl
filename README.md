@@ -4,8 +4,8 @@ ABCRN.jl
 
 <!--
 ![Pipeline status](https://gitlab-research.centralesupelec.fr/2017bentrioum/markovprocesses.jl/badges/master/pipeline.svg)
-[![Documentation](https://img.shields.io/badge/docs-stable-blue.svg)](https://2017bentrioum.pages.centralesupelec.fr/markovprocesses.jl/)
 -->
+[![Documentation](https://github.com/bentriom/ABCRN.jl/actions/workflows/doc.yml/badge.svg)](https://bentriom.github.io/ABCRN.jl/)
 
 A Julia package for efficient simulation, statistical inference and verification of Continuous Time Markov Chains
 modeled by Chemical Reaction Networks with Approximate Bayesian Computation methods.
@@ -26,7 +26,7 @@ It implements:
 
 ## Install
 
-This package is not yet registered in the Julia's packages. For the install of the package:
+This package is not yet registered in the Julia's General registry. For the install of the package:
 
 1. Launch Julia's REPL (for example by entering `julia` in the shell)
 2. Enter Pkg's REPL by typing `]`
@@ -37,11 +37,11 @@ This package is not yet registered in the Julia's packages. For the install of t
 
 ## Getting started 
 
-A few notebooks are available in examples/notebooks for a quick presentation of the different features of the package.
+A few notebooks are available in examples/notebooks for a quick presentation of the packages' features.
 
 ## Tests
 
-Execution and statistical tests are available. It can be run by
+Execution and statistical tests can be run through:
 
 `julia test/runtests.jl`
 
@@ -55,9 +55,9 @@ pkg> test ABCRN
 
 ## Benchmarks
 
-Benchmarks have been made to test the performance of the package compared to well-known efficient other packages such as `DifferentialEquations.jl`.
+Benchmarks have been made to test the package performance compared to well-known efficient other packages such as `DifferentialEquations.jl`.
 
 ## Info
 
-This package was written during my PhD thesis. The mathematical fundations and the package archtecture are presented in it.
+The mathematical fundations and the package architecture are presented in my [PhD thesis](https://theses.hal.science/tel-03621447).
 
