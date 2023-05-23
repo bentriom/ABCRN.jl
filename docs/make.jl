@@ -19,6 +19,7 @@ makedocs(
 )
 
 deploydocs(
-    repo = "github.com/bentriom/ABCRN.jl",
+    repo = "github.com/bentriom/ABCRN.jl.git",
+    devbranch = "ci_tests",
 )
 
