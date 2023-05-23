@@ -20,6 +20,7 @@ jobs:
       - name: Install Julia dependencies
         run: julia --project=docs/ -e 'using Pkg; Pkg.develop(PackageSpec(path=".")); Pkg.instantiate()'
       - name: Install scikit-learn manually within Julia
+        run: julia --project=docs/ -e 'ENV["PYTHON"] = ""; using Pkg; Pkg.add("PyCall"); Pkg.build("PyCall")'
         run: julia --project=docs/ -e 'using Pkg; Pkg.add("Conda"); using Conda; Conda.add("scikit-learn")'
       - name: Build and deploy
         env:
