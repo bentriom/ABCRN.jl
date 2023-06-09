@@ -5,7 +5,10 @@ BiochemNetABC.jl
 <!--
 ![Pipeline status](https://gitlab-research.centralesupelec.fr/2017bentrioum/markovprocesses.jl/badges/master/pipeline.svg)
 -->
-[![Documentation](https://github.com/bentriom/BiochemNetABC.jl/actions/workflows/doc.yml/badge.svg)](https://bentriom.github.io/BiochemNetABC.jl/)
+[![Documentation](https://github.com/bentriom/BiochemNetABC.jl/actions/workflows/doc.yml/badge.svg)](https://bentriom.github.io/BiochemNetABC.jl/dev/)
+
+[![](https://img.shields.io/badge/docs-latest-blue.svg)](https://bentriom.github.io/BiochemNetABC.jl/dev/)
+[![](https://img.shields.io/badge/docs-stable-blue.svg)](https://bentriom.github.io/BiochemNetABC.jl/stable/)
 
 A Julia package for efficient simulation, statistical inference and verification of 
 Markov Processes/Continuous Time Markov Chains (CTMC) modeled by Biochemical networks/Chemical Reaction Networks (CRN) 
