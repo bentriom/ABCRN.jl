@@ -7,16 +7,17 @@ BiochemNetABC.jl
 -->
 [![Documentation](https://github.com/bentriom/BiochemNetABC.jl/actions/workflows/doc.yml/badge.svg)](https://bentriom.github.io/BiochemNetABC.jl/)
 
-A Julia package for efficient simulation, statistical inference and verification of Continuous Time Markov Chains
-modeled by Chemical Reaction Networks with Approximate Bayesian Computation methods.
+A Julia package for efficient simulation, statistical inference and verification of 
+Markov Processes/Continuous Time Markov Chains (CTMC) modeled by Biochemical networks/Chemical Reaction Networks (CRN) 
+with Approximate Bayesian Computation methods (ABC).
 
 It implements:
 
-* A core for simulation of Markov Processes.
-* A simple interface for Biochemical Networks / Stochastic Petri Nets.
+* A core for simulation of Markov Processes/CTMC,
+* A simple interface for Biochemical Networks/Stochastic Petri Nets,
 * Synchronized simulation with Linear Hybrid Automata.
-* Approximate Bayesian Computation (a likelihood-free inference method)
-* Automaton-ABC: a statistical method for verification of parametric CTMC
+* Approximate Bayesian Computation (a likelihood-free inference method),
+* Automaton-ABC: a statistical method for verification of parametric CTMC.
 
 <!--
 ## Resources

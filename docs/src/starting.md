@@ -1,18 +1,11 @@
 
 # Getting Started
 
-## Installation
-
-1. Launch Julia's REPL (for example by entering julia in your shell)
-2. Enter Pkg's REPL by typing `]`
-3. Enter
-   ```julia 
-   pkg> add https://gitlab-research.centralesupelec.fr/2017bentrioum/markovprocesses.jl/
-   ```
-
 ## Context - Mathematical framework
 
-In this package, we are focused on Continuous-Time Markov Chains (CTMC, also called Markov jump processes), that can be described by Chemical Reaction Networks. The future state only depends on the current state. It is defined by two properties:
+In this package, we are focused on Continuous-Time Markov Chains (CTMC, also called Markov jump processes), 
+that can be described by Biochemical Networks, also called Chemical Reaction Networks (CRN). 
+The future state only depends on the current state. It is defined by two properties:
 
 - ``\forall t, s \in \mathbb{R}_{\geq 0}, \mathbb{P}(S_t | S_v, v \in [0,s]) = \mathbb{P}(S_t| S_s)`` (Memoryless/Markov property)
 - ``\forall t,v \in \mathbb{R}_{\geq 0}, t > v, \mathbb{P}(S_t | S_v) = \mathbb{P}(S_{t-v} | S_0)`` (Time-homogeneity).
@@ -26,7 +19,8 @@ R_1: S + I \xrightarrow{k_i} 2I
 R_2: I \xrightarrow{k_r} R
 ``
 
-This CRN has two reactions that models two phenomena: infection ($R_1$) or immunisation ($R_2$). Each reaction is parametrized by a kinetic rate ($k_i$ or $k_r$). The stochastic dynamics of a CRN are described by CTMCs.
+This CRN has two reactions that models two phenomena: infection ($R_1$) or immunisation ($R_2$). 
+Each reaction is parametrized by a kinetic rate ($k_i$ or $k_r$). The stochastic dynamics of a CRN are described by CTMCs.
 
 ## Models
 
