@@ -1,6 +1,6 @@
 
 using Test
-import ABCRN: get_module_path
+import BiochemNetABC: get_module_path
 
 path_bench  = get_module_path() * "/bench/"
 function include_arg!(path_file::String, arg::String)

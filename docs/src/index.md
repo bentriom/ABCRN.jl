@@ -1,9 +1,9 @@
 
 ```@meta
-CurrentModule = ABCRN
+CurrentModule = BiochemNetABC
 ```
 
-# ABCRN.jl
+# BiochemNetABC.jl
 
 *A package for simulation, verification and parameter estimation of Chemical Reaction Networks.*
 

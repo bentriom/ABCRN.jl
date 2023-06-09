@@ -1,6 +1,6 @@
 
 using Plots
-using ABCRN
+using BiochemNetABC
 import LinearAlgebra: dot
 
 # ER model

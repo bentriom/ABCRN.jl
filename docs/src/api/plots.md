@@ -2,7 +2,7 @@
 # Plots related methods
 
 ```@autodocs
-Modules = [ABCRN]
+Modules = [BiochemNetABC]
 Pages   = ["src/plots.jl"]
 ```
 

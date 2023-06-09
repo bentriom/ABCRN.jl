@@ -1,5 +1,5 @@
 
-using ABCRN
+using BiochemNetABC
 import Distributions: rand, pdf, product_distribution
 load_model("SIR")
 

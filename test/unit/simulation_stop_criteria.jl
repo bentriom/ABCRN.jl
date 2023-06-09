@@ -1,5 +1,5 @@
 
-using ABCRN
+using BiochemNetABC
 
 # Settings with two SIR models
 load_model("SIR")

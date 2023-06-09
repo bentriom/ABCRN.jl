@@ -1,0 +1,4 @@
+Models: Model[Model1(), Model2(), Model3()] 
+N: 10000 
+k: 10000 
+tolerance epsilon: 223931.77360888218 

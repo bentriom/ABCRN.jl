@@ -1,5 +1,5 @@
 
-using ABCRN
+using BiochemNetABC
 using Plots
 
 load_model("ER")

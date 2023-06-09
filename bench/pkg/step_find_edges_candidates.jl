@@ -2,7 +2,7 @@
 using Profile
 import Statistics: mean
 using BenchmarkTools
-using ABCRN
+using BiochemNetABC
 
 load_model("ER")
 load_automaton("automaton_F")

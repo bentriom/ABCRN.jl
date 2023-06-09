@@ -1,5 +1,5 @@
 
-using ABCRN
+using BiochemNetABC
 load_model("square_wave_oscillator")
 swo = square_wave_oscillator
 

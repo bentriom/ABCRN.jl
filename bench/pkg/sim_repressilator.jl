@@ -1,7 +1,7 @@
 
 using Statistics
 using BenchmarkTools
-using ABCRN
+using BiochemNetABC
 import LinearAlgebra: dot
 import Distributions: Uniform
 

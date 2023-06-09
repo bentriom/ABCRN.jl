@@ -1,7 +1,7 @@
 
 import Statistics: mean
 using BenchmarkTools
-using ABCRN
+using BiochemNetABC
 
 load_model("ER")
 load_automaton("automaton_F")
@@ -24,7 +24,7 @@ Sn_values = Sn.values
 Snplus1 = copy(Sn)
 edge_candidates = Vector{Edge}(undef, 2)
 edges_from_current_loc = getfield(A_F, :map_edges)[:l0]
-nbr_candidates = ABCRN._find_edge_candidates!(edge_candidates, edges_from_current_loc, A_F.Λ, Sn_time, Sn_values, xnplus1, p_sim, false)
+nbr_candidates = BiochemNetABC._find_edge_candidates!(edge_candidates, edges_from_current_loc, A_F.Λ, Sn_time, Sn_values, xnplus1, p_sim, false)
 
 edges_from_current_loc = getfield(A_F, :map_edges)[:l1]
 
@@ -41,12 +41,12 @@ function _find_edge_candidates2!(edge_candidates::Vector{Edge},
             cc_func = getfield(edge, :check_constraints)
             if cc_func(S_time, S_values, x, p)
                 if getfield(edge, :transitions) == nothing
-                    ABCRN._push_edge!(edge_candidates, edge, nbr_candidates)
+                    BiochemNetABC._push_edge!(edge_candidates, edge, nbr_candidates)
                     nbr_candidates += 1
                     return nbr_candidates
                 else
                     if !only_asynchronous
-                        ABCRN._push_edge!(edge_candidates, edge, nbr_candidates)
+                        BiochemNetABC._push_edge!(edge_candidates, edge, nbr_candidates)
                         nbr_candidates += 1
                     end
                 end
@@ -113,12 +113,12 @@ function _find_edge_candidates3!(edge_candidates::Vector{Edge},
         for i = eachindex(cc_funcs)
             if Λ[target_loc](x) && @inbounds(cc_funcs[i](Sn_time, Sn_values, x, p))
                 if l_tr[i] == nothing
-                    ABCRN._push_edge!(edge_candidates, edges_from_current_loc[target_loc][i], nbr_candidates)
+                    BiochemNetABC._push_edge!(edge_candidates, edges_from_current_loc[target_loc][i], nbr_candidates)
                     nbr_candidates += 1
                     return nbr_candidates
                 else
                     if !only_asynchronous
-                        ABCRN._push_edge!(edge_candidates, edges_from_current_loc[target_loc][i], nbr_candidates)
+                        BiochemNetABC._push_edge!(edge_candidates, edges_from_current_loc[target_loc][i], nbr_candidates)
                         nbr_candidates += 1
                     end
                 end
@@ -133,7 +133,7 @@ edge_candidates = Vector{Edge}(undef, 2)
 two_loops_edges_full(edge_candidates, edges_from_current_loc, Λ, Sn_time, Sn_values, xnplus1, p_sim, false)
 
 
-b_find = @benchmark ABCRN._find_edge_candidates!($(Vector{Edge}(undef, 2)), edges_from_current_loc, Λ, Sn_time, Sn_values, xnplus1, p_sim, false)
+b_find = @benchmark BiochemNetABC._find_edge_candidates!($(Vector{Edge}(undef, 2)), edges_from_current_loc, Λ, Sn_time, Sn_values, xnplus1, p_sim, false)
 @show minimum(b_find), mean(b_find), maximum(b_find)
 
 b_find2 = @benchmark _find_edge_candidates2!($(Vector{Edge}(undef, 2)), edges_from_current_loc, Λ, Sn_time, Sn_values, xnplus1, p_sim, false)

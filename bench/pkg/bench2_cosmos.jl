@@ -1,5 +1,5 @@
 
-@everywhere using ABCRN
+@everywhere using BiochemNetABC
 using Statistics
 using DelimitedFiles
 import Distributed: nworkers

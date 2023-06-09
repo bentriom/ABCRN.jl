@@ -1,5 +1,5 @@
 
-using ABCRN
+using BiochemNetABC
 load_plots()
 path_pics = get_module_path() * "/test/simulation/res_pics/"
 

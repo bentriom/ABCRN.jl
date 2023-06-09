@@ -1,7 +1,7 @@
 
 using StaticArrays
 using BenchmarkTools
-using ABCRN
+using BiochemNetABC
 using Profile
 
 load_model("ER")

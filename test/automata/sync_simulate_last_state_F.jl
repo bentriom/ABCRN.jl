@@ -1,5 +1,5 @@
 
-using ABCRN
+using BiochemNetABC
 
 load_model("SIR")
 load_automaton("automaton_F")

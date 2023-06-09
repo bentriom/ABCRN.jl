@@ -1,6 +1,6 @@
 
 @everywhere begin
-    using ABCRN
+    using BiochemNetABC
     import Distributed: nworkers
     absolute_path = get_module_path() * "/test/cosmos/"
     # Values x1, x2  t1, t2
@@ -50,7 +50,7 @@ for exp in l_exp
             nb_sim = dict_values["Total paths"][1]
             nb_accepted = dict_values["Accepted paths"][1]
             nb_sim = convert(Int, nb_sim)
-            # ABCRN estimation
+            # BiochemNetABC estimation
             set_param!(ER, :k3, convert(Float64, k3))
             sync_ER = ER*A_F
             l_dist_pkg[i], nb_accepts_pkg = distribute_mean_value_lha(sync_ER, :d, nb_sim; with_accepts = true)

@@ -2,7 +2,7 @@
 # Trajectory related methods
 
 ```@autodocs
-Modules = [ABCRN]
+Modules = [BiochemNetABC]
 Pages   = ["src/trajectory.jl"]
 ```
 

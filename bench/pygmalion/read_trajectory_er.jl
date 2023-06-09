@@ -1,7 +1,7 @@
 
 using BenchmarkTools
 using pygmalion
-using ABCRN
+using BiochemNetABC
 
 println("Pygmalion:")
 
@@ -42,11 +42,11 @@ b1_pyg = @benchmark read_trajectory_pyg_v1($so)
 b2_pyg = @benchmark read_trajectory_pyg_v2($so) 
 @show minimum(b2_pyg), mean(b2_pyg), maximum(b2_pyg)
 
-println("ABCRN:")
+println("BiochemNetABC:")
 
-ABCRN.load_model("ER")
+BiochemNetABC.load_model("ER")
 ER.time_bound = 10.0
-σ = ABCRN.simulate(ER)
+σ = BiochemNetABC.simulate(ER)
 function read_trajectory_v1(σ::AbstractTrajectory)
     n_states = length_states(σ)
     res = 0

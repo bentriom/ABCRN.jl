@@ -2,7 +2,7 @@
 using Profile
 using Statistics
 using BenchmarkTools
-using ABCRN
+using BiochemNetABC
 
 ER = @network_model begin
     R1: (E+S => ES, k1*E*S)

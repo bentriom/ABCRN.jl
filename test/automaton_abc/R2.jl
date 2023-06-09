@@ -1,5 +1,5 @@
 
-@everywhere using ABCRN
+@everywhere using BiochemNetABC
 using Plots
 
 @everywhere load_model("ER")

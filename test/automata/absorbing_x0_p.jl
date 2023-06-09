@@ -1,5 +1,5 @@
 
-using ABCRN
+using BiochemNetABC
 
 test_all = true
 

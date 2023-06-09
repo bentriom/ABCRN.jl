@@ -1,7 +1,7 @@
 
 using BenchmarkTools
 using pygmalion
-using ABCRN
+using BiochemNetABC
 
 println("Pygmalion:")
 
@@ -22,14 +22,14 @@ b2_pyg = @benchmark pygmalion.simulate(f, g_all, x0, u, p_true; on = nothing, fu
 @show minimum(b1_pyg), mean(b1_pyg), maximum(b1_pyg)
 @show minimum(b2_pyg), mean(b2_pyg), maximum(b2_pyg)
 
-println("ABCRN:")
+println("BiochemNetABC:")
 
-ABCRN.load_model("SIR")
+BiochemNetABC.load_model("SIR")
 SIR.time_bound = 100.0
-b1 = @benchmark ABCRN.simulate($SIR)
-b2 = @benchmark ABCRN.simulate(SIR)
+b1 = @benchmark BiochemNetABC.simulate($SIR)
+b2 = @benchmark BiochemNetABC.simulate(SIR)
 
-@timev ABCRN.simulate(SIR)
+@timev BiochemNetABC.simulate(SIR)
 @show minimum(b1), mean(b1), maximum(b1)
 @show minimum(b2), mean(b2), maximum(b2)
 

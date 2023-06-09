@@ -1,8 +1,8 @@
 
 using Distributed
-using ABCRN
+using BiochemNetABC
 addprocs(2)
-@everywhere using ABCRN
+@everywhere using BiochemNetABC
 
 test_all = true
 

@@ -1,5 +1,5 @@
 
-using ABCRN
+using BiochemNetABC
 import QuadGK: quadgk
 load_model("SIR")
 
@@ -27,8 +27,8 @@ let x_obs, y_obs, t_x, t_y, σ1, σ2
     test_1 = dist_lp(x_obs, t_x, y_obs, t_y; p=1) == 6.4
     test_1 = test_1 && dist_lp(σ1, σ2; p=1) == 6.4
 
-    f_x(t::Real) = ABCRN._f_step(x_obs, t_x, t)
-    f_y(t::Real) = ABCRN._f_step(y_obs, t_y, t)
+    f_x(t::Real) = BiochemNetABC._f_step(x_obs, t_x, t)
+    f_y(t::Real) = BiochemNetABC._f_step(y_obs, t_y, t)
     diff_f(t) = abs(f_x(t) - f_y(t))
     int, err = quadgk(diff_f, 0.0, 2.2)
 

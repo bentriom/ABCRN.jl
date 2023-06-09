@@ -1,7 +1,7 @@
 
 using Distributed
 addprocs(2)
-@everywhere using ABCRN
+@everywhere using BiochemNetABC
 import LinearAlgebra: dot
 
 # ER model

@@ -27,7 +27,7 @@ function generate_code_simulation(model_name::Symbol, f!::Symbol, isabsorbing::S
                                   run_isabsorbing::Bool = false)
 
     return quote
-        import ABCRN: simulate
+        import BiochemNetABC: simulate
         
         """
         `simulate(m)`
@@ -60,10 +60,10 @@ function generate_code_simulation(model_name::Symbol, f!::Symbol, isabsorbing::S
             isabsorbing::Bool = $(isabsorbing)(p_sim,xn)
             # If x0 is absorbing
             if isabsorbing
-                ABCRN._resize_trajectory!(full_values, times, transitions, 1)
+                BiochemNetABC._resize_trajectory!(full_values, times, transitions, 1)
                 values = full_values[getfield(m, :_g_idx)]
                 if isbounded(m)
-                    ABCRN._finish_bounded_trajectory!(values, times, transitions, time_bound)
+                    BiochemNetABC._finish_bounded_trajectory!(values, times, transitions, time_bound)
                 end
                 return Trajectory(m, values, times, transitions)
             end
@@ -82,7 +82,7 @@ function generate_code_simulation(model_name::Symbol, f!::Symbol, isabsorbing::S
                 # n+1 values are now n values
                 n += 1
                 copyto!(xn, vec_x)
-                ABCRN._update_values!(full_values, times, transitions, xn, tn, l_tr[1], i)
+                BiochemNetABC._update_values!(full_values, times, transitions, xn, tn, l_tr[1], i)
                 if $(run_isabsorbing)
                     isabsorbing = isabsorbing || $(isabsorbing)(p_sim,xn)
                     if isabsorbing break end
@@ -90,10 +90,10 @@ function generate_code_simulation(model_name::Symbol, f!::Symbol, isabsorbing::S
             end
             # If simulation ended before the estimation of states
             if n < estim_min_states
-                ABCRN._resize_trajectory!(full_values, times, transitions, n)
+                BiochemNetABC._resize_trajectory!(full_values, times, transitions, n)
                 values = full_values[getfield(m, :_g_idx)]
                 if isbounded(m)
-                    ABCRN._finish_bounded_trajectory!(values, times, transitions, time_bound)
+                    BiochemNetABC._finish_bounded_trajectory!(values, times, transitions, time_bound)
                 end
                 return Trajectory(m, values, times, transitions)
             end
@@ -101,7 +101,7 @@ function generate_code_simulation(model_name::Symbol, f!::Symbol, isabsorbing::S
             size_tmp = 0
             while !isabsorbing && tn <= time_bound
                 # Alloc buffer
-                ABCRN._resize_trajectory!(full_values, times, transitions, estim_min_states+size_tmp+buffer_size)
+                BiochemNetABC._resize_trajectory!(full_values, times, transitions, estim_min_states+size_tmp+buffer_size)
                 i = 0
                 while i < buffer_size
                     i += 1
@@ -114,7 +114,7 @@ function generate_code_simulation(model_name::Symbol, f!::Symbol, isabsorbing::S
                     end
                     # n+1 values are now n values
                     copyto!(xn, vec_x)
-                    ABCRN._update_values!(full_values, times, transitions, 
+                    BiochemNetABC._update_values!(full_values, times, transitions, 
                                                     xn, tn, l_tr[1], estim_min_states+size_tmp+i)
                     if $(run_isabsorbing)
                         isabsorbing = isabsorbing || $(isabsorbing)(p_sim,xn)
@@ -123,7 +123,7 @@ function generate_code_simulation(model_name::Symbol, f!::Symbol, isabsorbing::S
                 end
                 # If simulation ended before the end of buffer
                 if i < buffer_size
-                    ABCRN._resize_trajectory!(full_values, times, transitions, estim_min_states+size_tmp+i)
+                    BiochemNetABC._resize_trajectory!(full_values, times, transitions, estim_min_states+size_tmp+i)
                 end
                 size_tmp += i
                 n += i
@@ -132,7 +132,7 @@ function generate_code_simulation(model_name::Symbol, f!::Symbol, isabsorbing::S
             if isbounded(m)
                 # Add last value: the convention is the last transition is nothing,
                 # the trajectory is bounded
-                ABCRN._finish_bounded_trajectory!(values, times, transitions, time_bound)
+                BiochemNetABC._finish_bounded_trajectory!(values, times, transitions, time_bound)
             end
             return Trajectory(m, values, times, transitions)
         end
@@ -145,7 +145,7 @@ function generate_code_synchronized_simulation(model_name::Symbol, lha_name::Sym
                                                run_isabsorbing::Bool = false)
     
     return quote
-        import ABCRN: simulate, volatile_simulate
+        import BiochemNetABC: simulate, volatile_simulate
 
         function simulate(m::$(model_name), A::$(lha_name), product::SynchronizedModel,
                           p_sim::AbstractVector{Float64}, verbose::Bool)
@@ -182,10 +182,10 @@ function generate_code_synchronized_simulation(model_name::Symbol, lha_name::Sym
             l_tr = Transition[nothing]
             # If x0 is absorbing
             if isabsorbing || isacceptedLHA 
-                ABCRN._resize_trajectory!(full_values, times, transitions, 1)
+                BiochemNetABC._resize_trajectory!(full_values, times, transitions, 1)
                 values = full_values[getfield(m, :_g_idx)]
                 if isbounded(m)
-                    ABCRN._finish_bounded_trajectory!(values, times, transitions, time_bound)
+                    BiochemNetABC._finish_bounded_trajectory!(values, times, transitions, time_bound)
                 end
                 if isabsorbing && !isacceptedLHA
                     next_state!(A, ptr_loc_state, values_state, ptr_time_state, 
@@ -208,7 +208,7 @@ function generate_code_synchronized_simulation(model_name::Symbol, lha_name::Sym
                 n += 1
                 copyto!(xn, vec_x)
                 tr_n = l_tr[1]
-                ABCRN._update_values!(full_values, times, transitions, xn, tn, tr_n, i)
+                BiochemNetABC._update_values!(full_values, times, transitions, xn, tn, tr_n, i)
                 isacceptedLHA = isaccepted(ptr_loc_state[1], A)
                 if isacceptedLHA 
                     break
@@ -220,10 +220,10 @@ function generate_code_synchronized_simulation(model_name::Symbol, lha_name::Sym
             end
             # If simulation ended before the estimation of states
             if n < estim_min_states
-                ABCRN._resize_trajectory!(full_values, times, transitions, n)
+                BiochemNetABC._resize_trajectory!(full_values, times, transitions, n)
                 values = full_values[getfield(m, :_g_idx)]
                 if isbounded(m)
-                    ABCRN._finish_bounded_trajectory!(values, times, transitions, time_bound)
+                    BiochemNetABC._finish_bounded_trajectory!(values, times, transitions, time_bound)
                 end
                 if isabsorbing && !isacceptedLHA
                     next_state!(A, ptr_loc_state, values_state, ptr_time_state, 
@@ -237,7 +237,7 @@ function generate_code_synchronized_simulation(model_name::Symbol, lha_name::Sym
             size_tmp = 0
             while !isabsorbing && tn <= time_bound && !isacceptedLHA
                 # Alloc buffer
-                ABCRN._resize_trajectory!(full_values, times, transitions, estim_min_states+size_tmp+buffer_size)
+                BiochemNetABC._resize_trajectory!(full_values, times, transitions, estim_min_states+size_tmp+buffer_size)
                 i = 0
                 while i < buffer_size
                     i += 1
@@ -252,7 +252,7 @@ function generate_code_synchronized_simulation(model_name::Symbol, lha_name::Sym
                     # n+1 values are now n values
                     copyto!(xn, vec_x)
                     tr_n = l_tr[1]
-                    ABCRN._update_values!(full_values, times, transitions, 
+                    BiochemNetABC._update_values!(full_values, times, transitions, 
                                                     xn, tn, tr_n, estim_min_states+size_tmp+i)
                     isacceptedLHA = isaccepted(ptr_loc_state[1], A)
                     if isacceptedLHA
@@ -265,7 +265,7 @@ function generate_code_synchronized_simulation(model_name::Symbol, lha_name::Sym
                 end
                 # If simulation ended before the end of buffer
                 if i < buffer_size
-                    ABCRN._resize_trajectory!(full_values, times, transitions, estim_min_states+size_tmp+i)
+                    BiochemNetABC._resize_trajectory!(full_values, times, transitions, estim_min_states+size_tmp+i)
                 end
                 size_tmp += i
                 n += i
@@ -274,7 +274,7 @@ function generate_code_synchronized_simulation(model_name::Symbol, lha_name::Sym
             if isbounded(m) && !isacceptedLHA
                 # Add last value: the convention is that if the last transition is nothing,
                 # the trajectory is bounded
-                ABCRN._finish_bounded_trajectory!(values, times, transitions, time_bound)
+                BiochemNetABC._finish_bounded_trajectory!(values, times, transitions, time_bound)
             end
             if (isabsorbing || tn > time_bound) && !isacceptedLHA
                 next_state!(A, ptr_loc_state, values_state, ptr_time_state, 

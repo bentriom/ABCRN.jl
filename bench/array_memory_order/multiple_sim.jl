@@ -2,7 +2,7 @@
 using BenchmarkTools
 import BenchmarkTools: mean
 BenchmarkTools.DEFAULT_PARAMETERS.samples = 20000
-using ABCRN
+using BiochemNetABC
 include(get_module_path() * "/src/_tests_simulate.jl")
 
 if ARGS[1] == "SIR"

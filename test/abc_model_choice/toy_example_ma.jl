@@ -3,7 +3,7 @@
 using ARFIMA
 using Random
 using LinearAlgebra
-using ABCRN
+using BiochemNetABC
 using Distributions
 using ScikitLearn
 @sk_import metrics: (accuracy_score, classification_report)
@@ -11,7 +11,7 @@ using StatsBase: autocor
 
 struct MA1 <: Model end
 struct MA2 <: Model end
-import ABCRN: simulate
+import BiochemNetABC: simulate
 
 global N_tml = 100
 global σ = 1.0

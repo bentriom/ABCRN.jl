@@ -1,4 +1,4 @@
-module ABCRN
+module BiochemNetABC
 
 ## Imports
 import Base: +, -, *

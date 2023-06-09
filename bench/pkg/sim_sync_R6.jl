@@ -1,6 +1,6 @@
 
 using BenchmarkTools
-@everywhere using ABCRN
+@everywhere using BiochemNetABC
 using Profile
 
 load_model("ER")

@@ -1,9 +1,9 @@
 
-using Documenter, ABCRN
+using Documenter, BiochemNetABC
 
 makedocs(
-    sitename = "ABCRN.jl",
-    modules = [ABCRN],
+    sitename = "BiochemNetABC.jl",
+    modules = [BiochemNetABC],
     pages = [
         "Home" => "index.md",
         "Getting Started" => "starting.md",
@@ -19,7 +19,7 @@ makedocs(
 )
 
 deploydocs(
-    repo = "github.com/bentriom/ABCRN.jl.git",
+    repo = "github.com/bentriom/BiochemNetABC.jl.git",
     devbranch = "master",
 )
 

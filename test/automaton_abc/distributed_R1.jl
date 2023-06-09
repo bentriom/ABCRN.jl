@@ -1,7 +1,7 @@
 
 using Distributed
 addprocs(2)
-@everywhere using ABCRN
+@everywhere using BiochemNetABC
 
 load_model("ER")
 load_automaton("automaton_F")

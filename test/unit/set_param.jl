@@ -1,5 +1,5 @@
 
-using ABCRN
+using BiochemNetABC
 
 load_model("SIR") # p = 0.0012, 0.05 
 load_model("ER") # p = 1; 1; 1 

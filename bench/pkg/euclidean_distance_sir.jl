@@ -2,7 +2,7 @@
 using Profile
 using Statistics
 using BenchmarkTools
-@everywhere using ABCRN
+@everywhere using BiochemNetABC
 import LinearAlgebra: dot
 import Distributions: Uniform
 

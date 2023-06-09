@@ -1,4 +1,4 @@
-name = "ABCRN"
+name = "BiochemNetABC"
 uuid = "eb87d800-f8b7-11ed-3652-a7ab94e0ce49"
 authors = ["Mahmoud Bentriou <mahmoud.bentriou@centralesupelec.fr>"]
 version = "0.1.0"

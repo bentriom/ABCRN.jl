@@ -1,7 +1,7 @@
 
 using BenchmarkTools
 import BenchmarkTools: mean
-using ABCRN
+using BiochemNetABC
 include(get_module_path() * "/src/_tests_simulate.jl")
 
 str_model = ARGS[1]

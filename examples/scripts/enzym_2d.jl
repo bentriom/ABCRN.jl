@@ -1,7 +1,7 @@
 
 using DelimitedFiles
 using Distributed
-@everywhere using ABCRN
+@everywhere using BiochemNetABC
 using Dates
 using Plots
 

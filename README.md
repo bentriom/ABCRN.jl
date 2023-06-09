@@ -1,11 +1,11 @@
 
-ABCRN.jl 
+BiochemNetABC.jl 
 ==================
 
 <!--
 ![Pipeline status](https://gitlab-research.centralesupelec.fr/2017bentrioum/markovprocesses.jl/badges/master/pipeline.svg)
 -->
-[![Documentation](https://github.com/bentriom/ABCRN.jl/actions/workflows/doc.yml/badge.svg)](https://bentriom.github.io/ABCRN.jl/)
+[![Documentation](https://github.com/bentriom/BiochemNetABC.jl/actions/workflows/doc.yml/badge.svg)](https://bentriom.github.io/BiochemNetABC.jl/)
 
 A Julia package for efficient simulation, statistical inference and verification of Continuous Time Markov Chains
 modeled by Chemical Reaction Networks with Approximate Bayesian Computation methods.
@@ -32,7 +32,7 @@ This package is not yet registered in the Julia's General registry. For the inst
 2. Enter Pkg's REPL by typing `]`
 3. Enter
    ```julia
-   pkg> add https://github.com/bentriom/ABCRN.jl
+   pkg> add https://github.com/bentriom/BiochemNetABC.jl
    ```
 
 ## Getting started 
@@ -48,7 +48,7 @@ Execution and statistical tests can be run through:
 or in Pkg's REPL:
 
 ```julia
-pkg> test ABCRN
+pkg> test BiochemNetABC
 ```
 
 > :warning: The statistical tests run by `test/run_cosmos.jl` needs [Cosmos](http://cosmos.lacl.fr/) in your PATH environment variable.

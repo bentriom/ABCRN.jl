@@ -1,7 +1,7 @@
 
 using Distributed
 using Test
-using ABCRN
+using BiochemNetABC
 using Logging
 Logging.disable_logging(Logging.Warn)
 

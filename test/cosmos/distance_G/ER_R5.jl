@@ -1,6 +1,6 @@
 
 @everywhere begin 
-    using ABCRN
+    using BiochemNetABC
     import Distributed: nworkers
     absolute_path = get_module_path() * "/test/cosmos/"
     # Values x1, x2  t1, t2
@@ -44,7 +44,7 @@ for i = 1:nb_k1
             nb_sim = dict_values["Total paths"][1]
             nb_accepted = dict_values["Accepted paths"][1]
             nb_sim = convert(Int, nb_sim)
-            # ABCRN estimation
+            # BiochemNetABC estimation
             set_param!(ER, :k1, convert(Float64, k1))
             set_param!(ER, :k2, convert(Float64, k2))
             sync_ER = ER*A_G

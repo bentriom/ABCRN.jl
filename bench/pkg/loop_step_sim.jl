@@ -1,7 +1,7 @@
 
 using StaticArrays
 using BenchmarkTools
-using ABCRN
+using BiochemNetABC
 Transition = Union{String,Nothing}
 
 load_model("ER")

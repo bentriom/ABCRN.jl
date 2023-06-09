@@ -2,7 +2,7 @@
 using Distributed
 @everywhere begin
     using Distributions
-    using ABCRN
+    using BiochemNetABC
     using SpecialFunctions
     using LinearAlgebra
     using Random
@@ -16,7 +16,7 @@ using ScikitLearn
     struct Model1 <: Model end
     struct Model2 <: Model end
     struct Model3 <: Model end
-    import ABCRN: simulate
+    import BiochemNetABC: simulate
 
     function simulate(m::Model1)
         param = rand(Exponential(1))

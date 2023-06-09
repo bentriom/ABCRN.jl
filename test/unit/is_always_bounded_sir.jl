@@ -1,5 +1,5 @@
 
-using ABCRN
+using BiochemNetABC
 
 test = true
 load_model("SIR")

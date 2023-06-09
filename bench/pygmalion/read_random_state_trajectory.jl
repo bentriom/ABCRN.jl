@@ -1,7 +1,7 @@
 
 using BenchmarkTools
 using pygmalion
-using ABCRN
+using BiochemNetABC
 
 println("Pygmalion:")
 
@@ -30,11 +30,11 @@ end
 b1_pyg = @benchmark random_trajectory_value_pyg($so)
 @show minimum(b1_pyg), mean(b1_pyg), maximum(b1_pyg)
 
-println("ABCRN:")
+println("BiochemNetABC:")
 
-ABCRN.load_model("ER")
+BiochemNetABC.load_model("ER")
 ER.time_bound = 10.0
-σ = ABCRN.simulate(ER)
+σ = BiochemNetABC.simulate(ER)
 function random_trajectory_value(σ::AbstractTrajectory)
     n_states = length_states(σ)
     return σ[:P][rand(1:n_states)]

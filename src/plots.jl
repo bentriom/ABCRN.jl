@@ -88,14 +88,14 @@ function plot_periodic_trajectory(A::LHA, σ::SynchronizedTrajectory, sym_obs::S
     locations_trajectory = Vector{Location}(undef, nbr_states)
     locations_trajectory[1] = S0.loc
     idx_n = [1]
-    values_n = [ABCRN.get_state_lha_value(A, values, :n)]
-    values_tp = [ABCRN.get_state_lha_value(A, values, :tp)]
+    values_n = [BiochemNetABC.get_state_lha_value(A, values, :n)]
+    values_tp = [BiochemNetABC.get_state_lha_value(A, values, :tp)]
     edge_candidates = Vector{EdgePeriodAutomaton}(undef, 2)
     if verbose println("Init: ") end
     for k in 2:nbr_states
-        tp_k = ABCRN.get_state_lha_value(A, values, :tp)
+        tp_k = BiochemNetABC.get_state_lha_value(A, values, :tp)
         next_state!(A, ptr_loc, values, ptr_time, σ[k], l_t[k], l_tr[k], σ[k-1], p_sim, edge_candidates; verbose = verbose)
-        n_kplus1 = ABCRN.get_state_lha_value(A, values, :n)
+        n_kplus1 = BiochemNetABC.get_state_lha_value(A, values, :n)
         if n_kplus1 != values_n[end]
             push!(idx_n, k)
             push!(values_n, n_kplus1)
